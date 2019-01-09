@@ -1,5 +1,5 @@
 dataclasses
-django
+django==2.1.2
 https://github.com/TOMToolkit/tom_base/archive/master.zip
 gunicorn
 django-heroku
