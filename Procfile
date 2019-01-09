@@ -1,2 +1,1 @@
-release: python manage.py migrate --noinput
-web: gunicorn SNEx_TOM_test.wsgi
+web: gunicorn tom20190109.wsgi
