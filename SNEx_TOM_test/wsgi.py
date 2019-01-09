@@ -1,5 +1,5 @@
 """
-WSGI config for SNEx_TOM_test project.
+WSGI config for herokutom project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
