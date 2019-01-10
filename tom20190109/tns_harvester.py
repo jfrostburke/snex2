@@ -103,7 +103,7 @@ def get_tns_info(name):
         
     resource = "object"
         
-    sandbox = True
+    sandbox = False
 
     if sandbox:
         TNS_BASE_URL = "https://sandbox-tns.weizmann.ac.il/api/get/"
