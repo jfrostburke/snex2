@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'ks#e!w3m*y1g_=)%vmrdcyn*5dt0$)o^mq2f=vtj#myw#&amp;p3%i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
@@ -201,6 +201,20 @@ HOOKS = {
     'target_post_save': 'tom_common.hooks.target_post_save',
     'observation_change_state': 'tom_common.hooks.observation_change_state'
 }
+
+TOM_ALERT_CLASSES = [
+    'tom_alerts.brokers.mars.MARSBroker',
+    'tom_alerts.brokers.lasair.LasairBroker',
+    ]
+
+TOM_HARVESTER_CLASSES = [
+    'tom_catalogs.harvesters.simbad.SimbadHarvester',
+    'tom_catalogs.harvesters.ned.NEDHarvester',
+    #'tom_catalogs.harvesters.jplhorizons.JPLHorizonsHarvester',
+    #'tom_catalogs.harvesters.mpc.MPCHarvester',
+    'tom20190109.tns_harvester.TNSHarvester',
+    ]
+
 
 try:
     from local_settings import * # noqa
