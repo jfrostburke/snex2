@@ -1,6 +1,5 @@
 dataclasses
-django==2.1.2
+django
 https://github.com/TOMToolkit/tom_base/archive/master.zip
 gunicorn
 django-heroku
-django-contrib-comments
