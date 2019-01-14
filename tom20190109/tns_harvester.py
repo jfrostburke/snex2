@@ -129,7 +129,7 @@ def convert_radec(ra,dec):
     ra_hr = hr + mi/60. + se/3600.
     ra_deg = (ra_hr/24.)*360.
     
-    [de,mi,se] = [abs(float(x)) for x in ra.split(':')]
+    [de,mi,se] = [abs(float(x)) for x in dec.split(':')]
     
     dec_deg = de + mi/60. + se/3600.
     if '-' in dec: dec_deg = -dec_deg
@@ -147,8 +147,6 @@ class TNSHarvester(AbstractHarvester):
         target = super().to_target()
         target.type = 'SIDEREAL'
         target.identifier = self.catalog_data['name_prefix']+self.catalog_data['name']
-        target.ra = self.catalog_data['ra']
-        target.dec = self.catalog_data['dec']
         target.ra, target.dec = convert_radec(
             self.catalog_data['ra'], self.catalog_data['dec'])
         return target
