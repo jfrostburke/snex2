@@ -1,0 +1,58 @@
+{% extends 'tom_common/base.html' %}
+{% load comments bootstrap4 tom_common_extras targets_extras observation_extras dataproduct_extras static cache %}
+{% block title %}Target {{ object.name }}{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/main.css' %}">
+{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-4">
+    <div id="target-info">
+      {% target_feature object %}
+      {% target_data object %}
+    </div>
+  </div>
+  <div class="col-md-8">
+    <ul class="nav nav-tabs" id="tabs">
+      <li class="nav-item">
+        <span class="nav-link active" data-target="#observe" data-toggle="tab">Observe</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" data-target="#observations" data-toggle="tab">Observations</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" data-target="#data-products" data-toggle="tab">Data</span>
+      </li>
+    </ul>
+    <div class="tab-content">
+      <div class="tab-pane in active" id="observe">
+        <h4>Observe</h4>
+        {% observing_buttons object %}
+        <hr/>
+        <h4>Current Visibility at LCOGT</h4>
+        {% target_plan %}
+      </div>
+      <div class="tab-pane" id="observations">
+        <h4>Observations</h4>
+        <a href="{% url 'targets:detail' pk=target.id %}?update_status=True" title="Update status of observations for target" class="btn btn-primary">Update Observations Status</a>
+        {% observation_list object %}
+      </div>
+      <div class="tab-pane" id="data-products">
+        {% target_lightcurve target %}
+        {% upload_dataproduct %}
+        {% dataproduct_list_for_target object %}
+      </div>
+      {% comments_enabled as comments_are_enabled %}
+      <hr/>
+      <h5>Comments</h5>
+        {% if comments_are_enabled %}
+          {% render_comment_list for object %}
+          {% url 'targets:detail' object.id as next %}
+          {% if user.is_authenticated %}
+            {% render_comment_form for object %}
+          {% endif %}
+        {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
