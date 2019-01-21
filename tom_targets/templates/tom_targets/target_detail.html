@@ -15,43 +15,68 @@
   <div class="col-md-8">
     <ul class="nav nav-tabs" id="tabs">
       <li class="nav-item">
-        <span class="nav-link active" data-target="#observe" data-toggle="tab">Observe</span>
+        <span class="nav-link active" data-target="#overview" data-toggle="tab">Overview</span>
       </li>
       <li class="nav-item">
-        <span class="nav-link" data-target="#observations" data-toggle="tab">Observations</span>
+        <span class="nav-link" data-target="#spectra" data-toggle="tab">Spectra</span>
       </li>
       <li class="nav-item">
-        <span class="nav-link" data-target="#data-products" data-toggle="tab">Data</span>
+        <span class="nav-link" data-target="#images" data-toggle="tab">Images</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" data-target="#cross-reference" data-toggle="tab">Cross-Reference</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" data-target="#upload-data" data-toggle="tab">Upload Data</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" data-target="#download-data" data-toggle="tab">Download Data</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" data-target="#schedule" data-toggle="tab">Schedule Observations</span>
       </li>
     </ul>
     <div class="tab-content">
-      <div class="tab-pane in active" id="observe">
-        <h4>Observe</h4>
-        {% observing_buttons object %}
-        <hr/>
+      <div class="tab-pane in active" id="overview">
         <h4>Current Visibility at LCOGT</h4>
         {% target_plan %}
+        {% comments_enabled as comments_are_enabled %}
+        <hr/>
+        <h5>Comments</h5>
+          {% if comments_are_enabled %}
+            {% render_comment_list for object %}
+            {% url 'targets:detail' object.id as next %}
+            {% if user.is_authenticated %}
+              {% render_comment_form for object %}
+            {% endif %}
+          {% endif %}
       </div>
-      <div class="tab-pane" id="observations">
-        <h4>Observations</h4>
+      <div class="tab-pane" id="spectra">
+        <h4>Spectra</h4>
+        <p>Under construction</p>
+      </div>
+      <div class="tab-pane" id="images">
+        <h4>Examine Images</h4>
         <a href="{% url 'targets:detail' pk=target.id %}?update_status=True" title="Update status of observations for target" class="btn btn-primary">Update Observations Status</a>
         {% observation_list object %}
       </div>
-      <div class="tab-pane" id="data-products">
+      <div class="tab-pane" id="cross-reference">
+        <h4>Cross-Reference</h4>
+        <p>Under construction</p>
+      </div>
+      <div class="tab-pane" id="upload-data">
         {% target_lightcurve target %}
         {% upload_dataproduct %}
         {% dataproduct_list_for_target object %}
       </div>
-      {% comments_enabled as comments_are_enabled %}
-      <hr/>
-      <h5>Comments</h5>
-        {% if comments_are_enabled %}
-          {% render_comment_list for object %}
-          {% url 'targets:detail' object.id as next %}
-          {% if user.is_authenticated %}
-            {% render_comment_form for object %}
-          {% endif %}
-        {% endif %}
+      <div class="tab-pane" id="download-data">
+        <h4>Batch Download Data</h4>
+        <p>Under construction</p>
+      </div>
+      <div class="tab-pane" id="schedule">
+        <h4>Schedule Observations</h4>
+        {% observing_buttons object %}
+      </div>
     </div>
   </div>
 </div>

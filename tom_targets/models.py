@@ -7,9 +7,13 @@ from tom_common.hooks import run_hook
 
 GLOBAL_TARGET_FIELDS = ['identifier', 'name', 'type']
 
+#SIDEREAL_FIELDS = GLOBAL_TARGET_FIELDS + [
+#    'ra', 'dec', 'epoch', 'pm_ra', 'pm_dec',
+#    'galactic_lng', 'galactic_lat', 'distance', 'distance_err'
+#]
+
 SIDEREAL_FIELDS = GLOBAL_TARGET_FIELDS + [
-    'ra', 'dec', 'epoch', 'pm_ra', 'pm_dec',
-    'galactic_lng', 'galactic_lat', 'distance', 'distance_err'
+    'ra', 'dec', 'epoch'
 ]
 
 NON_SIDEREAL_FIELDS = GLOBAL_TARGET_FIELDS + [
