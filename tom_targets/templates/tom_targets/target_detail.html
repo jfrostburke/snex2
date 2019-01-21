@@ -38,10 +38,13 @@
     </ul>
     <div class="tab-content">
       <div class="tab-pane in active" id="overview">
-        <h4>Current Visibility at LCOGT</h4>
+        <h5>Current Visibility at LCOGT</h5>
         {% target_plan %}
+        <hr />
+        <h5>SDSS Reference Field</h5>
+        {% target_reference object %}
+        <hr />
         {% comments_enabled as comments_are_enabled %}
-        <hr/>
         <h5>Comments</h5>
           {% if comments_are_enabled %}
             {% render_comment_list for object %}

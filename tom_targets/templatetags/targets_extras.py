@@ -58,3 +58,7 @@ def target_plan(context):
         'target': context['object'],
         'visibility_graph': visibility_graph
     }
+
+@register.inclusion_tag('tom_targets/partials/target_reference.html')
+def target_reference(target):
+    return {'target': target}
