@@ -62,3 +62,7 @@ def target_plan(context):
 @register.inclusion_tag('tom_targets/partials/target_reference.html')
 def target_reference(target):
     return {'target': target}
+
+@register.inclusion_tag('tom_targets/partials/aladin.html')
+def aladin(target):
+    return {'target': target}
