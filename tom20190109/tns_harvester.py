@@ -40,6 +40,8 @@ class TNSHarvester(AbstractHarvester):
             self.catalog_data['name'])
         target.name = target.identifier
         target.epoch = 2000
+        if self.catalog_data['redshift'] is not None:
+            target.redshift = self.catalog_data['redshift']
         c = SkyCoord('{0} {1}'.format(self.catalog_data['ra'], 
             self.catalog_data['dec']), unit = (u.hourangle, u.deg))
         target.ra, target.dec = c.ra.deg, c.dec.deg

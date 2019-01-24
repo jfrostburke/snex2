@@ -13,7 +13,7 @@ GLOBAL_TARGET_FIELDS = ['identifier', 'name', 'name2', 'name3', 'type']
 #]
 
 SIDEREAL_FIELDS = GLOBAL_TARGET_FIELDS + [
-    'ra', 'dec', 'epoch'
+    'ra', 'dec', 'redshift', 'epoch'
 ]
 
 NON_SIDEREAL_FIELDS = GLOBAL_TARGET_FIELDS + [
@@ -123,6 +123,11 @@ class Target(models.Model):
     )
     ephemeris_epoch_err = models.FloatField(
         null=True, blank=True, verbose_name='Ephemeris Epoch Error', help_text='Days'
+    )
+    
+    #Added reshift myself
+    redshift = models.FloatField(
+        null=True, blank=True, verbose_name='Redshift', help_text='The redshift of the target'
     )
 
     class Meta:
