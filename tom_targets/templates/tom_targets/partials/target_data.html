@@ -4,7 +4,7 @@
 <dl class="row">
   {% for key, value in target.as_dict.items %}
   <dt class="col-sm-6">{% verbose_name target key %}</dt>
-  <dd class="col-sm-6">{{ value|truncate_number }}</dd>
+  <dd class="col-sm-6">{{ value }}</dd>
   {% if key == 'ra' %}
     <dt class="col-sm-6">&nbsp;</dt>
     <dd class="col-sm-6">{{ value|deg_to_sexigesimal:"hms" }}</dd>
