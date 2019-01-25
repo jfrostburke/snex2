@@ -72,4 +72,5 @@ class TargetVisibilityForm(forms.Form):
         #if end_time < start_time:
         #    raise forms.ValidationError('Start time must be before end time')
 
-TargetExtraFormset = inlineformset_factory(Target, TargetExtra, fields=('key', 'value'))
+TargetExtraFormset = inlineformset_factory(Target, TargetExtra, fields=('key', 'value'), 
+    extra = 0, can_delete = True)
