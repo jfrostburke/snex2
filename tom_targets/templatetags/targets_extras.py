@@ -50,7 +50,14 @@ def target_plan(context):
     plot_data = [
         go.Scatter(x=data[0], y=data[1], mode='lines', name=site, ) for site, data in visibility_data.items()
     ]
-    layout = go.Layout(yaxis=dict(range=[airmass,1.0]))
+    layout = go.Layout(
+        yaxis=dict(range=[airmass,1.0]),
+        margin=dict(l=20,r=10,b=30,t=40),
+        hovermode='closest',
+        width=600,
+        height=300,
+        autosize=True
+    )
     visibility_graph = offline.plot(
         go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False
     )

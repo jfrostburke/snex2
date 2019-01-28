@@ -57,7 +57,8 @@ def get_light_curve(file_path, error_limit=None):
         ]
         layout = go.Layout(
             yaxis=dict(autorange='reversed'),
-            margin=dict(l=20, r=10, b=20, t=40)
+            margin=dict(l=20, r=10, b=30, t=40),
+            hovermode='closest'
             #height=500,
             #width=500
         )
