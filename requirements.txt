@@ -1,5 +1,5 @@
 dataclasses
 django
-tomtoolkit
+-e git+https://github.com/TOMToolkit/tom_base.git#egg=tomtoolkit
 gunicorn
 django-heroku
