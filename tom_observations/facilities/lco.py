@@ -141,13 +141,13 @@ class LCOObservationForm(GenericObservationForm):
     See the documentation on Django forms for more information.
     """
     #group_id = forms.CharField()
-    proposal = forms.ChoiceField(choices=proposal_choices,initial='KEY2017AB-001')
+    proposal = forms.ChoiceField(choices=_proposal_choices,initial='KEY2017AB-001')
     ipp_value = forms.FloatField(initial=1.0)
     start = forms.DateField(widget=forms.TextInput(attrs={'type': 'date'}))
     #start = forms.DateField(widget=forms.SelectDateWidget(empty_label=("Choose year","choose month","choose day")))
     end = forms.CharField(widget=forms.TextInput(attrs={'type': 'date'}))
-    filter = forms.ChoiceField(choices=filter_choices,initial='b')
-    instrument_name = forms.ChoiceField(choices=instrument_choices,initial='1M0-SCICAM-SINISTRO')
+    filter = forms.ChoiceField(choices=_filter_choices,initial='b')
+    instrument_name = forms.ChoiceField(choices=_instrument_choices,initial='1M0-SCICAM-SINISTRO')
     exposure_count = forms.IntegerField(min_value=1,initial=2)
     exposure_time = forms.FloatField(min_value=0.1,initial=200)
     max_airmass = forms.FloatField(initial=1.6)

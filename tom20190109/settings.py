@@ -65,7 +65,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'tom_common.middleware.ExternalServiceMiddleware',
-     'tom_common.middleware.AuthStrategyMiddlware',
+     'tom_common.middleware.AuthStrategyMiddleware',
 ]
 
 ROOT_URLCONF = 'tom_common.urls'
@@ -223,6 +223,10 @@ TOM_HARVESTER_CLASSES = [
     'tom20190109.tns_harvester.TNSHarvester',
     ]
 
+DATA_TYPES = (
+    ('SPECTROSCOPY', 'Spectroscopy'),
+    ('PHOTOMETRY', 'Photometry')
+)
 
 try:
     from local_settings import * # noqa

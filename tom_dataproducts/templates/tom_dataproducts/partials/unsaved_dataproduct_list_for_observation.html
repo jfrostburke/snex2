@@ -1,0 +1,27 @@
+{% load bootstrap4 %}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Created</th>
+      <th>Filename</th>
+      <th>Save</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for product in products.unsaved %}
+    <tr>
+      <td>{{ product.created }}</td>
+      <td><a href="{{ product.data }}">{{ product.filename }}</a></td>
+      <td>
+        <input type="checkbox" name="products" id="product{{ product.id }}" value="{{ product.id }}">
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="6">
+        No unsaved data for this observation.
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
