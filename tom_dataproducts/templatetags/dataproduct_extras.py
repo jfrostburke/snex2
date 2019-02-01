@@ -66,9 +66,11 @@ def reduced_data_lightcurve(target):
         'V': 'rgb(120,255,0)',
         'g': 'rgb(0,204,255)',
         'r': 'rgb(255,124,0)',
-        'i': 'rgb(144,0,43)'}
+        'i': 'rgb(144,0,43)',
+        'k': 'rgb(0,0,0)'}
 
     for rd in ReducedDatum.objects.filter(target=target, data_type='PHOTOMETRY'):
+        if not rd.label: rd.label = 'k'
         filter_data.setdefault(rd.label, ([], [], []))
         filter_data[rd.label][0].append(rd.timestamp)
         filter_data[rd.label][1].append(rd.value)
