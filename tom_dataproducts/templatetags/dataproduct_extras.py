@@ -60,21 +60,27 @@ def upload_dataproduct(context):
 @register.inclusion_tag('tom_dataproducts/partials/reduced_data_lightcurve.html')
 def reduced_data_lightcurve(target):
     time = []
+    #filter_data = {'U': (), 'B': (), 'V': (), 'g': (), 'r': (), 'i': ()}
     filter_data = {}
+    filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
+        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i'}
     colors = {'U': 'rgb(59,0,113)',
         'B': 'rgb(0,87,255)',
         'V': 'rgb(120,255,0)',
         'g': 'rgb(0,204,255)',
         'r': 'rgb(255,124,0)',
         'i': 'rgb(144,0,43)',
-        'k': 'rgb(0,0,0)'}
+        'other': 'rgb(0,0,0)'}
 
     for rd in ReducedDatum.objects.filter(target=target, data_type='PHOTOMETRY'):
-        if not rd.label: rd.label = 'k'
-        filter_data.setdefault(rd.label, ([], [], []))
-        filter_data[rd.label][0].append(rd.timestamp)
-        filter_data[rd.label][1].append(rd.value)
-        filter_data[rd.label][2].append(rd.error)
+        if rd.label not in filter_translate.keys(): filt = 'other'
+        else: filt = filter_translate[rd.label]
+        filter_data.setdefault(filt, ([], [], []))
+        filter_data[filt][0].append(rd.timestamp)
+        filter_data[filt][1].append(rd.value)
+        filter_data[filt][2].append(rd.error)
+    filter_data = {k: filter_data[k] for k in 
+        [key for key in colors.keys() if key in filter_data.keys()]}
     plot_data = [
         go.Scatter(
             x=filter_values[0],

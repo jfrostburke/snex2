@@ -1,3 +1,9 @@
+ @import url('https://fonts.googleapis.com/css?family=Montserrat');
+
+span {
+  font-family: 'Montserrat', sans-serif;
+}
+
 #featured-image {
   height: auto;
   width: 100%;
