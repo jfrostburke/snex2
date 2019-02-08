@@ -50,17 +50,17 @@
         {% if user.is_authenticated %}
           <li class="nav-item">
             {% if user.first_name or user.last_name %}
-            <a class="nav-link" href="{% url 'account-update' %}">{{ user.first_name }} {{ user.last_name }}</a>
+            <a class="nav-link" href="{% url 'account-update' %}" style="font-family: 'Montserrat', sans-serif;">{{ user.first_name }} {{ user.last_name }}</a>
             {% else %}
-            <a class="nav-link" href="{% url 'account-update' %}">User {{ user.id }}</a>
+            <a class="nav-link" href="{% url 'account-update' %}" style="font-family: 'Montserrat', sans-serif;">User {{ user.id }}</a>
             {% endif %}
           </li>
           <li>
-            <a class="btn btn-outline-success" title="logout" href="{% url 'logout' %}">Logout</a>
+            <a class="btn btn-outline-success" title="logout" href="{% url 'logout' %}" style="font-family: 'Montserrat', sans-serif;">Logout</a>
           </li>
         {% else %}
           <li class="nav-item">
-            <a class="btn btn-outline-success" title="logout" href="{% url 'login' %}">Login</a>
+            <a class="btn btn-outline-success" title="logout" href="{% url 'login' %}" style="font-family: 'Montserrat', sans-serif;">Login</a>
           </li>
         {% endif %}
       </div>

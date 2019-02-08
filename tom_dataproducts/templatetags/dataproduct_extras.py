@@ -102,7 +102,13 @@ def reduced_data_lightcurve(target):
         #height=500,
         #width=500
     )
-    return {
-        'target': target,
-        'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)
-    }
+    if len(plot_data) == 0:
+        return {
+            'target': target,
+            'plot': "No photometry to display yet"
+        }
+    else:
+        return {
+            'target': target,
+            'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)
+        }
