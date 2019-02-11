@@ -2,7 +2,8 @@ import requests
 from django.conf import settings
 from django import forms
 from dateutil.parser import parse
-from crispy_forms.layout import Layout, Div
+from crispy_forms.layout import Layout, Div, HTML
+from crispy_forms.bootstrap import PrependedAppendedText, PrependedText
 from django.core.cache import cache
 import datetime
 
@@ -142,15 +143,26 @@ class LCOObservationForm(GenericObservationForm):
     """
     #group_id = forms.CharField()
     proposal = forms.ChoiceField(choices=_proposal_choices,initial='KEY2017AB-001')
-    ipp_value = forms.FloatField(initial=1.0)
-    start = forms.DateField(widget=forms.TextInput(attrs={'type': 'date'}))
+    ipp_value = forms.FloatField(initial=1.0,label='')
+    start = forms.CharField(initial=str(datetime.datetime.utcnow()))
     #start = forms.DateField(widget=forms.SelectDateWidget(empty_label=("Choose year","choose month","choose day")))
     end = forms.CharField(widget=forms.TextInput(attrs={'type': 'date'}))
+    window = forms.FloatField(initial=3.0,label="")
     filter = forms.ChoiceField(choices=_filter_choices,initial='b')
     instrument_name = forms.ChoiceField(choices=_instrument_choices,initial='1M0-SCICAM-SINISTRO')
-    exposure_count = forms.IntegerField(min_value=1,initial=2)
-    exposure_time = forms.FloatField(min_value=0.1,initial=200)
-    max_airmass = forms.FloatField(initial=1.6)
+    exposure_count_U = forms.IntegerField(min_value=1,initial=2,label='No. of exposures')
+    exposure_time_U = forms.FloatField(min_value=0.1,initial=300,label='Exposure time')
+    exposure_count_B = forms.IntegerField(min_value=1,initial=2,label='')
+    exposure_time_B = forms.FloatField(min_value=0.1,initial=200,label='')
+    exposure_count_V = forms.IntegerField(min_value=1,initial=2,label='')
+    exposure_time_V = forms.FloatField(min_value=0.1,initial=120,label='')
+    exposure_count_g = forms.IntegerField(min_value=1,initial=2,label='')
+    exposure_time_g = forms.FloatField(min_value=0.1,initial=200,label='')
+    exposure_count_r = forms.IntegerField(min_value=1,initial=2,label='')
+    exposure_time_r = forms.FloatField(min_value=0.1,initial=120,label='')
+    exposure_count_i = forms.IntegerField(min_value=1,initial=2,label='')
+    exposure_time_i = forms.FloatField(min_value=0.1,initial=120,label='')
+    max_airmass = forms.FloatField(initial=1.6,label="")
     observation_type = forms.ChoiceField(
         choices=(('NORMAL', 'Normal'), ('TARGET_OF_OPPORTUNITY', 'Rapid Response'))
     )
@@ -161,11 +173,47 @@ class LCOObservationForm(GenericObservationForm):
             self.common_layout,
             Div(
                 Div(
-                    'proposal', 'ipp_value', 'observation_type', 'start', 'end',
+                    HTML("<p></p>"),
+                    PrependedAppendedText(
+                        'window','Once in the next', 'days'
+                    ),
+                    Div(
+                        Div(PrependedText('exposure_time_U','U'),css_class='col-md-6'),
+                        Div('exposure_count_U',css_class='col-md-6'),
+                        css_class='form-row'
+                    ),
+                    Div(
+                        Div(PrependedText('exposure_time_B','B'),css_class='col-md-6'),
+                        Div('exposure_count_B',css_class='col-md-6'),
+                        css_class='form-row'
+                    ),
+                    Div(
+                        Div(PrependedText('exposure_time_V','V'),css_class='col-md-6'),
+                        Div('exposure_count_V',css_class='col-md-6'),
+                        css_class='form-row'
+                    ),
+                    Div(
+                        Div(PrependedText('exposure_time_g','g'),css_class='col-md-6'),
+                        Div('exposure_count_g',css_class='col-md-6'),
+                        css_class='form-row'
+                    ),
+                    Div(
+                        Div(PrependedText('exposure_time_r','r'),css_class='col-md-6'),
+                        Div('exposure_count_r',css_class='col-md-6'),
+                        css_class='form-row'
+                    ),
+                    Div(
+                        Div(PrependedText('exposure_time_i','i'),css_class='col-md-6'),
+                        Div('exposure_count_i',css_class='col-md-6'),
+                        css_class='form-row'
+                    ),
                     css_class='col'
                 ),
                 Div(
-                    'filter', 'instrument_name', 'exposure_count', 'exposure_time', 'max_airmass',
+                    HTML("<p></p>"),
+                    PrependedText('max_airmass', 'Airmass <'),
+                    PrependedText('ipp_value', 'IPP'),
+                    'instrument_name', 'proposal', 'observation_type', 
                     css_class='col'
                 ),
                 css_class='form-row'
@@ -196,6 +244,27 @@ class LCOObservationForm(GenericObservationForm):
     @property
     def observation_payload(self):
         target = Target.objects.get(pk=self.cleaned_data['target_id'])
+        molecules = []
+        exps = {
+           'u': [self.cleaned_data['exposure_time_U'],self.cleaned_data['exposure_count_U']],
+           'b': [self.cleaned_data['exposure_time_B'],self.cleaned_data['exposure_count_B']], 
+           'v': [self.cleaned_data['exposure_time_V'],self.cleaned_data['exposure_count_V']], 
+           'gp': [self.cleaned_data['exposure_time_g'],self.cleaned_data['exposure_count_g']], 
+           'rp': [self.cleaned_data['exposure_time_r'],self.cleaned_data['exposure_count_r']], 
+           'ip': [self.cleaned_data['exposure_time_i'],self.cleaned_data['exposure_count_i']]
+        }
+        for filt, exp_requests in exps.items():
+            if 0 not in [int(x) for x in exp_requests]:
+               molecules.append(
+                   {
+                       "type": self.instrument_to_type(self.cleaned_data['instrument_name']),
+                       "instrument_name": self.cleaned_data['instrument_name'],
+                       "filter": filt,
+                       "spectra_slit": filt,
+                       "exposure_count": exp_requests[1],
+                       "exposure_time": exp_requests[0]
+                   }
+               )
         return {
             #"group_id": self.cleaned_data['group_id'],
             "group_id": target.name,
@@ -221,20 +290,14 @@ class LCOObservationForm(GenericObservationForm):
                         "meananom": target.mean_anomaly,
                         "dailymot": target.mean_daily_motion
                     },
-                    "molecules": [
-                        {
-                            "type": self.instrument_to_type(self.cleaned_data['instrument_name']),
-                            "instrument_name": self.cleaned_data['instrument_name'],
-                            "filter": self.cleaned_data['filter'],
-                            "spectra_slit": self.cleaned_data['filter'],
-                            "exposure_count": self.cleaned_data['exposure_count'],
-                            "exposure_time": self.cleaned_data['exposure_time']
-                        }
-                    ],
+                    "molecules": molecules,
                     "windows": [
                         {
-                            "start": self.cleaned_data['start'],
-                            "end": self.cleaned_data['end']
+                            #"start": self.cleaned_data['start'],
+                            "start": str(datetime.datetime.utcnow()),
+                            #"end": self.cleaned_data['end']
+                            "end": str(datetime.datetime.utcnow()+
+                                datetime.timedelta(days=self.cleaned_data['window']))
                         }
                     ],
                     "location": {
@@ -253,15 +316,19 @@ class LCOFacility(GenericObservationFacility):
     form = LCOObservationForm
 
     def submit_observation(self, observation_payload):
+        SUBMIT_URL = PORTAL_URL + '/api/userrequests/validate/'
         response = make_request(
             'POST',
             #PORTAL_URL + '/api/userrequests/',
             #Changing to validate URL while testing
-            PORTAL_URL + '/api/userrequests/validate/',
+            SUBMIT_URL,
             json=observation_payload,
             headers=self._portal_headers()
         )
-        return [r['id'] for r in response.json()['requests']]
+        #return [r['id'] for r in response.json()['requests']]
+        print('Observation submitted to {0}'.format(SUBMIT_URL))
+        print(response.json())
+        return response.json()
 
     def validate_observation(self, observation_payload):
         response = make_request(
