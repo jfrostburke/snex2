@@ -3,7 +3,10 @@ from dateutil.parser import parse
 from plotly import offline
 import plotly.graph_objs as go
 from astropy import units as u
-from astropy.coordinates import Angle
+from astropy.coordinates import Angle, get_moon, SkyCoord
+from astropy.time import Time
+import numpy as np
+import ephem
 
 from tom_targets.models import Target
 from tom_targets.forms import TargetVisibilityForm
@@ -131,3 +134,42 @@ def deg_to_sexigesimal(value, fmt):
 @register.inclusion_tag('tom_targets/partials/aladin.html')
 def aladin(target):
     return {'target': target}
+
+@register.inclusion_tag('tom_targets/partials/moon_plot.html')
+def moon_plot(target):
+
+    def get_phase(moon, time):
+        moon.compute(time)
+        return moon.phase
+
+    day_range = 30
+    times = Time(
+        [str(datetime.datetime.utcnow() + datetime.timedelta(days=delta))
+            for delta in np.arange(0, day_range, 0.2)],
+        format = 'iso', scale = 'utc'
+    )
+    
+    obj_pos = SkyCoord(target.ra, target.dec, unit=u.deg)
+    moon_pos = get_moon(times)
+    separations = moon_pos.separation(obj_pos).deg
+    
+    moon = ephem.Moon()
+    phases = [get_phase(moon, time.iso)/100.0 for time in times]
+    plot_data = [
+        go.Scatter(x=times.mjd-times[0].mjd, y=separations, mode='lines', name='Moon distance (degrees)'),
+        go.Scatter(x=times.mjd-times[0].mjd, y=phases, mode='lines', name='Moon phase', yaxis='y2')
+    ]
+    layout = go.Layout(
+        yaxis=dict(range=[0.,180.]),
+        yaxis2=dict(range=[0., 1.], tickfont=dict(color='rgb(255,0,0)'), overlaying='y', side='right'),
+        margin=dict(l=20,r=10,b=30,t=40),
+        hovermode='closest',
+        width=600,
+        height=300,
+        autosize=True
+    )
+    figure = offline.plot(
+        go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False
+    )
+   
+    return {'figure': figure}
