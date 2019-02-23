@@ -244,4 +244,4 @@ try:
 except ImportError:
     pass
 
-django_heroku.settings(locals(), staticfiiles=False)
+django_heroku.settings(locals(), staticfiles=False)
