@@ -56,7 +56,7 @@
       </div>
       <div class="tab-pane" id="spectra">
         <h4>Spectra</h4>
-        <p>Under construction</p>
+        {% spectroscopy_for_target target %}
       </div>
       <div class="tab-pane" id="images">
         <h4>Examine Images</h4>
@@ -68,7 +68,6 @@
         <p>Under construction</p>
       </div>
       <div class="tab-pane" id="upload-data">
-        <!--{% target_lightcurve target %}-->
         {% upload_dataproduct %}
         {% dataproduct_list_for_target object %}
       </div>

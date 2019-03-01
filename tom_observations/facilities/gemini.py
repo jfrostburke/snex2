@@ -118,7 +118,7 @@ def obs_choices():
         for obs in GEM_SETTINGS['programs'][p]:
             obsid = p + '-' + obs
             val = p.split('-')
-            showtext = val[0][1]+val[1][2:]+val[2]+val[3]+ ' - '+ GEM_SETTINGS['programs'][p][obs]
+            showtext = val[0][1]+val[1][2:]+val[2]+val[3]+ '[' + obs + '] ' + GEM_SETTINGS['programs'][p][obs]
             choices.append((obsid,showtext))
     return choices
 
@@ -138,11 +138,12 @@ class GEMObservationForm(GenericObservationForm):
     # userkey = forms.CharField(get_site(self.cleaned_data[progid]))
     # email = forms.CharField(choices=GEM_SETTINGS['user_email'])
     # obsnum = forms.IntegerField(min_value=1)
-    obsid = forms.ChoiceField(choices=obs_choices())
+    # obsid = forms.ChoiceField(choices=obs_choices())
+    obsid = forms.MultipleChoiceField(choices=obs_choices())
     ready = forms.ChoiceField(initial='true',
         choices=(('true', 'Yes'), ('false', 'No'))
     )
-    brightness = forms.FloatField(required=False)
+    brightness = forms.FloatField(required=False, label='Target brightness')
     brightness_system =forms.ChoiceField(required=False, initial='AB',
         choices=(('Vega', 'Vega'), ('AB', 'AB'), ('Jy', 'Jy'))
     )
@@ -153,6 +154,9 @@ class GEMObservationForm(GenericObservationForm):
     )
     posangle = forms.FloatField(min_value=0., max_value=360., required=False, initial=0.0, label='Position Angle')
     # posangle = forms.FloatField(min_value=0., max_value=360.,help_text="Position angle in degrees [0-360]")
+
+    # exptime = forms.IntegerField(required=False, min_value=1, max_value=1200, label='Exposure Time [sec]')
+    exptimes = forms.CharField(required=False, label='Exptime [sec]. If multiple, comma separate')
 
     group = forms.CharField(required=False)
     note = forms.CharField(required=False)
@@ -173,6 +177,9 @@ class GEMObservationForm(GenericObservationForm):
         choices=(('UP', 'u'), ('U', 'U'), ('B', 'B'), ('GP', 'g'), ('V', 'V'), ('UC', 'UC'), ('RP', 'r'), ('R', 'R'),
                  ('IP', 'i'), ('I', 'I'), ('ZP', 'z'), ('Y', 'Y'), ('J', 'J'), ('H', 'H'), ('K', 'K'), ('L', 'L'),
                  ('M', 'M'), ('N', 'N'), ('Q', 'Q'), ('AP', 'AP'))
+    )
+    gssearch = forms.ChoiceField(initial='true', required=False, label='Search for guide star if none entered?',
+        choices=(('true', 'Yes'), ('false', 'No'))
     )
 
     # window_start = forms.DateTimeField(required=False)
@@ -229,30 +236,45 @@ class GEMObservationForm(GenericObservationForm):
             self.common_layout,
             Div(
                 Div(
-                    'obsid', 'posangle', 'brightness', 'eltype', 'note', 'gstarg', 'gsbrightness',
+                    'obsid',
                     css_class='col'
                 ),
                 Div(
-                    'ready', 'pamode', 'brightness_band', 'elmin', 'window_start', 'gsra', 'gsbrightness_band',
+                    'ready',
                     css_class='col'
                 ),
                 Div(
-                    'group', 'obsdate', 'brightness_system', 'elmax', 'window_duration', 'gsdec', 'gsbrightness_system',
+                    'group',
                     css_class='col'
                 ),
                 css_class='form-row'
             ),
             Div(
                 Div(
-                    'inst', 'iq', 'overwrite',
+                    'posangle', 'brightness', 'eltype', 'note', 'gstarg', 'gsbrightness',
                     css_class='col'
                 ),
                 Div(
-                    'gsprobe', 'cc', 'port',
+                    'pamode', 'brightness_band', 'elmin', 'window_start', 'gsra', 'gsbrightness_band',
                     css_class='col'
                 ),
                 Div(
-                    'ifu', 'sb',
+                    'obsdate', 'brightness_system', 'elmax', 'window_duration', 'gsdec', 'gsbrightness_system',
+                    css_class='col'
+                ),
+                css_class='form-row'
+            ),
+            Div(
+                Div(
+                    'inst',  'iq', 'exptimes', 'gssearch',
+                    css_class='col'
+                ),
+                Div(
+                    'gsprobe', 'cc', 'port', 'overwrite',
+                    css_class='col'
+                ),
+                Div(
+                    'ifu', 'sb', '', '',
                     css_class='col'
                 ),
                 css_class='form-row'
@@ -282,7 +304,7 @@ class GEMObservationForm(GenericObservationForm):
             time = isostring[ii + 1:]
             return date, time
 
-        def findgs():
+        def findgs(obs):
 
             gstarg = ''
             gsra = ''
@@ -298,7 +320,8 @@ class GEMObservationForm(GenericObservationForm):
             ra = target.ra / 15.
             dec = target.dec
 
-            l_site = get_site(self.cleaned_data['obsid'],location=True)
+            # l_site = get_site(self.cleaned_data['obsid'],location=True)
+            l_site = get_site(obs,location=True)
             l_pad = 7.
             l_chop = False
             l_rmin = -1.
@@ -329,71 +352,94 @@ class GEMObservationForm(GenericObservationForm):
 
             return gstarg, gsra, gsdec, sgsmag, spa
 
+        payloads = []
 
         target = Target.objects.get(pk=self.cleaned_data['target_id'])
         spa = str(self.cleaned_data['posangle']).strip()
 
-        ii = self.cleaned_data['obsid'].rfind('-')
-        progid = self.cleaned_data['obsid'][0:ii]
-        obsnum = self.cleaned_data['obsid'][ii+1:]
-        payload = {
-            "prog": progid,
-            # "password": self.cleaned_data['userkey'],
-            "password": GEM_SETTINGS['api_key'][get_site(self.cleaned_data['obsid'])],
-            # "email": self.cleaned_data['email'],
-            "email": GEM_SETTINGS['user_email'],
-            "obsnum": obsnum,
-            "target": target.name,
-            "ra": target.ra,
-            "dec": target.dec,
-            "note": self.cleaned_data['note'],
-            "ready": self.cleaned_data['ready']
-        }
+        nobs = len(self.cleaned_data['obsid'])
+        if self.cleaned_data['exptimes'] != '':
+            expvalues = self.cleaned_data['exptimes'].split(',')
+            if len(expvalues) != nobs:
+                payloads.append({"error": "If exptimes given, the number of values must equal the number of obsids selected."})
+                return payloads
+        
+            # Convert exposure times to integers
+            exptimes = []
+            try:
+                [exptimes.append(round(float(exp))) for exp in expvalues]
+            except:
+                payloads.append({"error": "Problem converting string to integer."})
+                return payloads
 
-        if self.cleaned_data['brightness'] != None:
-            smags = str(self.cleaned_data['brightness']).strip() + '/' + \
-                self.cleaned_data['brightness_band'] + '/' + \
-                self.cleaned_data['brightness_system']
-            payload["mags"] = smags
+        for jj in range(nobs):
+            obs = self.cleaned_data['obsid'][jj]
+            ii = obs.rfind('-')
+            progid = obs[0:ii]
+            obsnum = obs[ii+1:]
+            payload = {
+                "prog": progid,
+                # "password": self.cleaned_data['userkey'],
+                "password": GEM_SETTINGS['api_key'][get_site(obs)],
+                # "email": self.cleaned_data['email'],
+                "email": GEM_SETTINGS['user_email'],
+                "obsnum": obsnum,
+                "target": target.name,
+                "ra": target.ra,
+                "dec": target.dec,
+                "note": self.cleaned_data['note'],
+                "ready": self.cleaned_data['ready']
+            }
 
-        if self.cleaned_data['group'].strip() != '':
-            payload['group'] = self.cleaned_data['group'].strip()
+            if self.cleaned_data['brightness'] != None:
+                smags = str(self.cleaned_data['brightness']).strip() + '/' + \
+                    self.cleaned_data['brightness_band'] + '/' + \
+                    self.cleaned_data['brightness_system']
+                payload["mags"] = smags
 
-        # timing window?
-        if self.cleaned_data['window_start'].strip() != '':
-            wdate, wtime = isodatetime(self.cleaned_data['window_start'])
-            payload['windowDate'] = wdate
-            payload['windowTime'] = wtime
-            payload['windowDuration'] = str(self.cleaned_data['window_duration']).strip()
+            if self.cleaned_data['exptimes'] != '':
+                payload['exptime'] = exptimes[jj]
 
-        # elevation/airmass
-        if self.cleaned_data['eltype'] != None:
-            payload['elevationType'] = self.cleaned_data['eltype']
-            payload['elevationMin'] = str(self.cleaned_data['elmin']).strip()
-            payload['elevationMax'] = str(self.cleaned_data['elmax']).strip()
+            if self.cleaned_data['group'].strip() != '':
+                payload['group'] = self.cleaned_data['group'].strip()
 
-        # Guide star
-        gstarg = self.cleaned_data['gstarg']
-        if gstarg != '':
-            gsra = self.cleaned_data['gsra']
-            gsdec = self.cleaned_data['gsdec']
-            if self.cleaned_data['gsbrightness'] != None:
-                sgsmag = str(self.cleaned_data['gsbrightness']).strip() + '/' + \
-                     self.cleaned_data['gsbrightness_band'] + '/' + \
-                     self.cleaned_data['gsbrightness_system']
-        else:
-            gstarg, gsra, gsdec, sgsmag, spa = findgs()
+            # timing window?
+            if self.cleaned_data['window_start'].strip() != '':
+                wdate, wtime = isodatetime(self.cleaned_data['window_start'])
+                payload['windowDate'] = wdate
+                payload['windowTime'] = wtime
+                payload['windowDuration'] = str(self.cleaned_data['window_duration']).strip()
 
-        if gstarg != '':
-            payload['gstarget'] = gstarg
-            payload['gsra'] = gsra
-            payload['gsdec'] = gsdec
-            payload['gsmags'] = sgsmag
-            payload['gsprobe'] = self.cleaned_data['gsprobe']
+            # elevation/airmass
+            if self.cleaned_data['eltype'] != None:
+                payload['elevationType'] = self.cleaned_data['eltype']
+                payload['elevationMin'] = str(self.cleaned_data['elmin']).strip()
+                payload['elevationMax'] = str(self.cleaned_data['elmax']).strip()
 
-        payload['posangle'] = spa
+            # Guide star
+            gstarg = self.cleaned_data['gstarg']
+            if gstarg != '':
+                gsra = self.cleaned_data['gsra']
+                gsdec = self.cleaned_data['gsdec']
+                if self.cleaned_data['gsbrightness'] != None:
+                    sgsmag = str(self.cleaned_data['gsbrightness']).strip() + '/' + \
+                             self.cleaned_data['gsbrightness_band'] + '/' + \
+                             self.cleaned_data['gsbrightness_system']
+            elif self.cleaned_data['gssearch'] == 'true':
+                gstarg, gsra, gsdec, sgsmag, spa = findgs(obs)
 
-        return payload
+            if gstarg != '':
+                payload['gstarget'] = gstarg
+                payload['gsra'] = gsra
+                payload['gsdec'] = gsdec
+                payload['gsmags'] = sgsmag
+                payload['gsprobe'] = self.cleaned_data['gsprobe']
+
+            payload['posangle'] = spa
+
+            payloads.append(payload)
+
+        return payloads
 
 class GEMFacility(GenericObservationFacility):
     name = 'GEM'
@@ -401,16 +447,19 @@ class GEMFacility(GenericObservationFacility):
 
     @classmethod
     def submit_observation(clz, observation_payload):
-        response = make_request(
-            'POST',
-            PORTAL_URL[get_site(observation_payload['prog'])] + '/too',
-            verify=False,
-            params=observation_payload
-            # headers=clz._portal_headers()
-        )
-        # Return just observation number
-        obsid = response.text.split('-')
-        return [obsid[-1]]
+        obsids = []
+        for payload in observation_payload:
+            response = make_request(
+                'POST',
+                PORTAL_URL[get_site(payload['prog'])] + '/too',
+                verify=False,
+                params=payload
+                # headers=clz._portal_headers()
+            )
+            # Return just observation number
+            obsid = response.text.split('-')
+            obsids.append(obsid[-1])
+        return obsids
 
     @classmethod
     def validate_observation(clz, observation_payload):
@@ -423,12 +472,22 @@ class GEMFacility(GenericObservationFacility):
         # )
         # return response.json()['errors']
         errors = {}
-        if 'elevationType' in observation_payload.keys():
-            if observation_payload['elevationType'] == 'airmass':
-                if float(observation_payload['elevationMin']) < 1.0:
+        if 'elevationType' in observation_payload[0].keys():
+            if observation_payload[0]['elevationType'] == 'airmass':
+                if float(observation_payload[0]['elevationMin']) < 1.0:
                     errors['elevationMin'] = 'Airmass must be >= 1.0'
-                if float(observation_payload['elevationMax']) > 2.5:
+                if float(observation_payload[0]['elevationMax']) > 2.5:
                     errors['elevationMax'] = 'Airmass must be <= 2.5'
+                    
+        for payload in observation_payload:
+            if 'error' in payload.keys():
+                errors['exptimes'] = payload['error']
+            if 'exptime' in payload.keys():
+                if payload['exptime'] <= 0:
+                    errors['exptimes'] = 'Exposure time must be >= 1'
+                if payload['exptime'] > 1200:
+                    errors['exptimes'] = 'Exposure time must be <= 1200'
+
         return errors
 
     @classmethod
