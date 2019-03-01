@@ -98,32 +98,6 @@ def reduced_data_lightcurve(target):
         ) for filter_name, filter_values in filter_data.items()
     ]
 
-    """
-    @register.inclusion_tag('tom_dataproducts/partials/photometry_for_target.html')
-    def photometry_for_target(target):
-        photometry_data = {}
-        for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
-            value = json.loads(rd.value)
-            photometry_data.setdefault(value.get('filter', ''), {})
-            photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-            photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude'))
-            photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
-        plot_data = [
-            go.Scatter(
-                x=filter_values['time'],
-                y=filter_values['magnitude'], mode='markers',
-                name=filter_name,
-                error_y=dict(
-                    type='data',
-                    array=filter_values['error'],
-                    visible=True
-                )
-            ) for filter_name, filter_values in photometry_data.items()]
-    return {
-        'target': target,
-        'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)
-    }
-    """
     layout = go.Layout(
         yaxis=dict(autorange='reversed'),
         margin=dict(l=20, r=10, b=30, t=40),
@@ -141,6 +115,50 @@ def reduced_data_lightcurve(target):
             'target': target,
             'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)
         }
+
+@register.inclusion_tag('tom_dataproducts/partials/photometry_for_target.html')
+def photometry_for_target(target):
+    filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
+        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i'}
+    colors = {'U': 'rgb(59,0,113)',
+        'B': 'rgb(0,87,255)',
+        'V': 'rgb(120,255,0)',
+        'g': 'rgb(0,204,255)',
+        'r': 'rgb(255,124,0)',
+        'i': 'rgb(144,0,43)',
+        'other': 'rgb(0,0,0)'}
+    photometry_data = {}
+    for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
+        value = json.loads(rd.value)
+        photometry_data.setdefault(value.get('filter', ''), {})
+        photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
+        photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude'))
+        photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
+    plot_data = [
+        go.Scatter(
+            x=filter_values['time'],
+            y=filter_values['magnitude'], mode='markers',
+            marker=dict(color=colors[filter_translate[filter_name]]),
+            name=filter_name,
+            error_y=dict(
+                type='data',
+                array=filter_values['error'],
+                visible=True,
+                color=colors[filter_translate[filter_name]]
+            )
+        ) for filter_name, filter_values in photometry_data.items()]
+    layout = go.Layout(
+        yaxis=dict(autorange='reversed'),
+        margin=dict(l=30, r=10, b=30, t=40),
+        hovermode='closest'
+        #height=500,
+        #width=500
+    )
+    return {
+        'target': target,
+        'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)
+    }
+
 
 @register.inclusion_tag('tom_dataproducts/partials/spectroscopy_for_target.html')
 def spectroscopy_for_target(target, dataproduct=None):
