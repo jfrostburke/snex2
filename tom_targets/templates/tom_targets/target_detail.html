@@ -1,5 +1,6 @@
 {% extends 'tom_common/base.html' %}
 {% load comments bootstrap4 tom_common_extras targets_extras observation_extras dataproduct_extras static cache %}
+{% load custom_plots_tags %}
 {% block title %}Target {{ object.name }}{% endblock %}
 {% block additional_css %}
 <link rel="stylesheet" href="{% static 'tom_targets/css/main.css' %}">
@@ -10,7 +11,7 @@
     <div id="target-info">
       {% target_feature object %}
       {% target_data object %}
-      {% photometry_for_target target %}
+      {% lightcurve target %}
     </div>
   </div>
   <div class="col-md-7">
@@ -40,7 +41,7 @@
     <div class="tab-content">
       <div class="tab-pane in active" id="overview">
         <h5>Current Visibility at LCOGT</h5>
-        {% target_plan %}
+        {% airmass_plot %}
         <hr />
         {% aladin object %}
         <hr />
@@ -78,7 +79,7 @@
       <div class="tab-pane" id="schedule">
         <h4>Schedule Observations</h4>
         {% observing_buttons object %}
-        {% moon_plot object %}
+        {% moon_vis object %}
       </div>
     </div>
   </div>
