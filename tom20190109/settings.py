@@ -238,12 +238,17 @@ TOM_ALERT_CLASSES = [
     'tom_alerts.brokers.lasair.LasairBroker',
     ]
 
+TOM_FACILITY_CLASSES = [
+    'tom_observations.facilities.gemini.GEMFacility',
+    'custom_plots.lco_facility.LCOFacility'
+    ]
+
 TOM_HARVESTER_CLASSES = [
     'tom_catalogs.harvesters.simbad.SimbadHarvester',
     'tom_catalogs.harvesters.ned.NEDHarvester',
     #'tom_catalogs.harvesters.jplhorizons.JPLHorizonsHarvester',
     #'tom_catalogs.harvesters.mpc.MPCHarvester',
-    'tom20190109.tns_harvester.TNSHarvester',
+    'custom_plots.tns_harvester.TNSHarvester',
     ]
 
 DATA_TYPES = (
