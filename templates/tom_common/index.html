@@ -5,30 +5,25 @@
 <div class="row">
   <div class="col-md-8">
     <h2 class="text-center">SNEx 2.0</h2>
-    <p class="text-center"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Supernova_in_M101_2011-08-25.jpg/546px-Supernova_in_M101_2011-08-25.jpg" class="img-fluid mx-auto"></p>
-    <h3>Next steps</h3>
-    <ul>
-      <li>
-        Check out the <a href="https://tomtoolkit.github.io" title="TOM Toolkit home page">TOM Toolkit homepage</a>
-        for the latest news, downloads and documentation.
-      </li>
-      <li>
-        <a href="{% url 'targets:create' %}" title="Create Target">Add your first target</a>.
-      </li>
-      <li>
-        Check out some <a href="">example code</a>.
-      </li>
-      <li>
-        Customize this page by editing the
-        <code>templates/index.html</code> file or by editing your
-        project's <code>urls.py</code>.
-      </li>
-    </ul>
-    <h3>Other Resources</h3>
-    <ul>
-      <li>The official <a href="https://www.djangoproject.com/">Django documentation</a>.</li>
-      <li>The official <a href="http://www.astropy.org/">Astropy documentation</a>.</li>
-    </ul>
+    <!--<p class="text-center"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Supernova_in_M101_2011-08-25.jpg/546px-Supernova_in_M101_2011-08-25.jpg" class="img-fluid mx-auto"></p>-->
+    <p class="text-center"><img src="{% static 'img/SN2011fe_BJFulton.png' %}" class="img-fluid max-auto"></p>
+    <p class="text-center">(Image courtesy of BJ Fulton.)</p>
+    <p class="text-center"; style="font-size:16px">
+    Welcome to SNEx 2.0, an updated version of the 
+    <a href="https://supernova.exchange">Supernova Exchange</a>
+    built using the 
+    <a href="https://tomtoolkit.github.io/">TOM Toolkit</a>.
+    Github 
+    <a href="https://github.com/jfrostburke/snex2">here</a>.
+    To build your own TOM (Target Observation Manager), check out the 
+    <a href="https://tomtoolkit.github.io/docs/getting_started">getting started guide</a>.
+    </p>
+    <p class="text-center"; style="font-size:16px">
+    The Supernova Exchange (2.0) is an interface for viewing and sharing observational
+    data of supernovae, and for requesting and managing observations
+    with the 
+    <a href="https://lco.global/">LCO</a> network.
+    </p>
   </div>
   <div class="col-md-4">
     <div class="card">
