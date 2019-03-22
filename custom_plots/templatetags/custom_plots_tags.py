@@ -132,13 +132,14 @@ def moon_vis(target):
             line=dict(color=phase_color))
     ]
     layout = go.Layout(
+        xaxis=dict(title='Days from now'),
         yaxis=dict(range=[0.,180.],tick0=0.,dtick=45.,
             tickfont=dict(color=distance_color)
         ),
         yaxis2=dict(range=[0., 1.], tick0=0., dtick=0.25, overlaying='y', side='right',
             tickfont=dict(color=phase_color)),
         margin=dict(l=20,r=10,b=30,t=40),
-        hovermode='closest',
+        #hovermode='compare',
         width=600,
         height=300,
         autosize=True
@@ -147,4 +148,46 @@ def moon_vis(target):
         go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False
     )
    
-    return {'figure': figure}
+    return {'plot': figure}
+
+@register.inclusion_tag('custom_plots/spectra.html')
+def spectra_plot(target, dataproduct=None):
+    spectra = []
+    spectral_dataproducts = DataProduct.objects.filter(target=target, tag='spectroscopy')
+    if dataproduct:
+        spectral_dataproducts = DataProduct.objects.get(dataproduct=dataproduct)
+    for data in spectral_dataproducts:
+        datum = json.loads(ReducedDatum.objects.get(data_product=data).value)
+        wavelength = []
+        flux = []
+        for key, value in datum.items():
+            wavelength.append(value['wavelength'])
+            flux.append(float(value['flux']))
+        spectra.append((wavelength, flux))
+    plot_data = [
+        go.Scatter(
+            x=spectrum[0],
+            y=spectrum[1]
+        ) for spectrum in spectra]
+    layout = go.Layout(
+        height=600,
+        width=700,
+        xaxis=dict(
+            tickformat="d",
+            title='Wavelength (angstroms)'
+        ),
+        yaxis=dict(
+            tickformat=".1eg",
+            title='Flux'
+        )
+    )
+    if plot_data:
+      return {
+          'target': target,
+          'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)
+      }
+    else:
+        return {
+            'target': target,
+            'plot': 'No spectra for this target yet.'
+        }
