@@ -240,7 +240,7 @@ HOOKS = {
 }
 
 TOM_ALERT_CLASSES = [
-    'tom_alerts.brokers.mars.MARSBroker',
+    'custom_plots.mars.MARSBroker',
     'tom_alerts.brokers.lasair.LasairBroker',
     ]
 
@@ -250,11 +250,11 @@ TOM_FACILITY_CLASSES = [
     ]
 
 TOM_HARVESTER_CLASSES = [
+    'custom_plots.tns_harvester.TNSHarvester',
     'tom_catalogs.harvesters.simbad.SimbadHarvester',
     'tom_catalogs.harvesters.ned.NEDHarvester',
     #'tom_catalogs.harvesters.jplhorizons.JPLHorizonsHarvester',
     #'tom_catalogs.harvesters.mpc.MPCHarvester',
-    'custom_plots.tns_harvester.TNSHarvester',
     ]
 
 DATA_TYPES = (
