@@ -212,12 +212,13 @@ class MARSBroker(object):
             except HTTPError:
                 raise Exception('Unable to retrieve alert information from broker')
         for prv_candidate in alert.get('prv_candidate'):
-            if all([key in prv_candidate['candidate'] for key in ['jd', 'magpsf', 'fid']]):
+            if all([key in prv_candidate['candidate'] for key in ['jd', 'magpsf', 'fid', 'sigmapsf']]):
                 jd = Time(prv_candidate['candidate']['jd'], format='jd', scale='utc')
                 jd.to_datetime(timezone=TimezoneInfo())
                 value = {
                     'magnitude': prv_candidate['candidate']['magpsf'],
-                    'filter': filters[prv_candidate['candidate']['fid']]
+                    'filter': filters[prv_candidate['candidate']['fid']],
+                    'error': prv_candidate['candidate']['sigmapsf']
                 }
                 rd, created = ReducedDatum.objects.get_or_create(
                     timestamp=jd.to_datetime(timezone=TimezoneInfo()),
