@@ -235,7 +235,7 @@ AUTH_STRATEGY = 'LOCKED'
 OPEN_URLS = []
 
 HOOKS = {
-    'target_post_save': 'tom_common.hooks.target_post_save',
+    'target_post_save': 'custom_plots.hooks.target_post_save',
     'observation_change_state': 'tom_common.hooks.observation_change_state'
 }
 
@@ -251,6 +251,7 @@ TOM_FACILITY_CLASSES = [
 
 TOM_HARVESTER_CLASSES = [
     'custom_plots.tns_harvester.TNSHarvester',
+    'custom_plots.mars_harvester.MARSHarvester',
     'tom_catalogs.harvesters.simbad.SimbadHarvester',
     'tom_catalogs.harvesters.ned.NEDHarvester',
     #'tom_catalogs.harvesters.jplhorizons.JPLHorizonsHarvester',
