@@ -16,16 +16,14 @@
     <dd class="col-sm-6">{{ value|deg_to_sexigesimal:"dms" }}</dd>
   {% endif%}
   {% endfor %}
+  <dt class="col-sm-6">Redshift</dt>
+  <dd class="col-sm-6">{{ target|target_extra_field:"redshift" }}</dd>
+  <dt class="col-sm-6">Classification</dt>
+  <dd class="col-sm-6">{{ target|target_extra_field:"classification" }}</dd>
   <dt class="col-sm-6">Also known as</dt>
   <dd class="col-sm-6">{{ target.name }}</dd>
   <dt class="col-sm-6">&nbsp;</dt>
   <dd class="col-sm-6">{{ target.name2 }}</dd>
   <dt class="col-sm-6">&nbsp;</dt>
   <dd class="col-sm-6">{{ target.name3 }}</dd>
-</dl>
-<dl class="row">
-{% for target_extra in target.targetextra_set.all %}
-  <dt class="col-sm-6">{{ target_extra.key }}</dt>
-  <dd class="col-sm-6">{{ target_extra.value }}</dd>
-{% endfor %}
 </dl>

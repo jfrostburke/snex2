@@ -14,10 +14,12 @@
 </ul>
   {% if object %}
   <form action="{% url 'targets:update' pk=object.id %}" method="post" class="form">
-  {% bootstrap_form form exclude='epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err' %}
+  {% bootstrap_form form exclude='tweet,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err' %}
   {% else %}
   <form action="{% url 'targets:create' %}" method="post" class="form">
-  {% bootstrap_form form exclude='name2,name3,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err' %}
+  {% bootstrap_form form exclude='tweet,redshift,classification,name2,name3,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err' %}
+  <p>Tweet this target out automatically on <a href="https://twitter.com/Snex2B">snex2_bot</a>? (Note: in progress, not currently functioning.)</p>
+  {% bootstrap_field form.tweet %}
   {% endif %}
   {% csrf_token %}
   {% buttons %}
