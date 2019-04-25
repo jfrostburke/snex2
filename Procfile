@@ -1,2 +1,2 @@
 release: python manage.py migrate --noinput
-web: gunicorn tom20190109.wsgi
+web: gunicorn snex2.wsgi

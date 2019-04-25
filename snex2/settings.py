@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     'tom_catalogs',
     'tom_observations',
     'tom_dataproducts',
-    'custom_plots',
+    'custom_code',
 ]
 
 SITE_ID = 1
@@ -90,7 +90,7 @@ TEMPLATES = [
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
-WSGI_APPLICATION = 'tom20190109.wsgi.application'
+WSGI_APPLICATION = 'snex2.wsgi.application'
 
 
 # Database
@@ -239,23 +239,23 @@ AUTH_STRATEGY = 'LOCKED'
 OPEN_URLS = []
 
 HOOKS = {
-    'target_post_save': 'custom_plots.hooks.target_post_save',
+    'target_post_save': 'custom_code.hooks.target_post_save',
     'observation_change_state': 'tom_common.hooks.observation_change_state'
 }
 
 TOM_ALERT_CLASSES = [
-    'custom_plots.mars.MARSBroker',
+    'custom_code.brokers.mars.MARSBroker',
     'tom_alerts.brokers.lasair.LasairBroker',
     ]
 
 TOM_FACILITY_CLASSES = [
     'tom_observations.facilities.gemini.GEMFacility',
-    'custom_plots.lco_facility.LCOFacility'
+    'custom_code.facilities.lco_facility.LCOFacility'
     ]
 
 TOM_HARVESTER_CLASSES = [
-    'custom_plots.tns_harvester.TNSHarvester',
-    'custom_plots.mars_harvester.MARSHarvester',
+    'custom_code.harvesters.tns_harvester.TNSHarvester',
+    'custom_code.harvesters.mars_harvester.MARSHarvester',
     'tom_catalogs.harvesters.simbad.SimbadHarvester',
     'tom_catalogs.harvesters.ned.NEDHarvester',
     #'tom_catalogs.harvesters.jplhorizons.JPLHorizonsHarvester',

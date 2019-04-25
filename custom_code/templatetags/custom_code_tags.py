@@ -17,7 +17,7 @@ import numpy as np
 
 register = template.Library()
 
-@register.inclusion_tag('custom_plots/airmass.html', takes_context=True)
+@register.inclusion_tag('custom_code/airmass.html', takes_context=True)
 def airmass_plot(context):
     #request = context['request']
     start_time = datetime.datetime.now()
@@ -50,7 +50,7 @@ def airmass_plot(context):
         'figure': visibility_graph
     }
 
-@register.inclusion_tag('custom_plots/lightcurve.html')
+@register.inclusion_tag('custom_code/lightcurve.html')
 def lightcurve(target):
     filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
         'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
@@ -103,7 +103,7 @@ def lightcurve(target):
             'plot': 'No photometry for this target yet.'
         }
 
-@register.inclusion_tag('custom_plots/moon.html')
+@register.inclusion_tag('custom_code/moon.html')
 def moon_vis(target):
 
     def get_phase(moon, time):
@@ -154,7 +154,7 @@ def moon_vis(target):
    
     return {'plot': figure}
 
-@register.inclusion_tag('custom_plots/spectra.html')
+@register.inclusion_tag('custom_code/spectra.html')
 def spectra_plot(target, dataproduct=None):
     spectra = []
     spectral_dataproducts = DataProduct.objects.filter(target=target, tag='spectroscopy')
