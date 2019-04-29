@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'ks#e!w3m*y1g_=)%vmrdcyn*5dt0$)o^mq2f=vtj#myw#&amp;p3%i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -213,6 +213,18 @@ FACILITIES = {
             },
         },
     },
+    'SNExGemini': {
+        'portal_url': {
+            'GS': 'https://139.229.34.15:8443',
+            'GN': 'https://139.229.34.15:8443',
+        },
+        'api_key': {
+            'GS': '',
+            'GN': '',
+        },
+        'user_email': '',
+        'programs': 'GS-2019A-Q-113' 
+    }
 }
 
 # Define extra target fields here. Types can be any of "number", "st    ring", "boolean" or "datetime"
@@ -249,8 +261,9 @@ TOM_ALERT_CLASSES = [
     ]
 
 TOM_FACILITY_CLASSES = [
-    'tom_observations.facilities.gemini.GEMFacility',
-    'custom_code.facilities.lco_facility.LCOFacility'
+    #'tom_observations.facilities.gemini.GEMFacility',
+    'custom_code.facilities.gemini_facility.GeminiFacility',
+    'custom_code.facilities.lco_facility.LCOFacility',
     ]
 
 TOM_HARVESTER_CLASSES = [
