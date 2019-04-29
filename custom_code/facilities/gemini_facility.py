@@ -204,34 +204,6 @@ class SNExGeminiObservationForm(GenericObservationForm):
               ),
             )
         )
-        """
-                    Div(
-                        Div(PrependedText('g_exptime', 'g'), css_class='col-md-6'),
-                        css_class='form-row'
-                    ),
-                    Div(
-                        Div(PrependedText('r_exptime', 'r'), css_class='col-md-6'),
-                        css_class='form-row'
-                    ),
-                    Div(
-                        Div(PrependedText('i_exptime', 'i'), css_class='col-md-6'),
-                        css_class='form-row'
-                    ),
-                    Div(
-                        Div(PrependedText('z_exptime', 'z'), css_class='col-md-6'),
-                        css_class='form-row'
-                    ),
-                    css_class='col'
-                    ),
-                Div(
-                    HTML("<p></p>"),
-                    PrependedText('max_airmass', 'Airmass <'),
-                    css_class='col'
-                ),
-                css_class='form-row'
-            )
-        )
-        """
 
     def is_valid(self):
         super().is_valid()
