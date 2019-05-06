@@ -7,9 +7,11 @@
 {% endif %}
 <ul class="nav nav-tabs">
   {% for k, v in type_choices %}
-    <li class="nav-item">
-      <a class="nav-link {% if form.type.initial == k %} active {% endif %}" href="{% url 'targets:create' %}?type={{ k }}">{{ v }}</a>
-    </li>
+    {% if k == 'SIDEREAL' %}
+      <li class="nav-item">
+        <a class="nav-link {% if form.type.initial == k %} active {% endif %}" href="{% url 'targets:create' %}?type={{ k }}">{{ v }}</a>
+      </li>
+    {% endif %}
   {% endfor %}
 </ul>
   {% if object %}

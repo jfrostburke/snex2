@@ -4,8 +4,6 @@ import os
 import requests
 import json
 from collections import OrderedDict
-from astropy import units as u
-from astropy.coordinates import SkyCoord
 
 def get(term):
   api_key = os.environ['SNEXBOT_APIKEY']
@@ -39,10 +37,9 @@ class TNSHarvester(AbstractHarvester):
         target.identifier = (self.catalog_data['name_prefix'] +
             self.catalog_data['name'])
         target.name = target.identifier
+        target.ra = self.catalog_data['radeg']
+        target.dec = self.catalog_data['decdeg']
         target.epoch = 2000
         if self.catalog_data['redshift'] is not None:
             target.redshift = self.catalog_data['redshift']
-        c = SkyCoord('{0} {1}'.format(self.catalog_data['ra'], 
-            self.catalog_data['dec']), unit = (u.hourangle, u.deg))
-        target.ra, target.dec = c.ra.deg, c.dec.deg
         return target
