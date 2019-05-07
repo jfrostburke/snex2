@@ -1,0 +1,23 @@
+{% extends 'tom_common/base.html' %}
+{% block title %}TNS Targets{% endblock %}
+{% block content %}
+<h2 class="text-center">Recent targets from the TNS</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>RA</th>
+      <th>Dec</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for target in targets %}
+    <tr>
+      <td>{{ target.name }}</td>
+      <td>{{ target.ra }}</td>
+      <td>{{ target.dec }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

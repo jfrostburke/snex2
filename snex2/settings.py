@@ -70,7 +70,7 @@ MIDDLEWARE = [
      'tom_common.middleware.AuthStrategyMiddleware',
 ]
 
-ROOT_URLCONF = 'tom_common.urls'
+ROOT_URLCONF = 'snex2.urls'
 
 TEMPLATES = [
     {
