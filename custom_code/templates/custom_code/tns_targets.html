@@ -1,4 +1,5 @@
 {% extends 'tom_common/base.html' %}
+{% load targets_extras custom_code_tags %}
 {% block title %}TNS Targets{% endblock %}
 {% block content %}
 <h2 class="text-center">Recent targets from the TNS</h2>
@@ -6,16 +7,22 @@
   <thead>
     <tr>
       <th>Name</th>
-      <th>RA</th>
-      <th>Dec</th>
+      <th>Coordinates</th>
+      <th>Survey View</th>
+      <th>In TESS?</th>
     </tr>
   </thead>
   <tbody>
   {% for target in targets %}
     <tr>
-      <td>{{ target.name }}</td>
-      <td>{{ target.ra }}</td>
-      <td>{{ target.dec }}</td>
+      <td><a href={{ target.link }}>{{ target.name }}</a></td>
+      <td>{{ target.coords }}</td>
+      <td>{% aladin_small target %}</td>
+      {% if target.tess_response %}
+        <td><a href='#' data-toggle='tooltip' title={{ target.tess_response }}>Yes</a>
+      {% else %}
+        <td>No</td>
+      {% endif %}
     </tr>
   {% endfor %}
   </tbody>

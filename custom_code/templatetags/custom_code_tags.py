@@ -195,3 +195,7 @@ def spectra_plot(target, dataproduct=None):
             'target': target,
             'plot': 'No spectra for this target yet.'
         }
+
+@register.inclusion_tag('custom_code/aladin_small.html')
+def aladin_small(target):
+    return {'target': target}
