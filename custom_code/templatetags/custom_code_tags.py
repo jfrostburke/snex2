@@ -17,6 +17,46 @@ import numpy as np
 
 register = template.Library()
 
+@register.inclusion_tag('custom_code/airmass_collapse.html')
+def airmass_collapse(target):
+    start_time = datetime.datetime.now()
+    end_time = datetime.datetime.now() + datetime.timedelta(days=1)
+    airmass_limit = 3.0
+    plan_form = TargetVisibilityForm({
+        'start_time': start_time,
+        'end_time': end_time,
+        'airmass': airmass_limit
+    })
+
+    obj = Target
+    obj.ra = target['ra']
+    obj.dec = target['dec']
+    obj.epoch = 2000
+    obj.type = 'SIDEREAL' 
+
+    visibility_data = get_visibility(obj, start_time, end_time, 20, airmass_limit)
+    plot_data = [
+        go.Scatter(x=data[0], y=data[1], mode='lines', name=site, ) 
+            for site, data in visibility_data.items() if 'LCO' in site
+    ]
+    layout = go.Layout(
+        yaxis=dict(range=[airmass_limit,1.0]),
+        margin=dict(l=20,r=10,b=30,t=40),
+        hovermode='closest',
+        width=250,
+        height=200,
+        autosize=True,
+        showlegend=False
+    )
+    visibility_graph = offline.plot(
+        go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False
+    )
+    return {
+        'form': plan_form,
+        'target': target,
+        'figure': visibility_graph
+    }
+
 @register.inclusion_tag('custom_code/airmass.html', takes_context=True)
 def airmass_plot(context):
     #request = context['request']
@@ -196,6 +236,6 @@ def spectra_plot(target, dataproduct=None):
             'plot': 'No spectra for this target yet.'
         }
 
-@register.inclusion_tag('custom_code/aladin_small.html')
-def aladin_small(target):
+@register.inclusion_tag('custom_code/aladin_collapse.html')
+def aladin_collapse(target):
     return {'target': target}
