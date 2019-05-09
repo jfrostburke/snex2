@@ -29,7 +29,7 @@ class TNSTargets(TemplateView):
     with requests.Session() as s: 
     
         #Get list of recent candidates
-        days_ago = 0.3
+        days_ago = 1.0
     
         date = str(datetime.utcnow() - timedelta(days=days_ago))
         json_list = {'public_timestamp': date}

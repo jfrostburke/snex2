@@ -1,0 +1,39 @@
+version: '2'
+services:
+    snex2-db:
+        image: postgres:11.1
+        network_mode: bridge
+        environment:
+            POSTGRES_DB: "snex2"
+            POSTGRES_PASSWORD: "${SNEX2_DB_PASSWORD}"
+            POSTGRES_USER: "${SNEX2_DB_USER}"
+        volumes:
+            - ${SNEX2_DB_DATA_PATH}:/var/lib/postgresql/data
+        ports:
+            - 5435:5432/tcp
+    snex2:
+        image: jfrostburke/snex2:latest
+        network_mode: bridge
+        links:
+            - "snex2-db:snex2-db"
+        ports:
+            - 8889:8080
+        restart: "always"
+        mem_limit: "4g"
+        logging:
+            options:
+                max-file: "3"
+                max-size: "10m"
+        environment:
+            - DB_NAME=snex2
+            - DB_HOST=snex2-db
+            - DB_PORT=5432
+            - DB_USER=${SNEX2_DB_USER}
+            - DB_PASSWORD=${SNEX2_DB_PASSWORD}
+            - DB_BACKEND=postgres
+            - LCO_APIKEY=${SNEX2_LCO_APIKEY}
+            - SNEXBOT_APIKEY=${SNEX2_SNEXBOT_APIKEY}
+            - AWS_ACCESS_KEY_ID=${SNEX2_AWS_ACCESS_KEY_ID}
+            - AWS_S3_REGION_NAME=${SNEX2_AWS_REGION_NAME}
+            - AWS_SECRET_ACCESS_KEY=${SNEX2_AWS_SECRET_ACCESS_KEY}
+            - AWS_STORAGE_BUCKET_NAME=${SNEX2_AWS_STORAGE_BUCKET_NAME}
