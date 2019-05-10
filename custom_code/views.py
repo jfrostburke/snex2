@@ -49,6 +49,7 @@ class TNSTargets(TemplateView):
             obj_data = json.loads(obj_data.text)['data']['reply']
 
             coords = SkyCoord(obj_data['radeg'], obj_data['decdeg'], unit=u.deg)
+            discoverer = obj_data['source_group']['group_name']
             
             #Get recent and limiting mags
             recent_jd = max([x['jd'] for x in obj_data['photometry']])
@@ -109,7 +110,8 @@ class TNSTargets(TemplateView):
                 'coords': coords.to_string('hmsdms',sep=':',precision=1,alwayssign=True),
                 'tess_response': tess_response,
                 'mag_recent': mag_recent,
-                'mag_lim': mag_lim
+                'mag_lim': mag_lim,
+                'discoverer': discoverer
             }
             targets.append(target)
 

@@ -34,7 +34,7 @@ def airmass_collapse(target):
     obj.epoch = 2000
     obj.type = 'SIDEREAL' 
 
-    visibility_data = get_visibility(obj, start_time, end_time, 20, airmass_limit)
+    visibility_data = get_visibility(obj, start_time, end_time, 60, airmass_limit)
     plot_data = [
         go.Scatter(x=data[0], y=data[1], mode='lines', name=site, ) 
             for site, data in visibility_data.items() if 'LCO' in site

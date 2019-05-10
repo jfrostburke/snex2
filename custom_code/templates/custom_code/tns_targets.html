@@ -1,15 +1,17 @@
 {% extends 'tom_common/base.html' %}
+{% load static %}
 {% load targets_extras custom_code_tags %}
 {% block title %}TNS Targets{% endblock %}
 {% block content %}
 <h2 class="text-center">Recent targets from the TNS</h2>
-<table class="table table-hover">
+<table class="table">
   <thead class="thead-light">
     <tr>
       <th>Name</th>
       <th>Coordinates</th>
-      <th>Survey View</th>
-      <th>Visibility</th>
+      <!--<th>Survey View</th>
+      <th>Visibility</th>-->
+      <th>Discovered by</th>
       <th>Recent mag</th>
       <th>Last non-detection</th>
       <th>In TESS?</th>
@@ -18,10 +20,9 @@
   <tbody>
   {% for target in targets %}
     <tr>
-      <td><a href={{ target.link }}>{{ target.name }}</a></td>
+      <td rowspan=2><button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{target.name}}">+</button><p></p><a target="_blank" href={{ target.link }}>{{ target.name }}</a></td>
       <td>{{ target.coords }}</td>
-      <td>{% aladin_collapse target %}</td>
-      <td>{% airmass_collapse target %}</td>
+      <td>{{ target.discoverer }}
       <td>{{ target.mag_recent }}</td>
       <td>{{ target.mag_lim }}</td>
       {% if target.tess_response %}
@@ -29,6 +30,14 @@
       {% else %}
         <td>No</td>
       {% endif %}
+    </tr>
+    <tr>
+      <td colspan=5>
+        <div class="collapse" id="show-both-{{target.name}}">
+          <div style="display: inline-block;">{% aladin_collapse target %}</div>
+          <div style="display: inline-block;">{% airmass_collapse target %}</div>
+        </div>
+      </td>
     </tr>
   {% endfor %}
   </tbody>

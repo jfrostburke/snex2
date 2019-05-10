@@ -1,11 +1,7 @@
 <!-- include Aladin Lite CSS file in the head section of your page -->
 <link rel="stylesheet" href="//aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.css" />
 <!-- insert this snippet where you want Aladin Lite viewer to appear and after the loading of jQuery -->
-<a data-toggle="collapse" href="#collapse-{{target.name}}">Aladin</a>
-<div id="collapse-{{target.name}}" class="panel-collapse collapse">
   <div id="aladin-lite-{{ target.name }}" style="width:200px;height:200px;" class="panel-body"></div>
-  <div class="panel-footer"><p></p></div>
-</div>
 <script type="text/javascript" src="//aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.js" charset="utf-8"></script>
 <script type="text/javascript">
     var aladin = A.aladin('#aladin-lite-{{ target.name }}', {
