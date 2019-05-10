@@ -94,15 +94,15 @@ WSGI_APPLICATION = 'snex2.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
-if os.environ.get('DB_BACKEND') == 'postgres':
+if os.environ.get('SNEX2_DB_BACKEND') == 'postgres':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ['DB_NAME'],
-            'USER': os.environ['DB_USER'],
-            'PASSWORD': os.environ['DB_PASSWORD'],
-            'HOST': os.environ['DB_HOST'],
-            'PORT': os.environ['DB_PORT'],
+            'NAME': 'snex2',
+            'USER': os.environ['SNEX2_DB_USER'],
+            'PASSWORD': os.environ['SNEX2_DB_PASSWORD'],
+            'HOST': 'snex2-db',
+            'PORT': 5432,
         }
     }
 else:
