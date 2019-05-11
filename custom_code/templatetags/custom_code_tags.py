@@ -204,18 +204,21 @@ def spectra_plot(target, dataproduct=None):
         datum = json.loads(ReducedDatum.objects.get(data_product=data).value)
         wavelength = []
         flux = []
+        name = str(ReducedDatum.objects.get(data_product=data).timestamp).split(' ')[0]
         for key, value in datum.items():
             wavelength.append(value['wavelength'])
             flux.append(float(value['flux']))
-        spectra.append((wavelength, flux))
+        spectra.append((wavelength, flux, name))
     plot_data = [
         go.Scatter(
             x=spectrum[0],
-            y=spectrum[1]
+            y=spectrum[1],
+            name=spectrum[2]
         ) for spectrum in spectra]
     layout = go.Layout(
         height=600,
         width=700,
+        hovermode='closest',
         xaxis=dict(
             tickformat="d",
             title='Wavelength (angstroms)'
