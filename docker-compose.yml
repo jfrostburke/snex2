@@ -28,9 +28,9 @@ services:
             - DB_NAME=snex2
             - DB_HOST=snex2-db
             - DB_PORT=5432
-            - DB_USER=${SNEX2_DB_USER}
-            - DB_PASSWORD=${SNEX2_DB_PASSWORD}
-            - DB_BACKEND=postgres
+            - SNEX2_DB_USER=${SNEX2_DB_USER}
+            - SNEX2_DB_PASSWORD=${SNEX2_DB_PASSWORD}
+            - SNEX2_DB_BACKEND=postgres
             - LCO_APIKEY=${SNEX2_LCO_APIKEY}
             - SNEXBOT_APIKEY=${SNEX2_SNEXBOT_APIKEY}
             - AWS_ACCESS_KEY_ID=${SNEX2_AWS_ACCESS_KEY_ID}
