@@ -197,14 +197,14 @@ def moon_vis(target):
 @register.inclusion_tag('custom_code/spectra.html')
 def spectra_plot(target, dataproduct=None):
     spectra = []
-    spectral_dataproducts = DataProduct.objects.filter(target=target, tag='spectroscopy')
+    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy')
     if dataproduct:
         spectral_dataproducts = DataProduct.objects.get(dataproduct=dataproduct)
-    for data in spectral_dataproducts:
-        datum = json.loads(ReducedDatum.objects.get(data_product=data).value)
+    for spectrum in spectral_dataproducts:
+        datum = json.loads(spectrum.value)
         wavelength = []
         flux = []
-        name = str(ReducedDatum.objects.get(data_product=data).timestamp).split(' ')[0]
+        name = str(spectrum.timestamp).split(' ')[0]
         for key, value in datum.items():
             wavelength.append(value['wavelength'])
             flux.append(float(value['flux']))
