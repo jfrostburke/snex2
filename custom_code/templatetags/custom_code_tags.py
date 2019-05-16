@@ -92,19 +92,24 @@ def airmass_plot(context):
 
 @register.inclusion_tag('custom_code/lightcurve.html')
 def lightcurve(target):
-    filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
-        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
-        'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF'}
-    colors = {'U': 'rgb(59,0,113)',
-        'B': 'rgb(0,87,255)',
-        'V': 'rgb(120,255,0)',
-        'g': 'rgb(0,204,255)',
-        'r': 'rgb(255,124,0)',
-        'i': 'rgb(144,0,43)',
-        'g_ZTF': 'rgb(0,204,255)',
-        'r_ZTF': 'rgb(255,124,0)',
-        'i_ZTF': 'rgb(144,0,43)',
-        'other': 'rgb(0,0,0)'}
+    def get_color(filter_name):
+        filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
+            'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
+            'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF'}
+        colors = {'U': 'rgb(59,0,113)',
+            'B': 'rgb(0,87,255)',
+            'V': 'rgb(120,255,0)',
+            'g': 'rgb(0,204,255)',
+            'r': 'rgb(255,124,0)',
+            'i': 'rgb(144,0,43)',
+            'g_ZTF': 'rgb(0,204,255)',
+            'r_ZTF': 'rgb(255,124,0)',
+            'i_ZTF': 'rgb(144,0,43)',
+            'other': 'rgb(0,0,0)'}
+        try: color = colors[filter_translate[filter_name]]
+        except: color = colors['other']
+        return color
+         
     photometry_data = {}
     for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
         value = json.loads(rd.value)
@@ -116,13 +121,13 @@ def lightcurve(target):
         go.Scatter(
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
-            marker=dict(color=colors[filter_translate[filter_name]]),
+            marker=dict(color=get_color(filter_name)),
             name=filter_name,
             error_y=dict(
                 type='data',
                 array=filter_values['error'],
                 visible=True,
-                color=colors[filter_translate[filter_name]]
+                color=get_color(filter_name)
             )
         ) for filter_name, filter_values in photometry_data.items()]
     layout = go.Layout(

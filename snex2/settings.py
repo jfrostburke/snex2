@@ -258,7 +258,7 @@ AUTH_STRATEGY = 'LOCKED'
 
 # URLs that should be allowed access even with AUTH_STRATEGY = LOCKED
 # for example: OPEN_URLS = ['/', '/about']
-OPEN_URLS = ['/snex2/tnstargets']
+OPEN_URLS = ['/snex2/tnstargets/']
 
 HOOKS = {
     'target_post_save': 'custom_code.hooks.target_post_save',
