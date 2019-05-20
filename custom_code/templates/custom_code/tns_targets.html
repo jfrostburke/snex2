@@ -1,45 +1,55 @@
 {% extends 'tom_common/base.html' %}
-{% load static %}
+{% load static bootstrap4 crispy_forms_tags %}
 {% load targets_extras custom_code_tags %}
 {% block title %}TNS Targets{% endblock %}
 {% block content %}
 <h2 class="text-center">Recent targets from the TNS</h2>
-<table class="table">
-  <thead class="thead-light">
-    <tr>
-      <th>Name</th>
-      <th>Coordinates</th>
-      <!--<th>Survey View</th>
-      <th>Visibility</th>-->
-      <th>Discovered by</th>
-      <th>Recent mag</th>
-      <th>Last non-detection</th>
-      <th>In TESS?</th>
-    </tr>
-  </thead>
-  <tbody>
-  {% for target in targets %}
-    <tr>
-      <td rowspan=2><button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{target.name}}">+</button><p></p><a target="_blank" href={{ target.link }}>{{ target.name }}</a></td>
-      <td>{{ target.coords }}</td>
-      <td>{{ target.discoverer }}
-      <td>{{ target.mag_recent }}</td>
-      <td>{{ target.mag_lim }}</td>
-      {% if target.tess_response %}
-        <td><a href='#' data-toggle='tooltip' title={{ target.tess_response }}>Yes</a>
-      {% else %}
-        <td>No</td>
-      {% endif %}
-    </tr>
-    <tr>
-      <td colspan=5>
-        <div class="collapse" id="show-both-{{target.name}}">
-          <div style="display: inline-block;">{% aladin_collapse target %}</div>
-          <div style="display: inline-block;">{% airmass_collapse target %}</div>
-        </div>
-      </td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
+<div>
+  <h4>Filter</h4>
+  <form action="" method="get" class="form">
+    {% bootstrap_form filter.form %}
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">
+        Filter
+      </button>
+    {% endbuttons %}
+  </form>
+  <h4>Results</h4>
+  <table class="table">
+    <thead class="thead-light">
+      <tr>
+        <th>Name</th>
+        <th>Coordinates</th>
+        <th>Discovered by</th>
+        <th>Recent mag</th>
+        <th>Last non-detection</th>
+        <th>In TESS?</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for target in filter.qs %}
+      <tr>
+        <td rowspan=2><button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{target.name}}">+</button><p></p><a target="_blank" href={{ target.link }}>{{ target.name }}</a></td>
+        <td>{{ target.coords }}</td>
+        <td>{{ target.source_group }}
+        <td>{{ target.mag_recent }}</td>
+        <td>{{ target.mag_lnd }}</td>
+        {% if target.tess_response %}
+  	<td><a href='#' data-toggle='tooltip' title={{ target.tess_response }}>Yes</a>
+        {% else %}
+  	<td>No</td>
+        {% endif %}
+      </tr>
+      <tr>
+        <td colspan=5>
+  	<div class="collapse" id="show-both-{{target.name}}">
+  	  <div style="display: inline-block;">{% aladin_collapse target %}</div>
+  	  <div style="display: inline-block;">{% airmass_collapse target %}</div>
+  	</div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

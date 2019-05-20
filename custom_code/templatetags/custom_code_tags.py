@@ -29,8 +29,8 @@ def airmass_collapse(target):
     })
 
     obj = Target
-    obj.ra = target['ra']
-    obj.dec = target['dec']
+    obj.ra = target.ra
+    obj.dec = target.dec
     obj.epoch = 2000
     obj.type = 'SIDEREAL' 
 
