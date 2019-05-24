@@ -27,7 +27,7 @@
       </tr>
     </thead>
     <tbody>
-    {% for target in filter.qs %}
+    {% for target in tnstargets|slice:"::-1" %}
       <tr>
         <td rowspan=2><button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{target.name}}">+</button><p></p><a target="_blank" href={{ target.link }}>{{ target.name }}</a></td>
         <td>{{ target.coords }}</td>
@@ -51,5 +51,6 @@
     {% endfor %}
     </tbody>
   </table>
+  {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
 </div>
 {% endblock %}
