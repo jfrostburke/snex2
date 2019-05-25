@@ -5,14 +5,9 @@
 {% block content %}
 <h2 class="text-center">Recent targets from the TNS</h2>
 <div>
-  <h4>Filter</h4>
   <form action="" method="get" class="form">
-    {% bootstrap_form filter.form %}
-    {% buttons %}
-      <button type="submit" class="btn btn-primary">
-        Filter
-      </button>
-    {% endbuttons %}
+    <h4 style="margin-top: 0">Filter</h4>
+    {% crispy filter.form %}
   </form>
   <h4>Results</h4>
   <table class="table">
@@ -27,7 +22,7 @@
       </tr>
     </thead>
     <tbody>
-    {% for target in tnstargets|slice:"::-1" %}
+    {% for target in tnstargets %}
       <tr>
         <td rowspan=2><button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{target.name}}">+</button><p></p><a target="_blank" href={{ target.link }}>{{ target.name }}</a></td>
         <td>{{ target.coords }}</td>
