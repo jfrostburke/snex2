@@ -21,7 +21,7 @@ def make_lnd(mag, filt, jd, jd_now):
     if not jd:
         return 'Archival'
     diff = jd_now - jd
-    lnd = '{mag:.2f} ({filt}: {time:.2f} days ago)'.format(
+    lnd = '{mag:.2f} ({filt}: {time:.2f})'.format(
         mag = mag,
         filt = filt,
         time = diff)
@@ -35,7 +35,7 @@ def make_magrecent(all_phot, jd_now):
     mag = float(recent_phot['flux'])
     filt = recent_phot['filters']['name']
     diff = jd_now - float(recent_jd)
-    mag_recent = '{mag:.2f} ({filt}: {time:.2f} days ago)'.format(
+    mag_recent = '{mag:.2f} ({filt}: {time:.2f})'.format(
         mag = mag,
         filt = filt,
         time = diff)

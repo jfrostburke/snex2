@@ -13,18 +13,18 @@
   <table class="table">
     <thead class="thead-light">
       <tr>
-        <th>Name</th>
-        <th>Coordinates</th>
-        <th>Discovered by</th>
-        <th>Recent mag</th>
-        <th>Last non-detection</th>
-        <th>In TESS?</th>
+        <th>Name<br /><p></p></th>
+        <th>Coordinates<br /><p></p></th>
+        <th>Discovered by<br /><p></p></th>
+        <th>Recent photometry<br />mag (filter: days ago)</th>
+        <th>Last non-detection<br />mag (filter: days ago)</th>
+        <th>In TESS?<br /><p></p></th>
       </tr>
     </thead>
     <tbody>
     {% for target in tnstargets %}
       <tr>
-        <td rowspan=2><button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{target.name}}">+</button><p></p><a target="_blank" href={{ target.link }}>{{ target.name }}</a></td>
+        <td rowspan=2><button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{target.name}}">+</button><p></p><a target="_blank" href={{ target.link }}>{{ target.name_prefix }} {{ target.name }}</a></td>
         <td>{{ target.coords }}</td>
         <td>{{ target.source_group }}
         <td>{{ target.mag_recent }}</td>
