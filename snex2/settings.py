@@ -273,6 +273,7 @@ TOM_ALERT_CLASSES = [
 TOM_FACILITY_CLASSES = [
     #'tom_observations.facilities.gemini.GEMFacility',
     'custom_code.facilities.gemini_facility.GeminiFacility',
+    #'tom_observations.facilities.lco.LCOFacility',
     'custom_code.facilities.lco_facility.LCOFacility',
     ]
 

@@ -5,11 +5,12 @@ from dateutil.parser import parse
 from crispy_forms.layout import Layout, Div, HTML
 from crispy_forms.bootstrap import PrependedAppendedText, PrependedText
 from django.core.cache import cache
+from astropy import units as u
 import datetime
 
 from tom_observations.facility import GenericObservationForm
 from tom_common.exceptions import ImproperCredentialsException
-from tom_observations.facility import GenericObservationFacility
+from tom_observations.facility import GenericObservationFacility, get_service_class
 from tom_targets.models import Target
 
 # Determine settings for this module.
@@ -24,6 +25,10 @@ except (AttributeError, KeyError):
 # Module specific settings.
 PORTAL_URL = LCO_SETTINGS['portal_url']
 TERMINAL_OBSERVING_STATES = ['COMPLETED', 'CANCELED', 'WINDOW_EXPIRED']
+
+# Units of flux and wavelength for converting to Specutils Spectrum1D objects
+FLUX_CONSTANT = (1e-15 * u.erg) / (u.cm ** 2 * u.second * u.angstrom)
+WAVELENGTH_UNITS = u.angstrom
 
 # The SITES dictionary is used to calculate visibility intervals in the
 # planning tool. All entries should contain latitude, longitude, elevation
@@ -102,23 +107,32 @@ def _flatten_error_dict(form, error_dict):
 
 
 def _get_instruments():
-    response = make_request(
-        'GET',
-        PORTAL_URL + '/api/instruments/',
-        headers={'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
-    )
-    return response.json()
+    cached_instruments = cache.get('lco_instruments')
+
+    if not cached_instruments:
+        response = make_request(
+            'GET',
+            PORTAL_URL + '/api/instruments/',
+            headers={'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
+        )
+        cached_instruments = response.json()
+        cache.set('lco_instruments', cached_instruments)
+
+    return cached_instruments
 
 
-def _instrument_choices():
+def instrument_choices():
     return [(k, k) for k in _get_instruments()]
 
 
-def _filter_choices():
-    return set([(f, f) for ins in _get_instruments().values() for f in ins['filters']])
+def filter_choices():
+    return set([
+            (f['code'], f['name']) for ins in _get_instruments().values() for f in
+            ins['optical_elements'].get('filters', []) + ins['optical_elements'].get('slits', [])
+            ])
 
 
-def _proposal_choices():
+def proposal_choices():
     response = make_request(
         'GET',
         PORTAL_URL + '/api/profile/',
@@ -132,24 +146,17 @@ def _proposal_choices():
 
 
 class LCOObservationForm(GenericObservationForm):
-    """
-    This is the class that is responsible for displaying the observation request form.
-    It inherits from tom_observations.facility.GenericObservationForm which provides
-    some base shared functionality. Extra fields are provided below.
-    The layout is handlded by Django crispy forms which allows customizability of the
-    form layout without needing to write html templates:
-    https://django-crispy-forms.readthedocs.io/en/d-0/layouts.html
-    See the documentation on Django forms for more information.
-    """
     #group_id = forms.CharField()
-    proposal = forms.ChoiceField(choices=_proposal_choices,initial='KEY2017AB-001')
-    ipp_value = forms.FloatField(initial=1.0,label='')
+    #proposal = forms.ChoiceField(choices=_proposal_choices,initial='KEY2017AB-001')
+    proposal = forms.ChoiceField(choices=proposal_choices(),initial='KEY2017AB-001')
+    ipp_value = forms.FloatField(initial=1.0,label='',
+        help_text='IPP: priority, ranging from 0.5 (low) to 2.0 (high)')
     start = forms.CharField(initial=str(datetime.datetime.utcnow()))
     #start = forms.DateField(widget=forms.SelectDateWidget(empty_label=("Choose year","choose month","choose day")))
     end = forms.CharField(widget=forms.TextInput(attrs={'type': 'date'}))
     window = forms.FloatField(initial=3.0,label="")
-    filter = forms.ChoiceField(choices=_filter_choices,initial='b')
-    instrument_name = forms.ChoiceField(choices=_instrument_choices,initial='1M0-SCICAM-SINISTRO')
+    filter = forms.ChoiceField(choices=filter_choices(),initial='b')
+    instrument_type= forms.ChoiceField(choices=instrument_choices(),initial='1M0-SCICAM-SINISTRO')
     exposure_count_U = forms.IntegerField(min_value=1,initial=2,label='No. of exposures')
     exposure_time_U = forms.FloatField(min_value=0.1,initial=300,label='Exposure time')
     exposure_count_B = forms.IntegerField(min_value=1,initial=2,label='')
@@ -162,7 +169,7 @@ class LCOObservationForm(GenericObservationForm):
     exposure_time_r = forms.FloatField(min_value=0.1,initial=120,label='')
     exposure_count_i = forms.IntegerField(min_value=1,initial=2,label='')
     exposure_time_i = forms.FloatField(min_value=0.1,initial=120,label='')
-    max_airmass = forms.FloatField(initial=1.6,label="")
+    max_airmass = forms.FloatField(initial=1.6,label='')
     observation_type = forms.ChoiceField(
         choices=(('NORMAL', 'Normal'), ('TARGET_OF_OPPORTUNITY', 'Rapid Response'))
     )
@@ -213,13 +220,30 @@ class LCOObservationForm(GenericObservationForm):
                     HTML("<p></p>"),
                     PrependedText('max_airmass', 'Airmass <'),
                     PrependedText('ipp_value', 'IPP'),
-                    'instrument_name', 'proposal', 'observation_type', 
+                    'instrument_type', 'proposal', 'observation_type', 
                     css_class='col'
                 ),
                 css_class='form-row'
             )
         )
+    """
+    def layout(self):
+        return Div(
+            Div(
+                'name', 'proposal', 'ipp_value', 'observation_type', 'start', 'end',
+                css_class='col'
+            ),
+            Div(
+                'filter', 'instrument_type', 'exposure_count', 'exposure_time', 'max_airmass',
+                css_class='col'
+            ),
+            css_class='form-row'
+        )
 
+    def extra_layout(self):
+        # If you just want to add some fields to the end of the form, add them here.
+        return Div()
+    """
     def clean_start(self):
         start = self.cleaned_data['start']
         return parse(start).isoformat()
@@ -230,81 +254,119 @@ class LCOObservationForm(GenericObservationForm):
 
     def is_valid(self):
         super().is_valid()
-        errors = LCOFacility().validate_observation(self.observation_payload)
+        # TODO this is a bit leaky and should be done without the need of get_service_class
+        obs_module = get_service_class(self.cleaned_data['facility'])
+        errors = obs_module().validate_observation(self.observation_payload())
         if errors:
             self.add_error(None, _flatten_error_dict(self, errors))
         return not errors
 
-    def instrument_to_type(self, instrument_name):
-        if any(x in instrument_name for x in ['FLOYDS', 'NRES']):
+    def instrument_to_type(self, instrument_type):
+        if any(x in instrument_type for x in ['FLOYDS', 'NRES']):
             return 'SPECTRUM'
         else:
             return 'EXPOSE'
 
-    @property
     def observation_payload(self):
         target = Target.objects.get(pk=self.cleaned_data['target_id'])
-        molecules = []
-        exps = {
-           'u': [self.cleaned_data['exposure_time_U'],self.cleaned_data['exposure_count_U']],
-           'b': [self.cleaned_data['exposure_time_B'],self.cleaned_data['exposure_count_B']], 
-           'v': [self.cleaned_data['exposure_time_V'],self.cleaned_data['exposure_count_V']], 
-           'gp': [self.cleaned_data['exposure_time_g'],self.cleaned_data['exposure_count_g']], 
-           'rp': [self.cleaned_data['exposure_time_r'],self.cleaned_data['exposure_count_r']], 
-           'ip': [self.cleaned_data['exposure_time_i'],self.cleaned_data['exposure_count_i']]
+        target_fields = {
+            "name": target.name,
         }
-        for filt, exp_requests in exps.items():
-            if 0 not in [int(x) for x in exp_requests]:
-               molecules.append(
-                   {
-                       "type": self.instrument_to_type(self.cleaned_data['instrument_name']),
-                       "instrument_name": self.cleaned_data['instrument_name'],
-                       "filter": filt,
-                       "spectra_slit": filt,
-                       "exposure_count": exp_requests[1],
-                       "exposure_time": exp_requests[0]
-                   }
-               )
+        if target.type == Target.SIDEREAL:
+            target_fields['type'] = 'ICRS'
+            target_fields['ra'] = target.ra
+            target_fields['dec'] = target.dec
+            target_fields['proper_motion_ra'] = target.pm_ra
+            target_fields['proper_motion_dec'] = target.pm_dec
+            target_fields['epoch'] = target.epoch
+        elif target.type == Target.NON_SIDEREAL:
+            target_fields['type'] = 'ORBITAL_ELEMENTS'
+            target_fields['scheme'] = target.scheme
+            target_fields['orbinc'] = target.inclination
+            target_fields['longascnode'] = target.lng_asc_node
+            target_fields['argofperih'] = target.arg_of_perihelion
+            target_fields['eccentricity'] = target.eccentricity
+            target_fields['meandist'] = target.semimajor_axis
+            target_fields['meananom'] = target.mean_anomaly
+            target_fields['perihdist'] = target.distance
+            target_fields['dailymot'] = target.mean_daily_motion
+            target_fields['epochofel'] = target.epoch
+            target_fields['epochofperih'] = target.epoch_of_perihelion
+
+        #photometry
+        if self.instrument_to_type(self.cleaned_data['instrument_type']) == 'EXPOSE':
+            exps = {
+               'u': 
+                    {'exp_time': self.cleaned_data['exposure_time_U'],
+                    'exp_count': self.cleaned_data['exposure_count_U']},
+               'B': 
+                    {'exp_time': self.cleaned_data['exposure_time_B'],
+                    'exp_count': self.cleaned_data['exposure_count_B']},
+               'V': 
+                    {'exp_time': self.cleaned_data['exposure_time_V'],
+                    'exp_count': self.cleaned_data['exposure_count_V']},
+               'gp': 
+                    {'exp_time': self.cleaned_data['exposure_time_g'],
+                    'exp_count': self.cleaned_data['exposure_count_g']},
+               'rp': 
+                    {'exp_time': self.cleaned_data['exposure_time_r'],
+                    'exp_count': self.cleaned_data['exposure_count_r']},
+               'ip': 
+                    {'exp_time': self.cleaned_data['exposure_time_i'],
+                    'exp_count': self.cleaned_data['exposure_count_i']}
+            }
+            configurations = []
+            for filt in exps:
+                configurations.append(
+                        {
+                            "type": self.instrument_to_type(self.cleaned_data['instrument_type']),
+                            "instrument_type": self.cleaned_data['instrument_type'],
+                            "target": target_fields,
+                            "instrument_configs": [
+                                {
+                                    "exposure_count": exps[filt]['exp_count'],
+                                    "exposure_time": exps[filt]['exp_time'],
+                                    "optical_elements": {"filter": filt}
+                                }
+                            ],
+                            "acquisition_config": {
+
+                            },
+                            "guiding_config": {
+
+                            },
+                            "constraints": {
+                               "max_airmass": self.cleaned_data['max_airmass'],
+                            }
+                        }
+                )
+                
+        else:
+            optical_elements = {
+                "slit": self.cleaned_data['filter'],
+            }
+
         return {
-            #"group_id": self.cleaned_data['group_id'],
-            "group_id": target.name,
+            #"name": self.cleaned_data['name'],
+            "name": target.name,
             "proposal": self.cleaned_data['proposal'],
             "ipp_value": self.cleaned_data['ipp_value'],
             "operator": "SINGLE",
             "observation_type": self.cleaned_data['observation_type'],
             "requests": [
                 {
-                    "target": {
-                        "name": target.name,
-                        "type": target.type,
-                        "ra": target.ra,
-                        "dec": target.dec,
-                        "proper_motion_ra": target.pm_ra,
-                        "proper_motion_dec": target.pm_dec,
-                        "epoch": target.epoch,
-                        "orbinc": target.inclination,
-                        "longascnode": target.lng_asc_node,
-                        "argofperih": target.arg_of_perihelion,
-                        "perihdist": target.distance,
-                        "meandist": target.semimajor_axis,
-                        "meananom": target.mean_anomaly,
-                        "dailymot": target.mean_daily_motion
-                    },
-                    "molecules": molecules,
+                    "configurations": configurations,
                     "windows": [
                         {
                             #"start": self.cleaned_data['start'],
-                            "start": str(datetime.datetime.utcnow()),
                             #"end": self.cleaned_data['end']
+                            "start": str(datetime.datetime.utcnow()),
                             "end": str(datetime.datetime.utcnow()+
                                 datetime.timedelta(days=self.cleaned_data['window']))
                         }
                     ],
                     "location": {
-                        "telescope_class": self.cleaned_data['instrument_name'][:3].lower()
-                    },
-                    "constraints": {
-                        "max_airmass": self.cleaned_data['max_airmass'],
+                        "telescope_class": self.cleaned_data['instrument_type'][:3].lower()
                     }
                 }
             ]
@@ -316,24 +378,22 @@ class LCOFacility(GenericObservationFacility):
     form = LCOObservationForm
 
     def submit_observation(self, observation_payload):
-        SUBMIT_URL = PORTAL_URL + '/api/userrequests/validate/'
         response = make_request(
             'POST',
-            #PORTAL_URL + '/api/userrequests/',
-            #Changing to validate URL while testing
-            SUBMIT_URL,
+            PORTAL_URL + '/api/requestgroups/validate/',
+            #PORTAL_URL + '/api/requestgroups/',
             json=observation_payload,
             headers=self._portal_headers()
         )
         #return [r['id'] for r in response.json()['requests']]
-        print('Observation submitted to {0}'.format(SUBMIT_URL))
-        print(response.json())
-        return response.json()
+        #Since we're not actually submitting just generate random id
+        import random; id_number = random.randint(1,1000001)
+        return [id_number]
 
     def validate_observation(self, observation_payload):
         response = make_request(
             'POST',
-            PORTAL_URL + '/api/userrequests/validate/',
+            PORTAL_URL + '/api/requestgroups/validate/',
             json=observation_payload,
             headers=self._portal_headers()
         )
@@ -341,6 +401,12 @@ class LCOFacility(GenericObservationFacility):
 
     def get_observation_url(self, observation_id):
         return PORTAL_URL + '/requests/' + observation_id
+
+    def get_flux_constant(self):
+        return FLUX_CONSTANT
+
+    def get_wavelength_units(self):
+        return WAVELENGTH_UNITS
 
     def get_terminal_observing_states(self):
         return TERMINAL_OBSERVING_STATES
@@ -354,7 +420,28 @@ class LCOFacility(GenericObservationFacility):
             PORTAL_URL + '/api/requests/{0}'.format(observation_id),
             headers=self._portal_headers()
         )
-        return response.json()['state']
+        state = response.json()['state']
+
+        response = make_request(
+            'GET',
+            PORTAL_URL + '/api/requests/{0}/observations/'.format(observation_id),
+            headers=self._portal_headers()
+        )
+        blocks = response.json()
+        current_block = None
+        for block in blocks:
+            if block['state'] == 'COMPLETED':
+                current_block = block
+                break
+            elif block['state'] == 'PENDING':
+                current_block = block
+        if current_block:
+            scheduled_start = current_block['start']
+            scheduled_end = current_block['end']
+        else:
+            scheduled_start, scheduled_end = None, None
+
+        return {'state': state, 'scheduled_start': scheduled_start, 'scheduled_end': scheduled_end}
 
     def data_products(self, observation_id, product_id=None):
         products = []

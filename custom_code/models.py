@@ -67,5 +67,5 @@ class TNSTarget(models.Model):
     )
 
     class Meta:
-        ordering = ('id',)
-        get_latest_by = ('name',)
+        ordering = ('-id',)
+        get_latest_by = ('-name',)
