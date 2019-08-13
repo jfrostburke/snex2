@@ -7,3 +7,4 @@ django-storages
 boto3
 astropy==3.2.1
 requests_oauthlib
+python-magic

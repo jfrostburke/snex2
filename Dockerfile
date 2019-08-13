@@ -2,10 +2,10 @@ FROM python:3.7.3-slim-stretch
 
 ENTRYPOINT ["./run.sh"]
 
-RUN apt-get update && apt-get install -y git libpq-dev gcc && apt-get autoclean && rm -rf /var/lib/apt/lists/*
-
-RUN pip install --no-cache-dir numpy && pip install --no-cache-dir dataclasses django git+https://github.com/TOMToolkit/tom_base.git#egg=tomtoolkit gunicorn django-heroku django-storages boto3 astropy==3.2.1 requests_oauthlib
+RUN apt-get update && apt-get install -y git libpq-dev gcc gfortran libmagic-dev && apt-get autoclean && rm -rf /var/lib/apt/lists/*
 
 COPY . /snex2
+
+RUN pip install numpy && pip install -r /snex2/requirements.txt
 
 WORKDIR /snex2
