@@ -266,7 +266,7 @@ HOOKS = {
 }
 
 TOM_ALERT_CLASSES = [
-    'custom_code.brokers.mars.MARSBroker',
+    'tom_alerts.brokers.mars.MARSBroker',
     'tom_alerts.brokers.lasair.LasairBroker',
     ]
 

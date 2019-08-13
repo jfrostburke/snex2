@@ -45,7 +45,7 @@ class TNSTargets(FilterView):
 
     # Look at https://simpleisbetterthancomplex.com/tutorial/2016/11/28/how-to-filter-querysets-dynamically.html
     
-    template_name = 'custom_code/tns_targets_collapse.html'
+    template_name = 'custom_code/tns_targets.html'
     model = TNSTarget
     paginate_by = 10
     context_object_name = 'tnstargets'
