@@ -5,13 +5,14 @@ from django import template
 from tom_targets.models import Target
 from tom_targets.forms import TargetVisibilityForm
 from tom_observations.utils import get_visibility
+from tom_observations import utils, facility
 from tom_dataproducts.models import DataProduct, ReducedDatum, ObservationRecord
 
 import datetime
 import json
 from astropy.time import Time
 from astropy import units as u
-from astropy.coordinates import Angle, get_moon, SkyCoord
+from astropy.coordinates import Angle, get_moon, SkyCoord, AltAz
 import ephem
 import numpy as np
 
@@ -20,7 +21,8 @@ register = template.Library()
 @register.inclusion_tag('custom_code/airmass_collapse.html')
 def airmass_collapse(target):
     start_time = datetime.datetime.now()
-    end_time = datetime.datetime.now() + datetime.timedelta(days=1)
+    end_time = start_time + datetime.timedelta(days=1)
+    interval = 30 #min
     airmass_limit = 3.0
     plan_form = TargetVisibilityForm({
         'start_time': start_time,
@@ -34,7 +36,7 @@ def airmass_collapse(target):
     obj.epoch = 2000
     obj.type = 'SIDEREAL' 
 
-    visibility_data = get_visibility(obj, start_time, end_time, 60, airmass_limit)
+    visibility_data = get_24hr_airmass(obj, start_time, interval, airmass_limit)
     plot_data = [
         go.Scatter(x=data[0], y=data[1], mode='lines', name=site, ) 
             for site, data in visibility_data.items() if 'LCO' in site
@@ -45,7 +47,6 @@ def airmass_collapse(target):
         hovermode='closest',
         width=250,
         height=200,
-        autosize=True,
         showlegend=False
     )
     visibility_graph = offline.plot(
@@ -61,25 +62,25 @@ def airmass_collapse(target):
 def airmass_plot(context):
     #request = context['request']
     start_time = datetime.datetime.now()
-    end_time = datetime.datetime.now() + datetime.timedelta(days=1)
+    end_time = start_time + datetime.timedelta(days=1)
+    interval = 15 #min
     airmass_limit = 3.0
     plan_form = TargetVisibilityForm({
         'start_time': start_time,
         'end_time': end_time,
         'airmass': airmass_limit
     })
-    visibility_data = get_visibility(context['object'], start_time, end_time, 20, airmass_limit)
+    visibility_data = get_24hr_airmass(context['object'], start_time, interval, airmass_limit)
     plot_data = [
         go.Scatter(x=data[0], y=data[1], mode='lines', name=site, ) 
-            for site, data in visibility_data.items() if 'LCO' in site
+            for site, data in visibility_data.items()
     ]
     layout = go.Layout(
         yaxis=dict(range=[airmass_limit,1.0]),
         margin=dict(l=20,r=10,b=30,t=40),
         hovermode='closest',
         width=600,
-        height=300,
-        autosize=True
+        height=300
     )
     visibility_graph = offline.plot(
         go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False
@@ -89,6 +90,73 @@ def airmass_plot(context):
         'target': context['object'],
         'figure': visibility_graph
     }
+
+def get_24hr_airmass(target, start_time, interval, airmass_limit):
+    
+    end_time = start_time + datetime.timedelta(days=1)
+
+    visibility = {}
+    sun = ephem.Sun()
+    body = utils.get_pyephem_instance_for_type(target)
+    
+    for observing_facility in facility.get_service_classes():
+        if observing_facility != 'LCO':
+            continue
+        observing_facility_class = facility.get_service_class(observing_facility)
+        sites = observing_facility_class().get_observing_sites()
+        for site, site_details in sites.items():
+
+            positions = [[], []]
+            observer = utils.observer_for_site(site_details)
+
+            sun_up_times = get_up_times(observer,sun, start_time,end_time,interval)
+            obj_up_times = get_up_times(observer,body,start_time,end_time,interval)
+            
+            good_times = sorted(list(obj_up_times - sun_up_times))
+
+            for time in good_times:
+                observer.date = time
+                body.compute(observer)
+                alt = Angle(str(body.alt), unit=u.degree)
+                az = Angle(str(body.az), unit=u.degree)
+                altaz = AltAz(alt=alt.to_string(unit=u.rad), az=az.to_string(unit=u.rad))
+                airmass = altaz.secz
+                positions[0].append(time)
+                positions[1].append(
+                    airmass.value if (airmass.value > 1 and airmass.value <= airmass_limit) else None
+                )
+            visibility['({0}) {1}'.format(observing_facility, site)] = positions
+    
+    return visibility
+
+def get_up_times(observer,target,start_time,end_time,interval):
+    """
+    Returns up_times: a set of times, from start_time to end_time
+    at interval, where target is up
+    """
+
+    observer.date = start_time
+
+    try:
+        next_rise = utils.ephem_to_datetime(observer.next_rising(target))
+        next_set = utils.ephem_to_datetime(observer.next_setting(target))
+    except ephem.AlwaysUpError:
+        next_rise = start_time
+        next_set = end_time
+
+    up_times = []
+
+    for delta in range(0,24*60,interval):
+        curr_time = start_time + datetime.timedelta(minutes=delta)
+
+        if next_set > next_rise:
+            if curr_time > next_rise and curr_time < next_set:
+                up_times.append(curr_time)
+        elif next_set < next_rise:
+            if curr_time > next_rise or curr_time < next_set:
+                up_times.append(curr_time)
+
+    return set(up_times)
 
 @register.inclusion_tag('custom_code/lightcurve.html')
 def lightcurve(target):
