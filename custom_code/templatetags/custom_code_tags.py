@@ -143,6 +143,9 @@ def get_up_times(observer,target,start_time,end_time,interval):
     except ephem.AlwaysUpError:
         next_rise = start_time
         next_set = end_time
+    except ephem.NeverUpError:
+        next_rise = end_time
+        next_set = start_time
 
     up_times = []
 
