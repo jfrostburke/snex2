@@ -6,5 +6,6 @@ django-heroku
 django-storages
 boto3
 astropy==3.2.1
+astroplan
 requests_oauthlib
 python-magic

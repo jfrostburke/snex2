@@ -8,27 +8,21 @@ from tom_observations.utils import get_visibility
 from tom_observations import utils, facility
 from tom_dataproducts.models import DataProduct, ReducedDatum, ObservationRecord
 
+from astroplan import Observer, FixedTarget, AtNightConstraint, time_grid_from_range, moon_illumination
 import datetime
 import json
 from astropy.time import Time
 from astropy import units as u
-from astropy.coordinates import Angle, get_moon, SkyCoord, AltAz
-import ephem
+from astropy.coordinates import get_moon, get_sun, SkyCoord, AltAz
 import numpy as np
+import time
 
 register = template.Library()
 
 @register.inclusion_tag('custom_code/airmass_collapse.html')
 def airmass_collapse(target):
-    start_time = datetime.datetime.now()
-    end_time = start_time + datetime.timedelta(days=1)
     interval = 30 #min
     airmass_limit = 3.0
-    plan_form = TargetVisibilityForm({
-        'start_time': start_time,
-        'end_time': end_time,
-        'airmass': airmass_limit
-    })
 
     obj = Target
     obj.ra = target.ra
@@ -36,11 +30,7 @@ def airmass_collapse(target):
     obj.epoch = 2000
     obj.type = 'SIDEREAL' 
 
-    visibility_data = get_24hr_airmass(obj, start_time, interval, airmass_limit)
-    plot_data = [
-        go.Scatter(x=data[0], y=data[1], mode='lines', name=site, ) 
-            for site, data in visibility_data.items() if 'LCO' in site
-    ]
+    plot_data = get_24hr_airmass(obj, interval, airmass_limit)
     layout = go.Layout(
         yaxis=dict(range=[airmass_limit,1.0]),
         margin=dict(l=20,r=10,b=30,t=40),
@@ -53,7 +43,6 @@ def airmass_collapse(target):
         go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False
     )
     return {
-        'form': plan_form,
         'target': target,
         'figure': visibility_graph
     }
@@ -61,20 +50,9 @@ def airmass_collapse(target):
 @register.inclusion_tag('custom_code/airmass.html', takes_context=True)
 def airmass_plot(context):
     #request = context['request']
-    start_time = datetime.datetime.now()
-    end_time = start_time + datetime.timedelta(days=1)
     interval = 15 #min
     airmass_limit = 3.0
-    plan_form = TargetVisibilityForm({
-        'start_time': start_time,
-        'end_time': end_time,
-        'airmass': airmass_limit
-    })
-    visibility_data = get_24hr_airmass(context['object'], start_time, interval, airmass_limit)
-    plot_data = [
-        go.Scatter(x=data[0], y=data[1], mode='lines', name=site, ) 
-            for site, data in visibility_data.items()
-    ]
+    plot_data = get_24hr_airmass(context['object'], interval, airmass_limit)
     layout = go.Layout(
         yaxis=dict(range=[airmass_limit,1.0]),
         margin=dict(l=20,r=10,b=30,t=40),
@@ -86,80 +64,76 @@ def airmass_plot(context):
         go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False
     )
     return {
-        'form': plan_form,
         'target': context['object'],
         'figure': visibility_graph
     }
 
-def get_24hr_airmass(target, start_time, interval, airmass_limit):
-    
-    end_time = start_time + datetime.timedelta(days=1)
+def get_24hr_airmass(target, interval, airmass_limit):
 
-    visibility = {}
-    sun = ephem.Sun()
-    body = utils.get_pyephem_instance_for_type(target)
+    plot_data = []
     
+    start = Time(datetime.datetime.utcnow())
+    end = Time(start.datetime + datetime.timedelta(days=1))
+    time_range = time_grid_from_range(
+        time_range = [start, end],
+        time_resolution = interval*u.minute)
+    time_plot = time_range.datetime
+    
+    fixed_target = FixedTarget(name = target.name, 
+        coord = SkyCoord(
+            target.ra,
+            target.dec,
+            unit = 'deg'
+        )
+    )
+
+    #Hack to speed calculation up by factor of ~3
+    sun_coords = get_sun(time_range[int(len(time_range)/2)])
+    fixed_sun = FixedTarget(name = 'sun',
+        coord = SkyCoord(
+            sun_coords.ra,
+            sun_coords.dec,
+            unit = 'deg'
+        )
+    )
+
     for observing_facility in facility.get_service_classes():
+
         if observing_facility != 'LCO':
             continue
+
         observing_facility_class = facility.get_service_class(observing_facility)
         sites = observing_facility_class().get_observing_sites()
+
         for site, site_details in sites.items():
 
-            positions = [[], []]
-            observer = utils.observer_for_site(site_details)
-
-            sun_up_times = get_up_times(observer,sun, start_time,end_time,interval)
-            obj_up_times = get_up_times(observer,body,start_time,end_time,interval)
+            observer = Observer(
+                longitude = site_details.get('longitude')*u.deg,
+                latitude = site_details.get('latitude')*u.deg,
+                elevation = site_details.get('elevation')*u.m
+            )
             
-            good_times = sorted(list(obj_up_times - sun_up_times))
+            sun_alt = observer.altaz(time_range, fixed_sun).alt
+            obj_airmass = observer.altaz(time_range, fixed_target).secz
 
-            for time in good_times:
-                observer.date = time
-                body.compute(observer)
-                alt = Angle(str(body.alt), unit=u.degree)
-                az = Angle(str(body.az), unit=u.degree)
-                altaz = AltAz(alt=alt.to_string(unit=u.rad), az=az.to_string(unit=u.rad))
-                airmass = altaz.secz
-                positions[0].append(time)
-                positions[1].append(
-                    airmass.value if (airmass.value > 1 and airmass.value <= airmass_limit) else None
-                )
-            visibility['({0}) {1}'.format(observing_facility, site)] = positions
-    
-    return visibility
+            bad_indices = np.argwhere(
+                (obj_airmass >= airmass_limit) |
+                (obj_airmass <= 1) |
+                (sun_alt > -18*u.deg)  #between astro twilights
+            )
 
-def get_up_times(observer,target,start_time,end_time,interval):
-    """
-    Returns up_times: a set of times, from start_time to end_time
-    at interval, where target is up
-    """
+            obj_airmass = [np.nan if i in bad_indices else float(x)
+                for i, x in enumerate(obj_airmass)]
 
-    observer.date = start_time
+            label = '({facility}) {site}'.format(
+                facility = observing_facility, site = site
+            )
 
-    try:
-        next_rise = utils.ephem_to_datetime(observer.next_rising(target))
-        next_set = utils.ephem_to_datetime(observer.next_setting(target))
-    except ephem.AlwaysUpError:
-        next_rise = start_time
-        next_set = end_time
-    except ephem.NeverUpError:
-        next_rise = end_time
-        next_set = start_time
+            plot_data.append(
+                go.Scatter(x=time_plot, y=obj_airmass, mode='lines', name=label, )
+            )
 
-    up_times = []
-
-    for delta in range(0,24*60,interval):
-        curr_time = start_time + datetime.timedelta(minutes=delta)
-
-        if next_set > next_rise:
-            if curr_time > next_rise and curr_time < next_set:
-                up_times.append(curr_time)
-        elif next_set < next_rise:
-            if curr_time > next_rise or curr_time < next_set:
-                up_times.append(curr_time)
-
-    return set(up_times)
+    return plot_data
 
 @register.inclusion_tag('custom_code/lightcurve.html')
 def lightcurve(target):
@@ -222,10 +196,6 @@ def lightcurve(target):
 @register.inclusion_tag('custom_code/moon.html')
 def moon_vis(target):
 
-    def get_phase(moon, time):
-        moon.compute(time)
-        return moon.phase
-
     day_range = 30
     times = Time(
         [str(datetime.datetime.utcnow() + datetime.timedelta(days=delta))
@@ -235,10 +205,9 @@ def moon_vis(target):
     
     obj_pos = SkyCoord(target.ra, target.dec, unit=u.deg)
     moon_pos = get_moon(times)
+
     separations = moon_pos.separation(obj_pos).deg
-    
-    moon = ephem.Moon()
-    phases = [get_phase(moon, time.iso)/100.0 for time in times]
+    phases = moon_illumination(times)
 
     distance_color = 'rgb(0, 0, 255)'
     phase_color = 'rgb(255, 0, 0)'
