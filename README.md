@@ -5,3 +5,7 @@ data of supernovae, and for requesting and managing observations
 with the [LCO](https://lco.global/) network.
 
 SNEx 2.0 is currently live at [test.supernova.exchange](https://test.supernova.exchange/). Most pages are private (proprietary data), but the "TNS Targets" page is public.
+
+## License
+
+This project is licensed under the terms of GPLv3. See the LICENSE file for more information.
