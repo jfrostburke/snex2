@@ -1,4 +1,8 @@
+import os
 import requests
+from datetime import datetime
+from astropy import units as u
+from astropy.coordinates import SkyCoord
 from django.conf import settings
 from django import forms
 from dateutil.parser import parse
@@ -29,35 +33,14 @@ def proposal_choices():
     return [(proposal, proposal) for proposal in SNEX_GEMINI_SETTINGS['programs']]
 
 
-def obs_choices():
-    choices = []
-    for p in GEM_SETTINGS['programs']:
-        for obs in GEM_SETTINGS['programs'][p]:
-            obsid = p + '-' + obs
-            val = p.split('-')
-            showtext = val[0][1] + val[1][2:] + val[2] + val[3] + ' - ' + GEM_SETTINGS['programs'][p][obs]
-            choices.append((obsid, showtext))
-    return choices
-
-
 def get_site_code_from_program(program_id):
     return program_id.split('-')[0]
 
 
-def isodatetime(value):
-    isostring = parse(value).isoformat()
-    ii = isostring.find('T')
-    date = isostring[0:ii]
-    time = isostring[ii + 1:]
-    return date, time
-
-
 class SNExGeminiObservationForm(GenericObservationForm):
-    telescope = forms.ChoiceField(choices=(('north', 'Gemini North'), ('south', 'Gemini South')))
 
-    observation_type = forms.ChoiceField(choices=(('gmos_imaging', 'GMOS Optical Imaging'), ('gmos_spectra', 'GMOS Optical Spectra')), label='Observation Type')
-    window_size = forms.FloatField(label='', initial=1.0)
-    max_airmass = forms.FloatField(min_value=1.0, max_value=5.0, initial=2.0)
+    window_size = forms.FloatField(label='', initial=1.0, min_value=0.0)
+    max_airmass = forms.FloatField(min_value=1.0, max_value=5.0, initial=1.6, label='')
 
     ##Optical imaging
     optical_phot_exptime_choices = (
@@ -75,46 +58,6 @@ class SNExGeminiObservationForm(GenericObservationForm):
     i_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
     z_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
    
-    #IR imaging 
-    ir_phot_exptime_choices = (
-        (0, 0.0),
-        (120, 120.0),
-        (240, 240.0),
-        (600, 600.0),
-        (1200, 1200.0),
-    )
-    
-    j_exptime = forms.ChoiceField(choices=ir_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
-    h_exptime = forms.ChoiceField(choices=ir_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
-    k_exptime = forms.ChoiceField(choices=ir_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
-
-    ##Optical spectra
-    optical_spec_exptime_choices = (
-        (0, 0.0),
-        (1200, 1200.0),
-        (1500, 1500.0),
-        (1700, 1700.0),
-    )
-    
-    b600_exptime = forms.ChoiceField(choices=optical_spec_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
-    r400_exptime = forms.ChoiceField(choices=optical_spec_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
-
-    ##IR spectra
-    jh_spec_exptime_choices = (
-        (0, 0.0),
-        (900, 900.0),
-        (1800, 1800.0),
-        (4800, 4800.0),
-    )
-    hk_spec_exptime_choices = (
-        (0, 0.0),
-        (900, 900.0),
-        (1800, 1800.0),
-    )
-
-    jh_exptime = forms.ChoiceField(choices=jh_spec_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
-    hk_exptime = forms.ChoiceField(choices=hk_spec_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
@@ -122,10 +65,16 @@ class SNExGeminiObservationForm(GenericObservationForm):
             Div(
               Div(
                 Div(
-                    Div(HTML('<h5 style="text-align:center";>Optical Imaging</h5>')),
                     Div(HTML("<p></p>"),
                         PrependedAppendedText(
                             'window_size', 'Once in the next', 'days'
+                        ),
+                        PrependedText(
+                            'max_airmass', 'Airmass <'
+                        ),
+                        Div(
+                          Div(HTML('<p style="text-align:center;">Filter</p>'),css_class='col-md-2'),
+                          Div(HTML('<p style="text-align:center;">Exposure time (s)</p>'),css_class='col-md-10'), css_class='form-row',
                         ),
                         Div(
                           Div(HTML('<p style="text-align:center;">g</p>'),css_class='col-md-2'),
@@ -143,152 +92,103 @@ class SNExGeminiObservationForm(GenericObservationForm):
                           Div(HTML('<p style="text-align:center;">z</p>'),css_class='col-md-2'),
                           Div('z_exptime',css_class='col-md-10'), css_class='form-row'
                         ),
-                    ), css_class='col-md-5'
-                ),
-                Div(HTML('<p></p>'), css_class='col-md-2'),
-                Div(
-                    Div(HTML('<h5 style="text-align:center";>IR Imaging</h5>')),
-                    Div(HTML("<p></p>"),
-                        PrependedAppendedText(
-                            'window_size', 'Once in the next', 'days'
-                        ),
-                        Div(
-                          Div(HTML('<p style="text-align:center;">J</p>'),css_class='col-md-2'),
-                          Div('j_exptime',css_class='col-md-10'), css_class='form-row'
-                        ),
-                        Div(
-                          Div(HTML('<p style="text-align:center;">H</p>'),css_class='col-md-2'),
-                          Div('h_exptime',css_class='col-md-10'), css_class='form-row'
-                        ),
-                        Div(
-                          Div(HTML('<p style="text-align:center;">K</p>'),css_class='col-md-2'),
-                          Div('k_exptime',css_class='col-md-10'), css_class='form-row'
-                        ),
-                    ), css_class='col-md-5'
-                ), css_class='form-row'
-              ),
-              Div(
-                Div(
-                    Div(HTML('<h5 style="text-align:center";>Optical Spectra</h5>')),
-                    Div(HTML("<p></p>"),
-                        PrependedAppendedText(
-                            'window_size', 'Once in the next', 'days'
-                        ),
-                        Div(
-                          Div(HTML('<p style="text-align:center;">B600/500nm</p>'),css_class='col-md-4'),
-                          Div('b600_exptime',css_class='col-md-8'), css_class='form-row'
-                        ),
-                        Div(
-                          Div(HTML('<p style="text-align:center;">R400/850nm</p>'),css_class='col-md-4'),
-                          Div('r400_exptime',css_class='col-md-8'), css_class='form-row'
-                        ),
-                    ), css_class='col-md-5'
-                ),
-                Div(HTML('<p></p>'), css_class='col-md-2'),
-                Div(
-                    Div(HTML('<h5 style="text-align:center";>IR Spectra</h5>')),
-                    Div(HTML("<p></p>"),
-                        PrependedAppendedText(
-                            'window_size', 'Once in the next', 'days'
-                        ),
-                        Div(
-                          Div(HTML('<p style="text-align:center;">321/mm / JH</p>'),css_class='col-md-4'),
-                          Div('jh_exptime',css_class='col-md-8'), css_class='form-row'
-                        ),
-                        Div(
-                          Div(HTML('<p style="text-align:center;">321/mm / HK</p>'),css_class='col-md-4'),
-                          Div('hk_exptime',css_class='col-md-8'), css_class='form-row'
-                        ),
-                    ), css_class='col-md-5'
-                ), css_class='form-row'
-              ),
+                    ), css_class='col-md-8'
+                ), css_class='row justify-content-md-center'
+              )
             )
         )
 
     def is_valid(self):
         super().is_valid()
-        errors = SNExGemini.validate_observation(self.observation_payload)
+        errors = GeminiFacility.validate_observation(self.observation_payload())
         if errors:
             self.add_error(None, errors)
         return not errors
 
-    def _init_observation_payload(self):
+    def _init_observation_payload(self, target):
+
+        wait = True #On Hold
+        coords = SkyCoord(ra=target.ra*u.degree, dec=target.dec*u.degree)
+        now = datetime.utcnow()
+        sn_name = target.name
 
         payload = {
-            "prog": progid,
-            # "password": self.cleaned_data['userkey'],
-            "password": SNEX_GEMINI_SETTINGS['api_key'][get_site(self.cleaned_data['obsid'])],
-            # "email": self.cleaned_data['email'],
-            "email": GEM_SETTINGS['user_email'],
-            "obsnum": obsnum,
-            "target": target.name,
-            "ra": target.ra,
-            "dec": target.dec,
-            "note": self.cleaned_data['note'],
-            "ready": True
-        }
+            'ready': str(not wait).lower(),
+            'prog': os.environ['GEMINI_PROGRAMID'],
+            'email': os.environ['GEMINI_EMAIL'],
+            'password': os.environ['GEMINI_PASSWORD'],
+            'group': '{name} optical imaging'.format(name=target.name),
+            'ra': coords.ra.to_string(unit=u.hour,sep=':'),
+            'dec': coords.dec.to_string(unit=u.degree,sep=':'),
+            'mags': '18.0/g/AB',
+            'windowDate': now.strftime('%Y-%m-%d'),
+            'windowTime': now.strftime('%H:%M:%S'),
+            'windowDuration': int(float(self.data['window_size'])*24), 
+            'elevationType': 'airmass',
+            'elevationMin': 1.0,
+            'elevationMax': str(self.data['max_airmass']).strip(),
+            'note': 'No finder chart at the moment, sorry',
+            'posangle': 90.
+        }  
+
         return payload
 
-    @property
     def observation_payload(self):
-        target = Target.objects.get(pk=self.cleaned_data['target_id'])
-        payloads = []
-        if self.cleaned_data['observation_type'] == 'gmos_imaging':
-            for f in ['g', 'r', 'i', 'z']:
-                if self.cleaned_data[f + '_exptime'] > 0.0:
-                    # create the program level payload (username password etc)
-                    payload = self._init_observation_payload()
-                    # find the science observation ID for that observation
-                    # make
-                    # Add the exposure time to the payload (divided by 4 because of 4 dither positions)
-                    pass
+        
+        target = Target.objects.get(pk=self.data['target_id'])
 
-        ii = self.cleaned_data['obsid'].rfind('-')
-        progid = self.cleaned_data['obsid'][0:ii]
-        obsnum = self.cleaned_data['obsid'][ii + 1:]
+        obsid_map = {
+            'g': '56',
+            'r': '57',
+            'i': '58',
+            'z': '59'
+        }
 
+        payloads = {}
 
-        if self.cleaned_data['brightness'] != None:
-            smags = str(self.cleaned_data['brightness']).strip() + '/' + \
-                    self.cleaned_data['brightness_band'] + '/' + \
-                    self.cleaned_data['brightness_system']
-            payload["mags"] = smags
+        for f in ['g', 'r', 'i', 'z']:
+            if float(self.data[f + '_exptime']) > 0.0:
+                payloads[f] = self._init_observation_payload(target)
+                payloads[f]['obsnum'] = obsid_map[f]
+                payloads[f]['target'] = '{name} GMOS {f}'.format(
+                    name=target.name, f=f)
+                payloads[f]['exptime'] = self.data[f + '_exptime']
 
-        if self.cleaned_data['group'].strip() != '':
-            payload['group'] = self.cleaned_data['group'].strip()
+        #Need group in there when I'm doing it for real
+        #Not sure what to do about mags for now
 
-        # timing window?
-        if self.cleaned_data['window_start'].strip() != '':
-            wdate, wtime = isodatetime(self.cleaned_data['window_start'])
-            payload['windowDate'] = wdate
-            payload['windowTime'] = wtime
-            payload['windowDuration'] = str(self.cleaned_data['window_duration']).strip()
-
-        # airmass
-        payload['elevationType'] = 'airmass'
-        payload['elevationMin'] = '1.0'
-        payload['elevationMax'] = str(self.cleaned_data['max_airmass']).strip()
-
-        return payload
+        return payloads
 
 
 class GeminiFacility(GenericObservationFacility):
     name = 'Gemini'
     form = SNExGeminiObservationForm
+    observation_types = [('IMAGING', 'Optical Imaging')]
+
+    def get_form(self, observation_type):
+        return self.form
 
     @classmethod
     def submit_observation(clz, observation_payloads):
-        new_observation_ids = []
-        for observation_payload in observation_payloads:
-            response = requests.post(PORTAL_URL[get_site_code_from_program(observation_payload['prog'])] ,
-                                     verify=False, params=observation_payload)
-            # Note this assumes that if there is an error with the api, it will happen on the first payload
-            # If it happens on a later payload, we could end up with partially submitted requests
-            # we could in principle try to roll back the successful calls using the observation ids we just got.
-            response.raise_for_status()
-            # Return just observation number
-            new_observation_ids.append(response.text)
 
+        server = os.environ['GEMINI_SERVER']
+        url = server + '/too'
+
+        new_observation_ids = []
+
+        for payload in observation_payloads:
+            params = observation_payloads[payload]
+            response = requests.post(url, verify=False, params=params)
+            print(response.url)
+            try:
+                response.raise_for_status()
+                newobsid = response.text
+                new_observation_ids.append(newobsid)
+                print(newobsid + ' created and set On Hold')
+            except requests.exceptions.HTTPError as exc:
+                print('Request failed: ' + response.content)
+                raise exc
+        
         return new_observation_ids
 
     @classmethod
@@ -309,7 +209,7 @@ class GeminiFacility(GenericObservationFacility):
 
     @classmethod
     def get_observation_status(clz, observation_id):
-        return ''
+        return ['IN_PROGRESS']
 
     @classmethod
     def data_products(clz, observation_record, product_id=None):

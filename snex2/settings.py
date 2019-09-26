@@ -291,6 +291,9 @@ DATA_TYPES = (
     ('PHOTOMETRY', 'Photometry')
 )
 
+HINTS_ENABLED = False
+HINT_LEVEL = 20
+
 try:
     from local_settings import * # noqa
 except ImportError:

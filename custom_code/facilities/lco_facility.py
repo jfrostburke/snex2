@@ -170,7 +170,7 @@ class LCOObservationForm(GenericObservationForm):
     exposure_count_i = forms.IntegerField(min_value=1,initial=2,label='')
     exposure_time_i = forms.FloatField(min_value=0.1,initial=120,label='')
     max_airmass = forms.FloatField(initial=1.6,label='')
-    observation_type = forms.ChoiceField(
+    priority_level = forms.ChoiceField(
         choices=(('NORMAL', 'Normal'), ('TARGET_OF_OPPORTUNITY', 'Rapid Response'))
     )
 
@@ -220,7 +220,7 @@ class LCOObservationForm(GenericObservationForm):
                     HTML("<p></p>"),
                     PrependedText('max_airmass', 'Airmass <'),
                     PrependedText('ipp_value', 'IPP'),
-                    'instrument_type', 'proposal', 'observation_type', 
+                    'instrument_type', 'proposal', 'priority_level', 
                     css_class='col'
                 ),
                 css_class='form-row'
@@ -352,7 +352,7 @@ class LCOObservationForm(GenericObservationForm):
             "proposal": self.cleaned_data['proposal'],
             "ipp_value": self.cleaned_data['ipp_value'],
             "operator": "SINGLE",
-            "observation_type": self.cleaned_data['observation_type'],
+            "observation_type": self.cleaned_data['priority_level'],
             "requests": [
                 {
                     "configurations": configurations,
@@ -376,8 +376,9 @@ class LCOObservationForm(GenericObservationForm):
 class LCOFacility(GenericObservationFacility):
     name = 'LCO'
     form = LCOObservationForm
+    observation_types = [('IMAGING', 'Imaging')]
 
-    def get_form(self):
+    def get_form(self, observation_type):
         return LCOObservationForm
 
     def submit_observation(self, observation_payload):

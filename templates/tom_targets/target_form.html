@@ -23,6 +23,7 @@
   <p>Tweet this target out automatically on <a href="https://twitter.com/Snex2B">snex2_bot</a>? (Note: in progress, not currently functioning.)</p>
   {% bootstrap_field form.tweet %}
   {% endif %}
+  {% bootstrap_formset names_form %}
   {% bootstrap_formset extra_form %} 
   {% csrf_token %}
   {% buttons %}
