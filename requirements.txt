@@ -1,6 +1,6 @@
 dataclasses
 django
--e git+https://github.com/TOMToolkit/tom_base.git#egg=tomtoolkit
+-e git+https://github.com/TOMToolkit/tom_base.git@development#egg=tomtoolkit
 gunicorn
 django-heroku
 django-storages

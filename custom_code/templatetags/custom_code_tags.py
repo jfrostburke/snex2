@@ -4,7 +4,6 @@ from django import template
 
 from tom_targets.models import Target
 from tom_targets.forms import TargetVisibilityForm
-from tom_observations.utils import get_visibility
 from tom_observations import utils, facility
 from tom_dataproducts.models import DataProduct, ReducedDatum, ObservationRecord
 

@@ -2,6 +2,14 @@
 <a href="{% url 'tom_targets:update' pk=target.id %}" title="Update target" class="btn  btn-primary">Update Target</a>
 <a href="{% url 'tom_targets:delete' pk=target.id %}" title="Delete target" class="btn  btn-warning">Delete Target</a>
 <dl class="row">
+  {% for target_name in target.names %}
+    {% if forloop.first %}
+      <dt class="col-sm-6">Names</dt>
+    {% else %}
+      <dt class="col-sm-6">&nbsp;</dt>
+    {% endif %}
+    <dd class="col-sm-6">{{ target_name }}</dd>
+  {% endfor %}
   {% for key, value in target.as_dict.items %}
   {% if key == 'ra' %}
     <dt class="col-sm-6">{% verbose_name target key %}</dt>
@@ -20,10 +28,4 @@
   <dd class="col-sm-6">{{ target|target_extra_field:"redshift" }}</dd>
   <dt class="col-sm-6">Classification</dt>
   <dd class="col-sm-6">{{ target|target_extra_field:"classification" }}</dd>
-  <dt class="col-sm-6">Also known as</dt>
-  <dd class="col-sm-6">{{ target.name }}</dd>
-  <dt class="col-sm-6">&nbsp;</dt>
-  <dd class="col-sm-6">{{ target.name2 }}</dd>
-  <dt class="col-sm-6">&nbsp;</dt>
-  <dd class="col-sm-6">{{ target.name3 }}</dd>
 </dl>
