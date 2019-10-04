@@ -53,10 +53,9 @@ def target_post_save(target, created):
 
     response = requests.post(twitter_url, params=status, auth=auth)
  
-
-  if 'ZTF' in target.name:
-    objectId = target.name 
-    alerts = get(objectId)
+  ztf_name = next((name for name in target.names if 'ZTF' in name), None)
+  if ztf_name:
+    alerts = get(ztf_name)
     
     filters = {1: 'g_ZTF', 2: 'r_ZTF', 3: 'i_ZTF'}
     for alert in alerts:
@@ -76,3 +75,35 @@ def target_post_save(target, created):
                 data_type='photometry',
                 target=target)
             rd.save()
+
+  gaia_name = next((name for name in target.names if 'Gaia' in name), None)
+  if gaia_name:
+    base_url = 'http://gsaweb.ast.cam.ac.uk/alerts/alert'
+    lightcurve_url = f'{base_url}/{gaia_name}/lightcurve.csv'
+
+    response = requests.get(lightcurve_url)
+    data = response._content.decode('utf-8').split('\n')[2:-2]
+
+    jd = [x.split(',')[1] for x in data]
+    mag = [x.split(',')[2] for x in data]
+
+    for i in reversed(range(len(mag))):
+        try:
+            datum_mag = float(mag[i])
+            datum_jd = Time(float(jd[i]), format='jd', scale='utc')
+            value = {
+                'magnitude': datum_mag,
+                'filter': 'G_Gaia',
+                'error': 0 # for now
+            }
+            rd, created = ReducedDatum.objects.get_or_create(
+                timestamp=datum_jd.to_datetime(timezone=TimezoneInfo()),
+                value=json.dumps(value),
+                source_name=target.name,
+                source_location=lightcurve_url,
+                data_type='photometry',
+                target=target)
+            rd.save()
+        except:
+            pass
+    
