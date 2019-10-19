@@ -14,7 +14,7 @@ from astropy.time import Time
 from astropy import units as u
 from astropy.coordinates import get_moon, get_sun, SkyCoord, AltAz
 import numpy as np
-import time
+import matplotlib.pyplot as plt
 
 register = template.Library()
 
@@ -240,25 +240,6 @@ def moon_vis(target):
 
 @register.inclusion_tag('custom_code/spectra.html')
 def spectra_plot(target, dataproduct=None):
-    spectra = []
-    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy')
-    if dataproduct:
-        spectral_dataproducts = DataProduct.objects.get(dataproduct=dataproduct)
-    for spectrum in spectral_dataproducts:
-        datum = json.loads(spectrum.value)
-        wavelength = []
-        flux = []
-        name = str(spectrum.timestamp).split(' ')[0]
-        for key, value in datum.items():
-            wavelength.append(value['wavelength'])
-            flux.append(float(value['flux']))
-        spectra.append((wavelength, flux, name))
-    plot_data = [
-        go.Scatter(
-            x=spectrum[0],
-            y=spectrum[1],
-            name=spectrum[2]
-        ) for spectrum in spectra]
     layout = go.Layout(
         height=600,
         width=700,
@@ -272,10 +253,42 @@ def spectra_plot(target, dataproduct=None):
             title='Flux'
         )
     )
-    if plot_data:
+    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy')
+    if dataproduct:
+        spectral_dataproducts = DataProduct.objects.get(dataproduct=dataproduct)
+    colormap = plt.cm.gist_rainbow
+    colors = [colormap(i) for i in np.linspace(0, 0.99, len(spectral_dataproducts))]
+    rgb_colors = ['rgb({r}, {g}, {b})'.format(
+        r=int(color[0]*255),
+        g=int(color[1]*255),
+        b=int(color[2]*255),
+    ) for color in colors]
+    all_data = []
+    separate_plots = []
+    for i in range(len(spectral_dataproducts)):
+        spectrum = spectral_dataproducts[i]
+        datum = json.loads(spectrum.value)
+        wavelength = []
+        flux = []
+        name = str(spectrum.timestamp).split(' ')[0]
+        for key, value in datum.items():
+            wavelength.append(value['wavelength'])
+            flux.append(float(value['flux']))
+        scatter_obj = go.Scatter(
+            x=wavelength,
+            y=flux,
+            name=name,
+            line_color=rgb_colors[i]
+        )
+        all_data.append(scatter_obj)
+        separate_plots.append(
+            offline.plot(go.Figure(data=scatter_obj, layout=layout), output_type='div', show_link=False)
+        )
+    if all_data:
       return {
           'target': target,
-          'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)
+          'all_plot': offline.plot(go.Figure(data=all_data, layout=layout), output_type='div', show_link=False),
+          'separate_plots': separate_plots
       }
     else:
         return {

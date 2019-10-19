@@ -1,1 +1,7 @@
-{{ plot|safe }}
+<h5>All spectra</h5>
+{{ all_plot|safe }}
+<hr>
+<h5>Individual spectra</h5>
+{% for plot in separate_plots %}
+    {{ plot|safe }}
+{% endfor %}
