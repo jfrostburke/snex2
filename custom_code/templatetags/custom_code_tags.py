@@ -264,7 +264,6 @@ def spectra_plot(target, dataproduct=None):
         b=int(color[2]*255),
     ) for color in colors]
     all_data = []
-    separate_plots = []
     for i in range(len(spectral_dataproducts)):
         spectrum = spectral_dataproducts[i]
         datum = json.loads(spectrum.value)
@@ -281,19 +280,17 @@ def spectra_plot(target, dataproduct=None):
             line_color=rgb_colors[i]
         )
         all_data.append(scatter_obj)
-        separate_plots.append(
-            offline.plot(go.Figure(data=scatter_obj, layout=layout), output_type='div', show_link=False)
-        )
     if all_data:
       return {
           'target': target,
           'all_plot': offline.plot(go.Figure(data=all_data, layout=layout), output_type='div', show_link=False),
-          'separate_plots': separate_plots
       }
     else:
+        no_spec_message = """No spectra for this target yet.<br>
+            If you have spectra to upload, please click the Data tab."""
         return {
             'target': target,
-            'plot': 'No spectra for this target yet.'
+            'all_plot': no_spec_message
         }
 
 @register.inclusion_tag('custom_code/aladin_collapse.html')
