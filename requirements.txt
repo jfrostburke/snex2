@@ -9,3 +9,5 @@ astropy==3.2.1
 astroplan
 requests_oauthlib
 python-magic
+dash
+django_plotly_dash
