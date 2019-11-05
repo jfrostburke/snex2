@@ -5,7 +5,7 @@ gunicorn
 django-heroku
 django-storages
 boto3
-astropy==3.2.1
+astropy==3.2.3
 astroplan
 requests_oauthlib
 python-magic
