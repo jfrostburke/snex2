@@ -53,11 +53,12 @@
               {% render_comment_form for object %}
             {% endif %}
           {% endif %}
+        {% plotly_app name="SimpleExample" %}
       </div>
       <div class="tab-pane" id="spectra">
         <h4>Spectra</h4>
+        {% plotly_app name="Spectra" ratio=0.2 initial_arguments='{"color": {"value": "2"}}' %}
         {% spectra_plot target %}
-        {% plotly_app name="spectra" ratio=2%}
       </div>
       <div class="tab-pane" id="images">
         <h4>Examine Images</h4>

@@ -10,7 +10,71 @@ import numpy as np
 
 from django_plotly_dash import DjangoDash
 
-app = DjangoDash('spectra')   # replaces dash.Dash
+app = DjangoDash(name='Spectra', id='color')   # replaces dash.Dash
+
+"""
+app.layout = html.Div([
+    dcc.Graph(id='table-editing-simple-output'),
+])
+
+wave = [1000,2000,3000,4000,5000]
+flux = [1,2,1,2,1]
+
+@app.expanded_callback(
+    Output('table-editing-simple-output', 'figure'),
+    [Input('table-editing-simple', 'data')])
+def display_output(**kwargs):
+    graph_data = {'data':
+        [
+            go.Scatter(
+                x=wave,
+                y=flux,
+                name='spectrum'
+            )
+        ]
+    }
+    graph_data['layout'] = go.Layout(
+        xaxis={'title': 'Wave', 'type': 'linear'},
+        yaxis={'title': 'Flux', 'type': 'linear'},
+        height=450,
+        hovermode='closest'
+    )
+    #import pdb; pdb.set_trace()
+    print(graph_data)
+    return graph_data
+
+app.layout = html.Div([
+    dcc.RadioItems(
+        id='dropdown-color',
+        options=[{'label': c, 'value': c.lower()} for c in ['Red', 'Green', 'Blue']],
+        value='red'
+    ),
+    html.Div(id='output-color'),
+    dcc.RadioItems(
+        id='dropdown-size',
+        options=[{'label': i, 'value': j} for i, j in [('L','large'), ('M','medium'), ('S','small')]],
+        value='medium'
+    ),
+    html.Div(id='output-size')
+
+])
+
+@app.callback(
+    dash.dependencies.Output('output-color', 'children'),
+    [dash.dependencies.Input('dropdown-color', 'value')])
+def callback_color(dropdown_value):
+    return "The selected color is %s." % dropdown_value
+
+@app.callback(
+    dash.dependencies.Output('output-size', 'children'),
+    [dash.dependencies.Input('dropdown-color', 'value'),
+     dash.dependencies.Input('dropdown-size', 'value')])
+def callback_size(dropdown_color, dropdown_size):
+    return "The chosen T-shirt is a %s %s one." %(dropdown_size,
+                                                  dropdown_color)
+
+"""
+
 
 params = [
     'Redshift', 'Velocity (km/s)'
@@ -64,12 +128,14 @@ app.layout = html.Div([
 wave = [1000,2000,3000,4000,5000]
 flux = [1,2,1,2,1]
 
-@app.callback(
+@app.expanded_callback(
     Output('table-editing-simple-output', 'figure'),
     [Input('table-editing-simple', 'data'),
      Input('table-editing-simple', 'selected_rows'),
      Input('table-editing-simple', 'columns')])
-def display_output(rows, selected_row_ids, columns):
+def display_output(rows, selected_row_ids, columns, *args, **kwargs):
+    print(args)
+    print(kwargs)
     graph_data = {'data':
         [
             go.Scatter(
@@ -112,9 +178,12 @@ def display_output(rows, selected_row_ids, columns):
                 line=dict(color=elements[elem]['color'])
             )
         )
-            
+    graph_data['layout'] = {
+        'height': 225,
+        'margin': {'l': 20, 'b': 30, 'r': 10, 't': 10},
+        'yaxis': {'type': 'linear'},
+        'xaxis': {'showgrid': False}
+    }
     return graph_data
 
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
