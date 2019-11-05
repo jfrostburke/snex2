@@ -291,6 +291,18 @@ DATA_TYPES = (
     ('PHOTOMETRY', 'Photometry')
 )
 
+DATA_PRODUCT_TYPES = {
+    'photometry': ('photometry', 'Photometry'),
+    'fits_file': ('fits_file', 'FITS File'),
+    'spectroscopy': ('spectroscopy', 'Spectroscopy'),
+    'image_file': ('image_file', 'Image File')
+}
+
+DATA_PROCESSORS = {
+    'photometry': 'tom_dataproducts.processors.photometry_processor.PhotometryProcessor',
+    'spectroscopy': 'tom_dataproducts.processors.spectroscopy_processor.SpectroscopyProcessor',
+}
+
 HINTS_ENABLED = False
 HINT_LEVEL = 20
 
