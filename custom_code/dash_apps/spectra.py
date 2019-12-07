@@ -5,76 +5,15 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
 import numpy as np
+import json
 
 #lots of help from https://community.plot.ly/t/django-and-dash-eads-method/7717
 
 from django_plotly_dash import DjangoDash
+from tom_dataproducts.models import ReducedDatum
+import matplotlib.pyplot as plt
 
-app = DjangoDash(name='Spectra', id='color')   # replaces dash.Dash
-
-"""
-app.layout = html.Div([
-    dcc.Graph(id='table-editing-simple-output'),
-])
-
-wave = [1000,2000,3000,4000,5000]
-flux = [1,2,1,2,1]
-
-@app.expanded_callback(
-    Output('table-editing-simple-output', 'figure'),
-    [Input('table-editing-simple', 'data')])
-def display_output(**kwargs):
-    graph_data = {'data':
-        [
-            go.Scatter(
-                x=wave,
-                y=flux,
-                name='spectrum'
-            )
-        ]
-    }
-    graph_data['layout'] = go.Layout(
-        xaxis={'title': 'Wave', 'type': 'linear'},
-        yaxis={'title': 'Flux', 'type': 'linear'},
-        height=450,
-        hovermode='closest'
-    )
-    #import pdb; pdb.set_trace()
-    print(graph_data)
-    return graph_data
-
-app.layout = html.Div([
-    dcc.RadioItems(
-        id='dropdown-color',
-        options=[{'label': c, 'value': c.lower()} for c in ['Red', 'Green', 'Blue']],
-        value='red'
-    ),
-    html.Div(id='output-color'),
-    dcc.RadioItems(
-        id='dropdown-size',
-        options=[{'label': i, 'value': j} for i, j in [('L','large'), ('M','medium'), ('S','small')]],
-        value='medium'
-    ),
-    html.Div(id='output-size')
-
-])
-
-@app.callback(
-    dash.dependencies.Output('output-color', 'children'),
-    [dash.dependencies.Input('dropdown-color', 'value')])
-def callback_color(dropdown_value):
-    return "The selected color is %s." % dropdown_value
-
-@app.callback(
-    dash.dependencies.Output('output-size', 'children'),
-    [dash.dependencies.Input('dropdown-color', 'value'),
-     dash.dependencies.Input('dropdown-size', 'value')])
-def callback_size(dropdown_color, dropdown_size):
-    return "The chosen T-shirt is a %s %s one." %(dropdown_size,
-                                                  dropdown_color)
-
-"""
-
+app = DjangoDash(name='Spectra', id='target_id')   # replaces dash.Dash
 
 params = [
     'Redshift', 'Velocity (km/s)'
@@ -111,6 +50,7 @@ columns.insert(0, columns.pop())
 
 app.layout = html.Div([
     dcc.Graph(id='table-editing-simple-output'),
+    dcc.Input(id='target_id', type='hidden', value='filler text'),
     dash_table.DataTable(
         id='table-editing-simple',
         columns=(columns),
@@ -124,27 +64,53 @@ app.layout = html.Div([
     )
 ])
 
-# TODO: fix this spaghetti right here
-wave = [1000,2000,3000,4000,5000]
-flux = [1,2,1,2,1]
-
 @app.expanded_callback(
     Output('table-editing-simple-output', 'figure'),
     [Input('table-editing-simple', 'data'),
      Input('table-editing-simple', 'selected_rows'),
-     Input('table-editing-simple', 'columns')])
-def display_output(rows, selected_row_ids, columns, *args, **kwargs):
-    print(args)
-    print(kwargs)
-    graph_data = {'data':
-        [
-            go.Scatter(
-                x=wave,
-                y=flux,
-                name='spectrum'
-            )
-        ]
-    }
+     Input('table-editing-simple', 'columns'),
+     Input('target_id', 'value')])
+def display_output(rows, selected_row_ids, columns, value, *args, **kwargs):
+    # Improvements:
+    #   Slow: redraws all spectra each time
+    #   Fix dataproducts so they're correctly serialized
+    #   Correctly display message when there are no spectra
+    # TODO: extend view to give extra context, currently looks like in modified local base code
+    #  context['dash_context'] = {'target_id': {'value': self.get_object().id}}
+    target_id = value
+    spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy')
+    if not spectral_dataproducts:
+        return 'No spectra yet'
+    colormap = plt.cm.gist_rainbow
+    colors = [colormap(i) for i in np.linspace(0, 0.99, len(spectral_dataproducts))]
+    rgb_colors = ['rgb({r}, {g}, {b})'.format(
+        r=int(color[0]*255),
+        g=int(color[1]*255),
+        b=int(color[2]*255),
+    ) for color in colors]
+    all_data = []
+    max_flux = 0
+    min_flux = 0
+    for i in range(len(spectral_dataproducts)):
+        spectrum = spectral_dataproducts[i]
+        datum = json.loads(spectrum.value)
+        wavelength = []
+        flux = []
+        name = str(spectrum.timestamp).split(' ')[0]
+        for key, value in datum.items():
+            wavelength.append(value['wavelength'])
+            flux.append(float(value['flux']))
+        if max(flux) > max_flux: max_flux = max(flux)
+        if min(flux) < min_flux: min_flux = min(flux)
+        scatter_obj = go.Scatter(
+            x=wavelength,
+            y=flux,
+            name=name,
+            line_color=rgb_colors[i]
+        )
+        all_data.append(scatter_obj)
+
+    graph_data = {'data': all_data}
     
     for row_id in selected_row_ids:
         row = rows[row_id]
@@ -165,8 +131,8 @@ def display_output(rows, selected_row_ids, columns, *args, **kwargs):
             x.append(lambda_observed)
             x.append(lambda_observed)
             x.append(None)
-            y.append(min(flux)*0.95)
-            y.append(max(flux)*1.05)
+            y.append(min_flux*0.95)
+            y.append(max_flux*1.05)
             y.append(None)
 
         graph_data['data'].append(
@@ -179,7 +145,7 @@ def display_output(rows, selected_row_ids, columns, *args, **kwargs):
             )
         )
     graph_data['layout'] = {
-        'height': 225,
+        'height': 350,
         'margin': {'l': 20, 'b': 30, 'r': 10, 't': 10},
         'yaxis': {'type': 'linear'},
         'xaxis': {'showgrid': False}
