@@ -52,12 +52,12 @@ class OpticalImagingForm(GenericObservationForm):
         (600, 600.0),
         (900, 900.0),
     )
- 
+
     g_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
     r_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
     i_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
     z_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
-   
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
@@ -123,18 +123,18 @@ class OpticalImagingForm(GenericObservationForm):
             'mags': '18.0/g/AB',
             'windowDate': now.strftime('%Y-%m-%d'),
             'windowTime': now.strftime('%H:%M:%S'),
-            'windowDuration': int(float(self.data['window_size'])*24), 
+            'windowDuration': int(float(self.data['window_size'])*24),
             'elevationType': 'airmass',
             'elevationMin': 1.0,
             'elevationMax': str(self.data['max_airmass']).strip(),
             'note': 'API Test',
             'posangle': 90.
-        }  
+        }
 
         return payload
 
     def observation_payload(self):
-        
+
         target = Target.objects.get(pk=self.data['target_id'])
 
         obsid_map = {
@@ -160,6 +160,14 @@ class OpticalImagingForm(GenericObservationForm):
 
 
 class OpticalSpectraForm(GenericObservationForm):
+
+    north_south_choice = (
+        ('north', 'North'),
+        ('south', 'South'),
+    )
+    n_or_s = forms.ChoiceField(choices=north_south_choice, initial='north', widget=forms.Select(), required=True,
+                             label='')
+
     window_size = forms.FloatField(initial=1.0, min_value=0.0, label='')
     max_airmass = forms.FloatField(min_value=1.0, max_value=5.0, initial=1.6, label='')
 
@@ -182,6 +190,19 @@ class OpticalSpectraForm(GenericObservationForm):
     r_exptime = forms.ChoiceField(choices=optical_spec_exptime_choices, initial=0, widget=forms.Select(), required=True,
                                   label='')
 
+    filter_choices = (
+        ('U','U'),
+        ('B','B'),
+        ('g','g'),
+        ('V','V'),
+        ('r','r'),
+        ('i','i'),
+    )
+
+    mag_approx = forms.FloatField(initial=19.0, min_value=0.0, label='')
+    mag_approx_filter = forms.ChoiceField(choices=filter_choices, initial='g', widget=forms.Select(), required=True,
+                                    label='')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper.layout = Layout(
@@ -189,11 +210,22 @@ class OpticalSpectraForm(GenericObservationForm):
             Div(
                 Div(
                     Div(HTML("<p></p>"),
+                        Div(
+                            Div(HTML('<p style="text-align:center;">Gemini North or South?</p>'), css_class='col-md-4'),
+                            Div('n_or_s', css_class='col-md-8'),
+                            css_class='form-row',
+                        ),
                         PrependedAppendedText(
                             'window_size', 'Once in the next', 'days'
                         ),
                         PrependedText(
                             'max_airmass', 'Airmass <'
+                        ),
+                        Div(
+                            Div(PrependedText('mag_approx', 'Approximate mag: '),css_class='col-md-8'),
+                            Div(HTML('<p style="text-align:center;">Filter:</p>'),css_class='col-md-2'),
+                            Div('mag_approx_filter', css_class='col-md-2'),
+                            css_class='form-row'
                         ),
                         Div(
                             Div(HTML('<p style="text-align:center;">Grating</p>'), css_class='col-md-2'),
@@ -233,22 +265,30 @@ class OpticalSpectraForm(GenericObservationForm):
         now = datetime.utcnow()
         sn_name = target.name
 
+        if self.data['n_or_s'] == 'north':
+            prog = os.getenv('GEMINI_NORTH_PROGRAMID')
+            pwd = os.getenv('GEMINI_NORTH_PASSWORD')
+        elif self.data['n_or_s'] == 'south':
+            prog = os.getenv('GEMINI_SOUTH_PROGRAMID')
+            pwd = os.getenv('GEMINI_SOUTH_PASSWORD')
+
+        mag = self.data['mag_approx'] + '/' + self.data['mag_approx_filter'] + '/' + 'AB'
+
         payload = {
             'ready': str(not wait).lower(),
-            'prog': os.getenv('GEMINI_PROGRAMID',''),
+            'prog': prog,
             'email': os.getenv('GEMINI_EMAIL',''),
-            'password': os.getenv('GEMINI_PASSWORD',''),
-            'group': 'API Test Optical Spectra (B600)',
+            'password': pwd,
             'ra': coords.ra.to_string(unit=u.hour,sep=':'),
             'dec': coords.dec.to_string(unit=u.degree,sep=':'),
-            'mags': '18.0/g/AB',
+            'mags': mag,
             'windowDate': now.strftime('%Y-%m-%d'),
             'windowTime': now.strftime('%H:%M:%S'),
             'windowDuration': int(float(self.data['window_size'])*24),
             'elevationType': 'airmass',
             'elevationMin': 1.0,
             'elevationMax': str(self.data['max_airmass']).strip(),
-            'note': 'API Test',
+            'note': 'This observation was submitted through the API, if anything is unusual contact cmccully@lco.global',
             'posangle': 90.
         }
 
@@ -258,25 +298,83 @@ class OpticalSpectraForm(GenericObservationForm):
 
         target = Target.objects.get(pk=self.data['target_id'])
 
-        # Starting with 1.5", B600 to test
-        obsid_map = {
-            'arc': '47',
-            'acquisition': '48',
-            'science_with_flats': '49',
-        }
+        if self.data['n_or_s'] == 'north':
+            if self.data['slit'] == '1.5':
+                obsid_map = {
+                    'B600': {
+                        'arc': '48',
+                        'acquisition': '46',
+                        'science_with_flats': '47',
+                    },
+                    'R400': {
+                        'arc': '54',
+                        'acquisition': '52',
+                        'science_with_flats': '53',
+                    }
+                }
+            elif self.data['slit'] == '1':
+                obsid_map = {
+                    'B600': {
+                        'arc': '45',
+                        'acquisition': '85',
+                        'science_with_flats': '44',
+                    },
+                    'R400': {
+                        'arc': '51',
+                        'acquisition': '49',
+                        'science_with_flats': '50',
+                    }
+                }
+        elif self.data['n_or_s'] == 'south':
+            if self.data['slit'] == '1.5':
+                obsid_map = {
+                    'B600': {
+                        'arc': '47',
+                        'acquisition': '48',
+                        'science_with_flats': '49',
+                    },
+                    'R400': {
+                        'arc': '53',
+                        'acquisition': '54',
+                        'science_with_flats': '55',
+                    }
+                }
+            elif self.data['slit'] == '1':
+                obsid_map = {
+                    'B600': {
+                        'arc': '44',
+                        'acquisition': '45',
+                        'science_with_flats': '46',
+                    },
+                    'R400': {
+                        'arc': '50',
+                        'acquisition': '51',
+                        'science_with_flats': '52',
+                    }
+                }
 
         payloads = {}
+        slit_width = self.data['slit']
 
-        for key in obsid_map:
-            payloads[key] = self._init_observation_payload(target)
-            payloads[key]['obsnum'] = obsid_map[key]
-            if key == 'arc':
-                payloads[key]['target'] = 'CuAr Arc'
-            elif key == 'acquisition':
-                payloads[key]['target'] = 'Acquisition'
-            elif key == 'science_with_flats':
-                payloads[key]['target'] = 'Science with Flats'
-                payloads[key]['exptime'] = self.data['b_exptime']
+        for color_grating in obsid_map:
+            for key in obsid_map[color_grating]:
+                payloads[f'{color_grating}_{key}'] = self._init_observation_payload(target)
+                if self.data['n_or_s'] == 'north':
+                    group = f'{target.name}: GMOS-N {color_grating} Longslit {slit_width} arcsec'
+                elif self.data['n_or_s'] == 'south':
+                    group = f'{target.name}: GMOS-S {color_grating} Longslit {slit_width} arcsec'
+                payloads[f'{color_grating}_{key}']['group'] = group
+                payloads[f'{color_grating}_{key}']['obsnum'] = obsid_map[color_grating][key]
+                if key == 'arc':
+                    payloads[f'{color_grating}_{key}']['target'] = 'CuAr Arc'
+                elif key == 'acquisition':
+                    payloads[f'{color_grating}_{key}']['target'] = 'Acquisition'
+                elif key == 'science_with_flats':
+                    payloads[f'{color_grating}_{key}']['target'] = 'Science with Flats'
+                    if color_grating == 'B600':
+                        payloads[f'{color_grating}_{key}']['exptime'] = int(float(self.data['b_exptime'])/2)
+                    elif color_grating == 'R400':
+                        payloads[f'{color_grating}_{key}']['exptime'] = int(float(self.data['r_exptime'])/2)
 
         # Need group in there when I'm doing it for real
         # Not sure what to do about mags for now
@@ -302,12 +400,14 @@ class GeminiFacility(GenericObservationFacility):
     @classmethod
     def submit_observation(clz, observation_payloads):
 
-        server = os.getenv('GEMINI_SERVER','')
-        url = server + '/too'
-
         new_observation_ids = []
 
         for payload in observation_payloads:
+            if 'GN' in observation_payloads[payload]['prog']:
+                server = os.getenv('GEMINI_NORTH_SERVER', '')
+            elif 'GS' in observation_payloads[payload]['prog']:
+                server = os.getenv('GEMINI_SOUTH_SERVER', '')
+            url = server + '/too'
             params = observation_payloads[payload]
             response = requests.post(url, verify=False, params=params)
             print(response.url)
