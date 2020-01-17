@@ -355,14 +355,15 @@ class OpticalSpectraForm(GenericObservationForm):
 
         payloads = {}
         slit_width = self.data['slit']
+        date_tag = datetime.utcnow().strftime('%Y%m%d')
 
         for color_grating in obsid_map:
             for key in obsid_map[color_grating]:
                 payloads[f'{color_grating}_{key}'] = self._init_observation_payload(target)
                 if self.data['n_or_s'] == 'north':
-                    group = f'{target.name}: GMOS-N {color_grating} Longslit {slit_width} arcsec'
+                    group = f'{target.name}: GMOS-N {color_grating} Longslit {slit_width} arcsec {date_tag}'
                 elif self.data['n_or_s'] == 'south':
-                    group = f'{target.name}: GMOS-S {color_grating} Longslit {slit_width} arcsec'
+                    group = f'{target.name}: GMOS-S {color_grating} Longslit {slit_width} arcsec {date_tag}'
                 payloads[f'{color_grating}_{key}']['group'] = group
                 payloads[f'{color_grating}_{key}']['obsnum'] = obsid_map[color_grating][key]
                 if key == 'arc':
@@ -370,7 +371,7 @@ class OpticalSpectraForm(GenericObservationForm):
                 elif key == 'acquisition':
                     payloads[f'{color_grating}_{key}']['target'] = 'Acquisition'
                 elif key == 'science_with_flats':
-                    payloads[f'{color_grating}_{key}']['target'] = 'Science with Flats'
+                    payloads[f'{color_grating}_{key}']['target'] = target.name
                     if color_grating == 'B600':
                         payloads[f'{color_grating}_{key}']['exptime'] = int(float(self.data['b_exptime'])/2)
                     elif color_grating == 'R400':
@@ -417,7 +418,8 @@ class GeminiFacility(GenericObservationFacility):
                 new_observation_ids.append(newobsid)
                 print(newobsid + ' created and set On Hold')
             except requests.exceptions.HTTPError as exc:
-                print('Request failed: ' + response.content)
+                print('Request failed: ')
+                print(response.content)
                 raise exc
         
         return new_observation_ids
