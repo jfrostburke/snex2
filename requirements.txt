@@ -1,7 +1,7 @@
 dataclasses
-django
--e git+https://github.com/TOMToolkit/tom_base.git@development#egg=tomtoolkit
-gunicorn
+django==2.2.6
+tomtoolkit
+gunicorn==19.9.0
 django-heroku
 django-storages
 boto3
