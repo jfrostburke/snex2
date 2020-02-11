@@ -1,5 +1,5 @@
 dataclasses
-django==2.2.6
+django==2.2.10
 tomtoolkit
 gunicorn==19.9.0
 django-heroku
