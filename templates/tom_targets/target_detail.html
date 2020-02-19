@@ -1,0 +1,98 @@
+{% extends 'tom_common/base.html' %}
+{% load comments bootstrap4 tom_common_extras targets_extras observation_extras dataproduct_extras static cache %}
+{% load airmass_tags %}
+{% block title %}Target {{ object.name }}{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+      <ul class="nav mr-auto">
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.name }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.ra|deg_to_sexigesimal:"hms" }} {{ target.dec|deg_to_sexigesimal:"dms" }}<br>{{ target.ra|floatformat:4 }} {{ target.dec|floatformat:4 }}</a></li>
+      </ul>
+    <ul class="nav nav-tabs" id="tabs">
+      <li class="nav-item">
+        <span class="nav-link active" data-target="#observe" data-toggle="tab">Overview</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" data-target="#observations" data-toggle="tab">Observations</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" data-target="#manage-data" data-toggle="tab">Manage Data</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" data-target="#manage-groups" data-toggle="tab">Manage Groups</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" data-target="#photometry" data-toggle="tab">Photometry</span>
+      </li>
+      <li class="nav-item">
+        <span class="nav-link" data-target="#spectroscopy" data-toggle="tab">Spectroscopy</span>
+      </li>
+    </ul>
+  </div>
+</nav>
+<div class="row">
+  <div class="col-md-12">
+    <div class="tab-content">
+      <div class="tab-pane in active" id="observe">
+        <div class="row">
+        <div class="col-md-6">
+          {% comments_enabled as comments_are_enabled %}
+          <h4>Latest Comments</h4>
+            {% if comments_are_enabled %}
+              {% render_comment_list for object %}
+              {% url 'targets:detail' object.id as next %}
+              {% if user.is_authenticated %}
+                {% render_comment_form for object %}
+              {% endif %}
+            {% endif %}
+        </div>
+        <div class="col-md-6">
+          <h4>Latest Visibility at LCO</h4>
+          {% airmass_plot %}
+        </div>
+        </div>
+        <hr/>
+        <div>
+          {% aladin object %}
+        </div>
+        <hr/>
+        <div class="row">
+        <div class="col-md-6">
+          <h4>Photometry</h4>
+          {% lightcurve object %}
+        </div>
+        <div class="col-md-6">
+          <h4>Spectroscopy</h4>
+          {% spectra_plot object %}
+        </div>
+        </div>
+      </div>
+      <div class="tab-pane" id="observations">
+        <h4>Schedule Observations</h4>
+        {% observing_buttons object %}
+        <hr/>
+        <h4>Previous Observations</h4>
+        <a href="{% url 'targets:detail' pk=target.id %}?update_status=True" title="Update status of observations for target" class="btn btn-primary">Update Observations Status</a>
+        {% observation_list object %}
+      </div>
+      <div class="tab-pane" id="manage-data">
+        {% include 'tom_dataproducts/upload_dataproduct.html' %}
+        {% dataproduct_list_for_target object %}
+      </div>
+      <div class="tab-pane" id="manage-groups">
+        {% target_groups target %}
+      </div>
+      <div class="tab-pane" id="photometry">
+        {% photometry_for_target target %}
+        </div>
+      <div class="tab-pane" id="spectroscopy">
+        {% spectroscopy_for_target target %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

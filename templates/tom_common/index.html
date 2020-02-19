@@ -1,0 +1,45 @@
+{% extends 'tom_common/base.html' %}
+{% load static targets_extras observation_extras dataproduct_extras tom_common_extras bootstrap4 %}
+{% block title %}Home{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_common/css/snex.css' %}">
+{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8">
+    <br>
+    <br>
+    <br>
+    <table border=0 width=100% cellpadding=0 cellspacing=0>
+    <tr><td colspan=2 align=center>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:black">welcome to</span><br><br>
+    </td></tr>
+    <tr><td valign=bottom align=right width=50%>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:600; font-size:48pt; color:#004459; line-height:100%; letter-spacing:-3px;">SN</span>
+    </td><td valign=bottom align=left width=50%>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:600; font-size:48pt; color:#ff9900; line-height:100%; letter-spacing:-3px;">Ex 2.0</span>
+    </td></tr>
+    <tr><td valign=bottom align=right width=50%>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:#004459;">the </span>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:24pt; color:#004459;">Supernova</span>
+    </td><td valign=bottom align=left width=50%>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:24pt; color:#ff9900;">Exchange (2.0)</span>
+    </td></tr>
+    </table>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header">
+        Latest Comments
+      </div>
+      {% recent_comments %}
+    </div>
+    <br/>
+    <div class="card">
+      <div class="card-header">
+        Latest Targets
+      </div>
+      {% recent_targets %}
+  </div>
+</div>
+{% endblock %}

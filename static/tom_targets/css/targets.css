@@ -1,0 +1,63 @@
+@import url('https://fonts.googleapis.com/css?family=Montserrat');
+@import url('https://fonts.googleapis.com/css?family=Open+Sans');
+
+h5 {
+  font-family: 'Montserrat', sans-serif;
+}
+
+h4 {
+  font-family: 'Open Sans', sans-serif;
+}
+
+h3 {
+  font-family: 'Montserrat', sans-serif;
+}
+
+h2 {
+  font-family: 'Montserrat', sans-serif;
+}
+
+body {
+  font-family: 'Open Sans', sans-serif;
+  padding-top: 5rem;
+}
+
+nav a {
+  font-family: 'Open Sans', sans-serif;
+  color: white;
+  font-size: 12pt;
+}
+
+nav a:hover {
+  color: white;
+}
+
+nav {
+  background: black;
+  color: white;
+  height: 35px;
+}
+
+.fixed-top-2 {
+  margin-top: 35px;
+  background: #174460;
+  height: 89px;
+}
+
+.fixed-top-2 a {
+  text-align: left;
+  font-size: 18pt;
+  padding: 14px 16px;
+}
+
+.content {
+  padding: 3rem 1.5rem;
+}
+
+.navbar-brand > img {
+    max-height: 25px;
+}
+
+.input-group-text {
+    font-family: monospace;
+}
