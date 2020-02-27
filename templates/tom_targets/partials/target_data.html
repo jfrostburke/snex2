@@ -1,0 +1,27 @@
+{% load tom_common_extras targets_extras %}
+<dl class="row">
+  <h4>Known as: </h4>
+</dl>
+<dl class="row">
+  {% for target_name in target.names %}
+    {{ target_name }}<br> 
+  {% endfor %}
+</dl>  
+<dl class="row">
+  <a href="{% url 'tom_targets:update' pk=target.id %}" title="Update target" class="btn-sm  btn-primary">Update Target</a>
+</dl>
+<dl class="row">
+  <h5>Science Interests:</h5>
+</dl>
+<dl class="row">
+  <h5>Interested Persons:</h5>
+</dl>
+<dl class="row">
+  <h5>Data Used In:</h5>
+</dl>
+<dl class="row">
+  <h5>Reference Status:</h5>
+</dl>
+<dl class="row">
+  <h5>Known to:</h5>
+</dl>

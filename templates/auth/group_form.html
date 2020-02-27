@@ -1,0 +1,26 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 static %}
+{% block title %}Create Group{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Create New Group</h3>
+  </div>
+</nav>
+<div class="row">
+  <div class="col">
+    {% if object %}
+    <form method="POST" action="{% url 'group-update' object.id %}">
+    {% else %}
+    <form method="POST" action="{% url 'group-create' %}">
+    {% endif %}
+      {% csrf_token %}
+      {% bootstrap_form form %}
+      {% buttons submit="Submit" %}{% endbuttons %}
+    </form>
+  </div>
+</div>
+{% endblock %}

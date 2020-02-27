@@ -11,30 +11,35 @@
       <ul class="nav mr-auto">
         <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.name }}</a></li>
         <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.ra|deg_to_sexigesimal:"hms" }} {{ target.dec|deg_to_sexigesimal:"dms" }}<br>{{ target.ra|floatformat:4 }} {{ target.dec|floatformat:4 }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target|target_extra_field:"classification" }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">z = {{ target|target_extra_field:"redshift" }}</a></li>
       </ul>
-    <ul class="nav nav-tabs" id="tabs">
-      <li class="nav-item">
-        <span class="nav-link active" data-target="#observe" data-toggle="tab">Overview</span>
-      </li>
-      <li class="nav-item">
-        <span class="nav-link" data-target="#observations" data-toggle="tab">Observations</span>
-      </li>
-      <li class="nav-item">
-        <span class="nav-link" data-target="#manage-data" data-toggle="tab">Manage Data</span>
-      </li>
-      <li class="nav-item">
-        <span class="nav-link" data-target="#manage-groups" data-toggle="tab">Manage Groups</span>
-      </li>
-      <li class="nav-item">
-        <span class="nav-link" data-target="#photometry" data-toggle="tab">Photometry</span>
-      </li>
-      <li class="nav-item">
-        <span class="nav-link" data-target="#spectroscopy" data-toggle="tab">Spectroscopy</span>
-      </li>
-    </ul>
   </div>
 </nav>
+<ul class="nav nav-tabs" id="tabs">
+  <li class="nav-item">
+    <span class="nav-link active" data-target="#observe" data-toggle="tab">Overview</span>
+  </li>
+  <li class="nav-item">
+    <span class="nav-link" data-target="#observations" data-toggle="tab">Observations</span>
+  </li>
+  <li class="nav-item">
+    <span class="nav-link" data-target="#manage-data" data-toggle="tab">Manage Data</span>
+  </li>
+  <li class="nav-item">
+    <span class="nav-link" data-target="#manage-groups" data-toggle="tab">Manage Groups</span>
+  </li>
+  <li class="nav-item">
+    <span class="nav-link" data-target="#photometry" data-toggle="tab">Photometry</span>
+  </li>
+  <li class="nav-item">
+    <span class="nav-link" data-target="#spectroscopy" data-toggle="tab">Spectroscopy</span>
+  </li>
+</ul>
 <div class="row">
+  <div class="col-md-2" id="target-info">
+    {% target_data object %}
+  </div>
   <div class="col-md-12">
     <div class="tab-content">
       <div class="tab-pane in active" id="observe">

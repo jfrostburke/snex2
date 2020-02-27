@@ -38,20 +38,10 @@ nav {
   height: 35px;
 }
 
-.fixed-top {
-  position: absolute;
-  top: 0;
-  right: 0;
-  left: 0;
-  z-index: 0;
-}
-
 .fixed-top-2 {
   margin-top: 35px;
   background: #174460;
   height: 89px;
-  position: absolute;
-  z-index: -1;
 }
 
 .fixed-top-2 a {
@@ -70,23 +60,4 @@ nav {
 
 .input-group-text {
     font-family: monospace;
-}
-
-@media (min-width: 768px)
-.navbar-expand-md .navbar-nav .dropdown-menu {
-    position: absolute;
-    z-index: 9999;
-}
-
-.col-md-12 {
-  max-width: 83.3333%;
-}
-
-.container {
-  width: 100%;
-  padding-right: 15px;
-  padding-left: 15px;
-  margin-right: auto;
-  margin-left: auto;
-  max-width: none;
 }
