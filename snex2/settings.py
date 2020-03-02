@@ -262,7 +262,8 @@ OPEN_URLS = ['/snex2/tnstargets/']
 
 HOOKS = {
     'target_post_save': 'custom_code.hooks.target_post_save',
-    'observation_change_state': 'tom_common.hooks.observation_change_state'
+    'observation_change_state': 'tom_common.hooks.observation_change_state',
+    'targetextra_post_save': 'custom_code.hooks.targetextra_post_save'
 }
 
 TOM_ALERT_CLASSES = [
