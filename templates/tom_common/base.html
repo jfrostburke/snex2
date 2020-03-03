@@ -13,6 +13,9 @@
     {% endblock %}
     <link rel="icon" type="image/png" href="{% static 'tom_common/img/favicon-32.ico' %}" sizes="32x32" />
     <link rel="icon" type="image/png" href="{% static 'tom_common/img/favicon-16.ico' %}" sizes="16x16" />
+
+    {% bootstrap_javascript jquery='True' %}
+
     <title>SNEx 2.0 | {% block title %}{% endblock %}</title>
   </head>
   <body>
