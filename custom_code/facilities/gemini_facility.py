@@ -185,10 +185,19 @@ class OpticalSpectraForm(GenericObservationForm):
 
     slit = forms.ChoiceField(choices=optical_spec_slit_choices, initial=1, widget=forms.Select(), required=True,
                                   label='')
-    b_exptime = forms.ChoiceField(choices=optical_spec_exptime_choices, initial=0, widget=forms.Select(), required=True,
-                                  label='')
-    r_exptime = forms.ChoiceField(choices=optical_spec_exptime_choices, initial=0, widget=forms.Select(), required=True,
-                                  label='')
+    
+    ready_choices = (
+        ('true', 'Prepared'),
+        ('false', 'On Hold'),
+    )
+    ready = forms.ChoiceField(choices=ready_choices, initial='false', 
+                              widget=forms.Select(), required=True,
+                              label='')
+
+    b_exptime = forms.FloatField(initial=0.0, min_value=0.0, 
+            required=True, label='')
+    r_exptime = forms.FloatField(initial=0.0, min_value=0.0, 
+            required=True, label='')
 
     filter_choices = (
         ('U','U'),
@@ -247,6 +256,13 @@ class OpticalSpectraForm(GenericObservationForm):
                         Div(
                             Div('slit', css_class='col-md-12'), css_class='form-row'
                         ),
+                        Div(
+                            Div(HTML('<p style="text-align:center;">Status</p>'), css_class='col-md-12'),
+                            css_class='form-row',
+                        ),
+                        Div(
+                            Div('ready', css_class='col-md-12'), css_class='form-row'
+                        ),
                         ), css_class='col-md-8'
                 ), css_class='row justify-content-md-center'
             )
@@ -275,7 +291,7 @@ class OpticalSpectraForm(GenericObservationForm):
         mag = self.data['mag_approx'] + '/' + self.data['mag_approx_filter'] + '/' + 'AB'
 
         payload = {
-            'ready': str(not wait).lower(),
+            'ready': self.data['ready'],
             'prog': prog,
             'email': os.getenv('GEMINI_EMAIL',''),
             'password': pwd,
@@ -302,54 +318,54 @@ class OpticalSpectraForm(GenericObservationForm):
             if self.data['slit'] == '1.5':
                 obsid_map = {
                     'B600': {
-                        'arc': '48',
-                        'acquisition': '46',
-                        'science_with_flats': '47',
+                        'arc': '68',
+                        'acquisition': '66',
+                        'science_with_flats': '67',
                     },
                     'R400': {
-                        'arc': '54',
-                        'acquisition': '52',
-                        'science_with_flats': '53',
+                        'arc': '74',
+                        'acquisition': '72',
+                        'science_with_flats': '73',
                     }
                 }
             elif self.data['slit'] == '1':
                 obsid_map = {
                     'B600': {
-                        'arc': '45',
-                        'acquisition': '85',
-                        'science_with_flats': '44',
+                        'arc': '65',
+                        'acquisition': '63',
+                        'science_with_flats': '64',
                     },
                     'R400': {
-                        'arc': '51',
-                        'acquisition': '49',
-                        'science_with_flats': '50',
+                        'arc': '71',
+                        'acquisition': '69',
+                        'science_with_flats': '70',
                     }
                 }
         elif self.data['n_or_s'] == 'south':
             if self.data['slit'] == '1.5':
                 obsid_map = {
                     'B600': {
-                        'arc': '47',
-                        'acquisition': '48',
-                        'science_with_flats': '49',
+                        'arc': '64',
+                        'acquisition': '65',
+                        'science_with_flats': '66',
                     },
                     'R400': {
-                        'arc': '53',
-                        'acquisition': '54',
-                        'science_with_flats': '55',
+                        'arc': '70',
+                        'acquisition': '71',
+                        'science_with_flats': '72',
                     }
                 }
             elif self.data['slit'] == '1':
                 obsid_map = {
                     'B600': {
-                        'arc': '44',
-                        'acquisition': '45',
-                        'science_with_flats': '46',
+                        'arc': '61',
+                        'acquisition': '62',
+                        'science_with_flats': '63',
                     },
                     'R400': {
-                        'arc': '50',
-                        'acquisition': '51',
-                        'science_with_flats': '52',
+                        'arc': '67',
+                        'acquisition': '68',
+                        'science_with_flats': '69',
                     }
                 }
 
@@ -396,7 +412,7 @@ class GeminiFacility(GenericObservationFacility):
         elif observation_type == 'SPECTRA_OPTICAL':
             return OpticalSpectraForm
         else:
-            return OpticalImagingForm
+            return OpticalSpectraForm
 
     @classmethod
     def submit_observation(clz, observation_payloads):
