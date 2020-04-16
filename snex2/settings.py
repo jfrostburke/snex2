@@ -257,6 +257,8 @@ EXTRA_FIELDS = [
 # or READ_ONLY (read only access to views)
 AUTH_STRATEGY = 'LOCKED'
 
+TARGET_PERMISSIONS_ONLY = True
+
 # URLs that should be allowed access even with AUTH_STRATEGY = LOCKED
 # for example: OPEN_URLS = ['/', '/about']
 OPEN_URLS = ['/snex2/tnstargets/']
@@ -304,6 +306,11 @@ DATA_PRODUCT_TYPES = {
 DATA_PROCESSORS = {
     'photometry': 'tom_dataproducts.processors.photometry_processor.PhotometryProcessor',
     'spectroscopy': 'tom_dataproducts.processors.spectroscopy_processor.SpectroscopyProcessor',
+}
+
+TOM_LATEX_PROCESSORS = {
+    'ObservationGroup': 'tom_publications.processors.observation_group_latex_processor.ObservationGroupLatexProcessor',
+    'TargetList': 'tom_publications.processors.target_list_latex_processor.TargetListLatexProcessor'
 }
 
 HINTS_ENABLED = False
