@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'tom_catalogs',
     'tom_observations',
     'tom_dataproducts',
+    'tom_publications',
     'custom_code',
 ]
 

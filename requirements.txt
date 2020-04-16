@@ -1,11 +1,9 @@
 dataclasses
-django==2.2.6
+django
 tomtoolkit
-gunicorn==19.9.0
+gunicorn
 django-heroku
 django-storages
 boto3
-astropy==3.2.3
-astroplan
 requests_oauthlib
 python-magic
