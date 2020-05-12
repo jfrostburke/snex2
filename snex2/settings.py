@@ -66,8 +66,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'tom_common.middleware.Raise403Middleware',
     'tom_common.middleware.ExternalServiceMiddleware',
-     'tom_common.middleware.AuthStrategyMiddleware',
+    'tom_common.middleware.AuthStrategyMiddleware',
 ]
 
 ROOT_URLCONF = 'snex2.urls'
