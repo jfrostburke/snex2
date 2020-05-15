@@ -139,7 +139,8 @@ def lightcurve(target):
     def get_color(filter_name):
         filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
             'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
-            'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF'}
+            'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2', 
+            'UVW1': 'UVW1'}
         colors = {'U': 'rgb(59,0,113)',
             'B': 'rgb(0,87,255)',
             'V': 'rgb(120,255,0)',
@@ -149,6 +150,9 @@ def lightcurve(target):
             'g_ZTF': 'rgb(0,204,255)',
             'r_ZTF': 'rgb(255,124,0)',
             'i_ZTF': 'rgb(144,0,43)',
+            'UVW2': '#FE0683',
+            'UVM2': '#BF01BC',
+            'UVW1': '#8B06FF',
             'other': 'rgb(0,0,0)'}
         try: color = colors[filter_translate[filter_name]]
         except: color = colors['other']
