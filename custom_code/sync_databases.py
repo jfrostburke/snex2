@@ -69,13 +69,22 @@ Spec = load_table('spec', db_address=_SNEX1_DB)
 Targets = load_table('targets', db_address=_SNEX1_DB)
 Target_Names = load_table('targetnames', db_address=_SNEX1_DB)
 Classifications = load_table('classifications', db_address=_SNEX1_DB)
+Groups = load_table('groups', db_address=_SNEX1_DB)
 
 ### And our SNex2 tables
 Datum = load_table('tom_dataproducts_reduceddatum', db_address=_SNEX2_DB)
 Target = load_table('tom_targets_target', db_address=_SNEX2_DB)
 Target_Extra = load_table('tom_targets_targetextra', db_address=_SNEX2_DB)
 Targetname = load_table('tom_targets_targetname', db_address=_SNEX2_DB)
+Auth_Group = load_table('auth_group', db_address=_SNEX2_DB)
+Group_Perm = load_table('guardian_groupobjectpermission', db_address=_SNEX2_DB)
 
+### Make a dictionary of the groups in the SNex1 db
+with get_session(db_address=_SNEX1_DB) as db_session:
+    snex1_groups = {}
+    for x in db_session.query(groups):
+        snex1_groups[x.name] = x.idcode
+    
 
 def query_db_changes(table, action, db_address=_SNEX1_DB):
     """
@@ -124,6 +133,35 @@ def delete_row(table, id_, db_address=_SNEX1_DB):
         db_session.query(table).filter(criteria).delete()
         db_session.commit()
 
+def update_permissions(groupid, permissionid, objectid, contentid):
+    """
+    Updates permissions of a specific group for a certain target
+    or reduceddatum
+
+    Parameters
+    ----------
+    groupid: int, corresponding to which groups in SNex1 have permissions for this object
+    permissionid: int, the permission id in the SNex2 db for this permission
+    objectid: int, the row id of the object
+    contentid: int, the content id in the SNex2 db for this object
+    """
+    def powers_of_two(num):
+        powers = []
+        i = 1
+        while i <= num:
+            if i & num:
+                powers.append(i)
+            i <<= 1
+        return powers
+    target_groups = powers_of_two(groupid)
+    
+    for g_name, g_id in snex1_groups.items():
+        if g_id in target_groups:
+            with get_session(db_address=_SNEX2_DB) as db_session:
+                snex2_groupid = db_session.query(Auth_Group).filter(auth_group.name==g_name).first().id
+                update_permission = db_session.add(Group_Perm(object_pk=str(objectid), content_type_id=contentid, group_id = snex2_groupid, permission_id = permissionid))
+                db_session.commit()
+
 
 def update_phot(action, db_address=_SNEX2_DB):
     """
@@ -136,26 +174,33 @@ def update_phot(action, db_address=_SNEX2_DB):
     """
     phot_result = query_db_changes('photlco', action, db_address=_SNEX1_DB)
     for result in phot_result:
-        id_ = result.rowid # The ID of the row in the photlco table
-        phot_row = get_current_row(Photlco, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the photlco table
+        try:
+            id_ = result.rowid # The ID of the row in the photlco table
+            phot_row = get_current_row(Photlco, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the photlco table
         
-        targetid = phot_row.targetid
-        time = '{} {}'.format(phot_row.dateobs, phot_row.ut) 
-        phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filt, 'error': float(phot_row.dmag)})
+            targetid = phot_row.targetid
+            time = '{} {}'.format(phot_row.dateobs, phot_row.ut) 
+            phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filt, 'error': float(phot_row.dmag)})
+            phot_groupid = phot_row.groupidcode
 
-        with get_session(db_address=db_address) as db_session:
-            criteria = getattr(Datum, 'id') == id_
-            if action=='update':
-                db_session.query(Datum).filter(criteria).update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
+            with get_session(db_address=db_address) as db_session:
+                criteria = and_(Datum.data_type=='photometry', Datum.timestamp==time)
+                if action=='update':
+                    db_session.query(Datum).filter(criteria).update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
             
-            elif action=='insert':
-                db_session.add(Datum(target_id=targetid, timestamp=time, value=phot, data_type='photometry', source_name='', source_location=''))
-            
-            elif action=='delete':
-                db_session.query(Datum).filter(criteria).delete()
+                elif action=='insert':
+                    db_session.add(Datum(target_id=targetid, timestamp=time, value=phot, data_type='photometry', source_name='', source_location=''))
+                    if phot_groupid is int:
+                        update_permissions(phot_groupid, 77, id_, 19) #View reduceddatum
 
-            db_session.commit()
-        delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
+                elif action=='delete':
+                    db_session.query(Datum).filter(criteria).delete()
+
+                db_session.commit()
+            delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
+
+        except:
+            continue
 
 
 def read_spec(filename):
@@ -183,26 +228,33 @@ def update_spec(action, db_address=_SNEX2_DB):
     """
     spec_result = query_db_changes('spec', action, db_address=_SNEX1_DB)
     for result in spec_result:
-        id_ = result.rowid # The ID of the row in the spec table
-        spec_row = get_current_row(Spec, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the spec table
+        try:
+            id_ = result.rowid # The ID of the row in the spec table
+            spec_row = get_current_row(Spec, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the spec table
 
-        targetid = spec_row.targetid
-        time = '{} {}'.format(spec_row.dateobs, spec_row.ut) 
-        spec = read_spec(spec_row.filepath + spec_row.filename.replace('.fits', '.ascii'))
+            targetid = spec_row.targetid
+            time = '{} {}'.format(spec_row.dateobs, spec_row.ut) 
+            spec = read_spec(spec_row.filepath + spec_row.filename.replace('.fits', '.ascii'))
+            spec_groupid = spec_row.groupidcode
 
-        with get_session(db_address=db_address) as db_session:
-            criteria = getattr(Datum, 'id') == id_
-            if action=='update':
-                db_session.query(Datum).filter(criteria).update({'target_id': targetid, 'timestamp': time, 'value': spec, 'data_type': 'spectroscopy', 'source_name': '', 'source_location': ''})
+            with get_session(db_address=db_address) as db_session:
+                criteria = and_(Datum.data_type=='spectroscopy', Datum.timestamp==time)
+                if action=='update':
+                    db_session.query(Datum).filter(criteria).update({'target_id': targetid, 'timestamp': time, 'value': spec, 'data_type': 'spectroscopy', 'source_name': '', 'source_location': ''})
 
-            elif action=='insert':
-                db_session.add(Datum(target_id=targetid, timestamp=time, value=spec, data_type='spectroscopy', source_name='', source_location=''))
+                elif action=='insert':
+                    db_session.add(Datum(target_id=targetid, timestamp=time, value=spec, data_type='spectroscopy', source_name='', source_location=''))
+                    if spec_groupid is int:
+                        update_permissions(spec_groupid, 77, id_, 19) #View reduceddatum
 
-            elif action=='delete':
-                db_session.query(Datum).filter(criteria).delete()
+                elif action=='delete':
+                    db_session.query(Datum).filter(criteria).delete()
 
-            db_session.commit()
-        delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
+                db_session.commit()
+            delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
+
+        except:
+            continue
 
 
 def update_target(action, db_address=_SNEX2_DB):
@@ -218,49 +270,68 @@ def update_target(action, db_address=_SNEX2_DB):
     name_result = query_db_changes('targetnames', action, db_address=_SNEX1_DB)
 
     for tresult in target_result:
-        target_id = tresult.rowid # The ID of the row in the targets table
-        target_row = get_current_row(Targets, target_id, db_address=_SNEX1_DB) # The row corresponding the target_id in the targets table
+        try:
+            target_id = tresult.rowid # The ID of the row in the targets table
+            target_row = get_current_row(Targets, target_id, db_address=_SNEX1_DB) # The row corresponding to target_id in the targets table
 
-        t_ra = target_row.ra0
-        t_dec = target_row.dec0
-        t_modified = target_row.lastmodified
-        t_created = target_row.datecreated
+            t_ra = target_row.ra0
+            t_dec = target_row.dec0
+            t_modified = target_row.lastmodified
+            t_created = target_row.datecreated
+            t_groupid = target_row.groupidcode
 
-        with get_session(db_address=db_address) as db_session:
-            criteria = getattr(Target, 'id') == target_id
-            if action=='update':
-                db_session.query(Target).filter(criteria).update({'ra': ra, 'dec': dec, 'modified': modified, 'created': created, 'type': 'SIDEREAL', 'epoch': 2000, 'scheme': ''})
+            ### Get the name of the target
+            with get_session(db_address=_SNEX1_DB) as db_session:
+                name_query = db_session.query(Target_Names).filter(Target_Names.targetid==target_row.id).first()
+                t_name = name_query.name
+                db_session.commit()
 
-            elif action=='insert':
-                db_session.add(Target(ra=t_ra, dec=t_dec, modified=t_modified, created=t_created, type='SIDEREAL', epoch=2000, scheme=''))
+            with get_session(db_address=db_address) as db_session:
+                criteria = getattr(Target, 'id') == target_id
+                if action=='update':
+                    db_session.query(Target).filter(criteria).update({'ra': t_ra, 'dec': t_dec, 'modified': t_modified, 'created': t_created, 'type': 'SIDEREAL', 'epoch': 2000, 'scheme': ''})
 
-            elif action=='delete':
-                db_session.query(Target).filter(criteria).delete()
+                elif action=='insert':
+                    db_session.add(Target(name=t_name, ra=t_ra, dec=t_dec, modified=t_modified, created=t_created, type='SIDEREAL', epoch=2000, scheme=''))
+                    update_permissions(t_groupid, 47, target_id, 12) #Change target
+                    update_permissions(t_groupid, 48, target_id, 12) #Delete target
+                    update_permissions(t_groupid, 49, target_id, 12) #View target
 
-            db_session.commit()
-        delete_row(Db_Changes, tresult.id, db_address=_SNEX1_DB)
+                elif action=='delete':
+                    db_session.query(Target).filter(criteria).delete()
+
+                db_session.commit()
+            delete_row(Db_Changes, tresult.id, db_address=_SNEX1_DB)
+
+        except:
+            continue
 
     for nresult in name_result:
-        name_id = nresult.rowid # The ID of the row in the targetnames table
-        name_row = get_current_row(Target_Names, name_id, db_address=_SNEX1_DB) # The row corresponding to name_id in the targetnames table
+        try:
+            name_id = nresult.rowid # The ID of the row in the targetnames table
+            name_row = get_current_row(Target_Names, name_id, db_address=_SNEX1_DB) # The row corresponding to name_id in the targetnames table
 
-        n_id = name_row.targetid
-        t_name = name_row.name
+            n_id = name_row.targetid
+            t_name = name_row.name
 
-        with get_session(db_address=db_address) as db_session:
-            targetname_criteria = Targetname.target_id == n_id # Update the row in the targetname table that has the same targetid as the targetid in the targetnames table
-            if action=='update':
-                db_session.query(Target).filter(target_criteria).update({'name': name})
-                db_session.query(Targetname).filter(targetname_criteria).update({'name': name})
+            with get_session(db_address=db_address) as db_session:
+                targetname_criteria = and_(Targetname.name==t_name, Targetname.target_id==n_id)
+                #targetname_criteria = Targetname.target_id == n_id # Update the row in the targetname table that has the same targetid as the targetid in the targetnames table
+                if action=='update':
+                    db_session.query(Target).filter(Target.id==n_id).update({'name': t_name})
+                    db_session.query(Targetname).filter(targetname_criteria).update({'name': t_name})
 
-            elif action=='insert':
-                db_session.add(Targetname(name=t_name, target_id=n_id, created=datetime.datetime.utcnow(), modified=datetime.datetime.utcnow()))
+                elif action=='insert':
+                    db_session.add(Targetname(name=t_name, target_id=n_id, created=datetime.datetime.utcnow(), modified=datetime.datetime.utcnow()))
 
-            elif action=='delete':
-                db_session.query(Targetname).filter(targetname_criteria).delete()
+                elif action=='delete':
+                    db_session.query(Targetname).filter(targetname_criteria).delete()
 
-            db_session.commit()
-        delete_row(Db_Changes, nresult.id, db_address=_SNEX1_DB)
+                db_session.commit()
+            delete_row(Db_Changes, nresult.id, db_address=_SNEX1_DB)
+        
+        except:
+            continue
 
 
 def update_target_extra(action, db_address=_SNEX2_DB):
@@ -275,31 +346,35 @@ def update_target_extra(action, db_address=_SNEX2_DB):
     target_result = query_db_changes('targets', action, db_address=_SNEX1_DB)
 
     for tresult in target_result:
-        target_id = tresult.rowid # The ID of the row in the targets table
-        target_row = get_current_row(Targets, target_id, db_address=_SNEX1_DB) # The row corresponding to target_id in the targets table
+        try:
+            target_id = tresult.rowid # The ID of the row in the targets table
+            target_row = get_current_row(Targets, target_id, db_address=_SNEX1_DB) # The row corresponding to target_id in the targets table
 
-        t_id = target_row.id
-        value = target_row.redshift
-        class_id = target_row.classificationid
-        class_name = get_current_row(Classifications, class_id, db_address=_SNEX1_DB).name # Get the classification from the classifications table based on the classification id in the targets table (wtf)
+            t_id = target_row.id
+            value = target_row.redshift
+            class_id = target_row.classificationid
+            class_name = get_current_row(Classifications, class_id, db_address=_SNEX1_DB).name # Get the classification from the classifications table based on the classification id in the targets table (wtf)
 
-        with get_session(db_address=db_address) as db_session:
-            z_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='redshift') # Criteria for updating the redshift info in the targetextra table
-            c_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='classification') # Criteria for updating the classification info in the targetextra table
-            if action=='update':
-                db_session.query(Target_Extra).filter(z_criteria).update({'value': str(value), 'float_value': float(value)})
-                db_session.query(Target_Extra).filter(c_criteria).update({'value': class_name})
+            with get_session(db_address=db_address) as db_session:
+                z_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='redshift') # Criteria for updating the redshift info in the targetextra table
+                c_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='classification') # Criteria for updating the classification info in the targetextra table
+                if action=='update':
+                    db_session.query(Target_Extra).filter(z_criteria).update({'value': str(value), 'float_value': float(value)})
+                    db_session.query(Target_Extra).filter(c_criteria).update({'value': class_name})
 
-            elif action=='insert':
-                db_session.add(Target_Extra(target_id=t_id, key='redshift', value=str(value), float_value=float(value)))
-                db_session.add(Target_Extra(target_id=t_id, key='classification', value=class_name))
+                elif action=='insert':
+                    db_session.add(Target_Extra(target_id=t_id, key='redshift', value=str(value), float_value=float(value)))
+                    db_session.add(Target_Extra(target_id=t_id, key='classification', value=class_name))
 
-            elif action=='delete':
-                db_session.query(Target_Extra).filter(z_criteria).delete()
-                db_session.query(Target_Extra).filter(c_criteria).delete()
+                elif action=='delete':
+                    db_session.query(Target_Extra).filter(z_criteria).delete()
+                    db_session.query(Target_Extra).filter(c_criteria).delete()
 
-            db_session.commit()
-        delete_row(Db_Changes, tresult.id, db_address=_SNEX1_DB)
+                db_session.commit()
+            delete_row(Db_Changes, tresult.id, db_address=_SNEX1_DB)
+
+        except:
+            continue
 
 
 def migrate_data():
@@ -308,12 +383,9 @@ def migrate_data():
     and afterwards deletes all the rows in the db_changes table
     """
     actions = ['update', 'insert', 'delete']
-    try:
-        for action in actions:
-            update_phot(action, db_address=_SNEX2_DB)
-            update_spec(action, db_address=_SNEX2_DB)
-            update_target(action, db_address=_SNEX2_DB)
-            update_target_extra(action, db_address=_SNEX2_DB)
+    for action in actions:
+        update_phot(action, db_address=_SNEX2_DB)
+        update_spec(action, db_address=_SNEX2_DB)
+        update_target(action, db_address=_SNEX2_DB)
+        update_target_extra(action, db_address=_SNEX2_DB)
 
-    except:
-        raise

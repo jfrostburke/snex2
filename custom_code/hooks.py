@@ -141,7 +141,7 @@ def targetextra_post_save(targetextra, created):
         if targetextra.key == 'classification': # Update the classification in the targets table in the SNex 1 db
             targetid = targetextra.target_id # Get the targetid of our saved entry
             classification = targetextra.value # Get the new classification
-            classificationid = db_session.query(Classifications).filter(Classifications.name==classification).id # Get the corresponding id from the classifications table
+            classificationid = db_session.query(Classifications).filter(Classifications.name==classification).first().id # Get the corresponding id from the classifications table
             db_session.query(Targets).filter(Targets.id==targetid).update({'classificationid': classificationid}) # Update the classificationid in the targets table
 
         elif targetextra.key == 'redshift': # Now update the targets table with the redshift info
