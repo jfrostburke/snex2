@@ -13,9 +13,36 @@ from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
 from contextlib import contextmanager
-from custom_code.views import get_session, load_table, query_most_recent
 
 logger = logging.getLogger(__name__)
+
+@contextmanager
+def _get_session(db_address):
+    Base = automap_base()
+    engine = create_engine(db_address, poolclass=pool.NullPool)
+    Base.metadata.bind = engine
+
+    db_session = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+    session = db_session()
+
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def _load_table(tablename, db_address):
+    Base = automap_base()
+    engine = create_engine(db_address, poolclass=pool.NullPool)
+    Base.prepare(engine, reflect=True)
+
+    table = getattr(Base.classes, tablename)
+    return(table)
+ 
 
 def target_post_save(target, created):
   def get(objectId):
@@ -117,9 +144,9 @@ def target_post_save(target, created):
   ### ----------------------------------
     _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
 
-    with get_session(db_address=_snex1_address) as db_session:
-        Targets = load_table('targets', db_address=_snex1_address)
-        Targetnames = load_table('targetnames', db_address=_snex1_address)
+    with _get_session(db_address=_snex1_address) as db_session:
+        Targets = _load_table('targets', db_address=_snex1_address)
+        Targetnames = _load_table('targetnames', db_address=_snex1_address)
         if created == True: 
             # Insert into SNex 1 db
             db_session.add(Targets('ra0'=target.ra, 'dec0'=target.dec, 'lastmodified'=target.modified, 'datecreated'=target.created))
@@ -134,9 +161,9 @@ def targetextra_post_save(targetextra, created):
     logger.info('targetextra post save hook: %s created: %s', targetextra, created)
     _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
 
-    with get_session(db_address=_snex1_address) as db_session:
-        Targets = load_table('targets', db_address=_snex1_address)
-        Classifications = load_table('classifications', db_address=_snex1_address)
+    with _get_session(db_address=_snex1_address) as db_session:
+        Targets = _load_table('targets', db_address=_snex1_address)
+        Classifications = _load_table('classifications', db_address=_snex1_address)
 
         if targetextra.key == 'classification': # Update the classification in the targets table in the SNex 1 db
             targetid = targetextra.target_id # Get the targetid of our saved entry

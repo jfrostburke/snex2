@@ -68,33 +68,3 @@ class TNSTargets(FilterView):
             target.mag_recent = make_magrecent(target.all_phot, jd_now)
             target.link = TNS_URL + target.name
         return context
-
-@contextmanager
-def get_session(db_address):
-    Base = automap_base()
-    engine = create_engine(db_address, poolclass=pool.NullPool)
-    Base.metadata.bind = engine
-
-    db_session = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False) 
-    session = db_session()
-
-    try:
-        yield session
-        session.commit()
-    except:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-def load_table(tablename, db_address):
-    Base = automap_base()
-    engine = create_engine(db_address, poolclass=pool.NullPool)
-    Base.prepare(engine, reflect=True)
-
-    table = getattr(Base.classes, tablename)
-    return(table)
-
-def query_most_recent(db_session, table, criteria):
-    record = db_session.query(table).filter(criteria).order_by(table.id.desc()).all()
-    return(record)
