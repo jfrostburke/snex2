@@ -7,3 +7,4 @@ django-storages
 boto3
 requests_oauthlib
 python-magic
+sqlalchemy
