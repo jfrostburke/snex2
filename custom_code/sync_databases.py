@@ -191,7 +191,7 @@ def update_phot(action, db_address=_SNEX2_DB):
             else:
                 phot = json.dumps({})
 
-            phot_groupid = int(phot_row.groupidcode)
+            phot_groupid = phot_row.groupidcode
 
             if phot_row.filetype == 1:
                 with get_session(db_address=db_address) as db_session:
@@ -248,24 +248,28 @@ def update_spec(action, db_address=_SNEX2_DB):
             targetid = spec_row.targetid
             time = '{} {}'.format(spec_row.dateobs, spec_row.ut) 
             spec = read_spec(spec_row.filepath + spec_row.filename.replace('.fits', '.ascii'))
-            spec_groupid = int(spec_row.groupidcode)
+            spec_groupid = spec_row.groupidcode
 
-            with get_session(db_address=db_address) as db_session:
-                criteria = and_(Datum.data_type=='spectroscopy', Datum.timestamp==time)
-                if action=='update':
-                    db_session.query(Datum).filter(criteria).update({'target_id': targetid, 'timestamp': time, 'value': spec, 'data_type': 'spectroscopy', 'source_name': '', 'source_location': ''})
+            with get_session(db_address=_SNEX1_DB) as db_session:
+                standard_list = db_session.query(Targets).filter(Targets.classificationid==1)
+                standard_ids = [x.id for x in standard_list]
+            if targetid not in standard_ids:
+                with get_session(db_address=db_address) as db_session:
+                    criteria = and_(Datum.data_type=='spectroscopy', Datum.timestamp==time)
+                    if action=='update':
+                        db_session.query(Datum).filter(criteria).update({'target_id': targetid, 'timestamp': time, 'value': spec, 'data_type': 'spectroscopy', 'source_name': '', 'source_location': ''})
 
-                elif action=='insert':
-                    newspec = Datum(target_id=targetid, timestamp=time, value=spec, data_type='spectroscopy', source_name='', source_location='')
-                    db_session.add(newspec)
-                    db_session.flush()
-                    if spec_groupid is not None:
-                        update_permissions(int(spec_groupid), 77, newspec.id, 19) #View reduceddatum
+                    elif action=='insert':
+                        newspec = Datum(target_id=targetid, timestamp=time, value=spec, data_type='spectroscopy', source_name='', source_location='')
+                        db_session.add(newspec)
+                        db_session.flush()
+                        if spec_groupid is not None:
+                            update_permissions(int(spec_groupid), 77, newspec.id, 19) #View reduceddatum
 
-                elif action=='delete':
-                    db_session.query(Datum).filter(criteria).delete()
+                    elif action=='delete':
+                        db_session.query(Datum).filter(criteria).delete()
 
-                db_session.commit()
+                    db_session.commit()
             delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
 
         except:
