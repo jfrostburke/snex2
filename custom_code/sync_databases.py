@@ -193,7 +193,10 @@ def update_phot(action, db_address=_SNEX2_DB):
 
             phot_groupid = phot_row.groupidcode
 
-            if phot_row.filetype == 1:
+            with get_session(db_address=_SNEX1_DB) as db_session:
+                standard_list = db_session.query(Targets).filter(Targets.classificationid==1)
+                standard_ids = [x.id for x in standard_list]
+            if targetid not in standard_ids and int(phot_row.filetype) == 1:
                 with get_session(db_address=db_address) as db_session:
                     criteria = and_(Datum.data_type=='photometry', Datum.timestamp==time)
                     if action=='update':
@@ -371,23 +374,32 @@ def update_target_extra(action, db_address=_SNEX2_DB):
 
             t_id = target_row.id
             value = target_row.redshift
+            if value is not None:
+                with get_session(db_address=db_address) as db_session:
+                    z_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='redshift') # Criteria for updating the redshift info in the targetextra table
+                    
+                    if action=='update':
+                        db_session.query(Target_Extra).filter(z_criteria).update({'value': str(value), 'float_value': float(value)})
+                    
+                    elif action=='insert':
+                        db_session.add(Target_Extra(target_id=t_id, key='redshift', value=str(value), float_value=float(value)))
+                    
+                    elif action=='delete':
+                        db_session.query(Target_Extra).filter(z_criteria).delete()
+            
             class_id = target_row.classificationid
-            class_name = get_current_row(Classifications, class_id, db_address=_SNEX1_DB).name # Get the classification from the classifications table based on the classification id in the targets table (wtf)
+            if class_id is not None:
+                class_name = get_current_row(Classifications, class_id, db_address=_SNEX1_DB).name # Get the classification from the classifications table based on the classification id in the targets table (wtf)
+                with get_session(db_address=db_address) as db_session:
+                    c_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='classification') # Criteria for updating the classification info in the targetextra table
+                    if action=='update':
+                        db_session.query(Target_Extra).filter(c_criteria).update({'value': class_name})
 
-            with get_session(db_address=db_address) as db_session:
-                z_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='redshift') # Criteria for updating the redshift info in the targetextra table
-                c_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='classification') # Criteria for updating the classification info in the targetextra table
-                if action=='update':
-                    db_session.query(Target_Extra).filter(z_criteria).update({'value': str(value), 'float_value': float(value)})
-                    db_session.query(Target_Extra).filter(c_criteria).update({'value': class_name})
+                    elif action=='insert':
+                        db_session.add(Target_Extra(target_id=t_id, key='classification', value=class_name))
 
-                elif action=='insert':
-                    db_session.add(Target_Extra(target_id=t_id, key='redshift', value=str(value), float_value=float(value)))
-                    db_session.add(Target_Extra(target_id=t_id, key='classification', value=class_name))
-
-                elif action=='delete':
-                    db_session.query(Target_Extra).filter(z_criteria).delete()
-                    db_session.query(Target_Extra).filter(c_criteria).delete()
+                    elif action=='delete':
+                        db_session.query(Target_Extra).filter(c_criteria).delete()
 
                 db_session.commit()
             delete_row(Db_Changes, tresult.id, db_address=_SNEX1_DB)
@@ -401,7 +413,7 @@ def migrate_data():
     Migrates all changes from the SNex1 db to the SNex2 db,
     and afterwards deletes all the rows in the db_changes table
     """
-    actions = ['insert', 'update', 'delete']
+    actions = ['insert', 'update']#, 'delete']
     for action in actions:
         update_target(action, db_address=_SNEX2_DB)
         update_target_extra(action, db_address=_SNEX2_DB)
