@@ -8,9 +8,9 @@ from django.core.cache import cache
 from astropy import units as u
 import datetime
 
-from tom_observations.facility import GenericObservationForm
+from tom_observations.facility import BaseObservationForm
 from tom_common.exceptions import ImproperCredentialsException
-from tom_observations.facility import GenericObservationFacility, get_service_class
+from tom_observations.facility import BaseRoboticObservationFacility, get_service_class
 from tom_targets.models import Target
 
 # Determine settings for this module.
@@ -145,7 +145,7 @@ def proposal_choices():
     return choices
 
 
-class LCOObservationForm(GenericObservationForm):
+class LCOObservationForm(BaseObservationForm):
     #group_id = forms.CharField()
     #proposal = forms.ChoiceField(choices=_proposal_choices,initial='KEY2017AB-001')
     proposal = forms.ChoiceField(choices=proposal_choices(),initial='KEY2017AB-001')
@@ -224,7 +224,8 @@ class LCOObservationForm(GenericObservationForm):
                     css_class='col'
                 ),
                 css_class='form-row'
-            )
+            ),
+            self.button_layout()
         )
     """
     def layout(self):
@@ -373,7 +374,7 @@ class LCOObservationForm(GenericObservationForm):
         }
 
 
-class LCOFacility(GenericObservationFacility):
+class LCOFacility(BaseRoboticObservationFacility):
     name = 'LCO'
     form = LCOObservationForm
     observation_types = [('IMAGING', 'Imaging')]

@@ -9,8 +9,8 @@ from dateutil.parser import parse
 from crispy_forms.layout import Layout, Div, HTML
 from crispy_forms.bootstrap import PrependedAppendedText, PrependedText, InlineRadios
 
-from tom_observations.facility import GenericObservationForm
-from tom_observations.facility import GenericObservationFacility
+from tom_observations.facility import BaseObservationForm
+from tom_observations.facility import BaseRoboticObservationFacility
 from tom_targets.models import Target
 
 from tom_observations.facilities import gemini
@@ -37,7 +37,7 @@ def get_site_code_from_program(program_id):
     return program_id.split('-')[0]
 
 
-class OpticalImagingForm(GenericObservationForm):
+class OpticalImagingForm(BaseObservationForm):
 
     window_size = forms.FloatField(initial=1.0, min_value=0.0, label='')
     max_airmass = forms.FloatField(min_value=1.0, max_value=5.0, initial=1.6, label='')
@@ -95,7 +95,8 @@ class OpticalImagingForm(GenericObservationForm):
                     ), css_class='col-md-8'
                 ), css_class='row justify-content-md-center'
               )
-            )
+            ),
+            self.button_layout()
         )
 
     def is_valid(self):
@@ -159,7 +160,7 @@ class OpticalImagingForm(GenericObservationForm):
         return payloads
 
 
-class OpticalSpectraForm(GenericObservationForm):
+class OpticalSpectraForm(BaseObservationForm):
 
     north_south_choice = (
         ('north', 'North'),
@@ -265,7 +266,8 @@ class OpticalSpectraForm(GenericObservationForm):
                         ),
                         ), css_class='col-md-8'
                 ), css_class='row justify-content-md-center'
-            )
+            ),
+            self.button_layout()
         )
 
     def is_valid(self):
@@ -399,7 +401,7 @@ class OpticalSpectraForm(GenericObservationForm):
         return payloads
 
 
-class GeminiFacility(GenericObservationFacility):
+class GeminiFacility(BaseRoboticObservationFacility):
     name = 'Gemini'
     observation_types = [
         ('IMAGING_OPTICAL', 'Optical Imaging'),
