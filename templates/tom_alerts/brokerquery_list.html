@@ -1,0 +1,57 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 static %}
+{% block title %}Query List{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Query a Broker</h3>
+  </div>
+</nav>
+<h3 style="text-align:center;">Create a new query using
+  <p> 
+    {% for broker in installed_brokers %}
+    <a href="{% url 'tom_alerts:create' %}?broker={{ broker }}" title="{{ broker }}" class="btn btn-outline-primary">{{ broker }}</a>
+    {% endfor %}
+  </p>
+</h3>
+<div class="row">
+  <div class="col-md-10">
+    <table class="table table-striped">
+      <thead><tr><th>Name</th><th>Broker</th><th>Created</th><th>Last Run</th><th>Run</th><th>Delete</th></tr></thead>
+      <tbody>
+        {% for query in filter.qs %}
+        <tr>
+          <td><a href="{% url 'tom_alerts:update' query.id %}" title="Update {{ query.name }}">{{ query.name }}</a></td>
+          <td>{{ query.broker }}</td>
+          <td>{{ query.created }}</td>
+          <td>{{ query.last_run }}</td>
+          <td><a href="{% url 'tom_alerts:run' query.id %}" title="Run query" class="btn btn-primary">Run</a></td>
+          <td><a href="{% url 'tom_alerts:delete' query.id %}" title="Delete query" class="btn btn-danger">Delete</a></td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5">
+            No saved queries yet, Try creating a query from one of the alert brokers listed above.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="col-md-2">
+    <h4>Filter Saved Queries</h4>
+    <form action="" method="get" class="form">
+      {% bootstrap_form filter.form %}
+      {% buttons %}
+        <button type="submit" class="btn btn-primary">
+          Filter
+        </button>
+        <a href="{% url 'tom_alerts:list' %}" class="btn btn-secondary" title="Reset">Reset</a>
+      {% endbuttons %}
+    </form>
+  </div
+</div-->
+{% endblock %}

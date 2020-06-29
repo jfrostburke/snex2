@@ -1,32 +1,31 @@
 {% extends 'tom_common/base.html' %}
-{% load static targets_extras tom_common_extras %}
+{% load static targets_extras observation_extras dataproduct_extras tom_common_extras bootstrap4 %}
 {% block title %}Home{% endblock %}
 {% block additional_css %}
-<link rel="stylesheet" href="{% static 'tom_common/css/main.css' %}">
+<link rel="stylesheet" href="{% static 'tom_common/css/snex.css' %}">
 {% endblock %}
 {% block content %}
 <div class="row">
   <div class="col-md-8">
-    <h2 class="text-center">SNEx 2.0</h2>
-    <!--<p class="text-center"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Supernova_in_M101_2011-08-25.jpg/546px-Supernova_in_M101_2011-08-25.jpg" class="img-fluid mx-auto"></p>-->
-    <p class="text-center"><img src="{% static 'img/SN2011fe_BJFulton.png' %}" class="img-fluid max-auto"></p>
-    <p class="text-center">(Image courtesy of BJ Fulton.)</p>
-    <p class="text-center"; style="font-size:16px">
-    Welcome to SNEx 2.0, an updated version of the 
-    <a href="https://supernova.exchange">Supernova Exchange</a>
-    built using the 
-    <a href="https://tomtoolkit.github.io/">TOM Toolkit</a>.
-    Github 
-    <a href="https://github.com/jfrostburke/snex2">here</a>.
-    To build your own TOM (Target Observation Manager), check out the 
-    <a href="https://tomtoolkit.github.io/docs/getting_started">getting started guide</a>.
-    </p>
-    <p class="text-center"; style="font-size:16px">
-    The Supernova Exchange (2.0) is an interface for viewing and sharing observational
-    data of supernovae, and for requesting and managing observations
-    with the 
-    <a href="https://lco.global/">LCO</a> network.
-    </p>
+    <br>
+    <br>
+    <br>
+    <table border=0 width=100% cellpadding=0 cellspacing=0>
+    <tr><td colspan=2 align=center>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:black">welcome to</span><br><br>
+    </td></tr>
+    <tr><td valign=bottom align=right width=50%>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:600; font-size:48pt; color:#004459; line-height:100%; letter-spacing:-3px;">SN</span>
+    </td><td valign=bottom align=left width=50%>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:600; font-size:48pt; color:#ff9900; line-height:100%; letter-spacing:-3px;">Ex 2.0</span>
+    </td></tr>
+    <tr><td valign=bottom align=right width=50%>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:#004459;">the </span>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:24pt; color:#004459;">Supernova</span>
+    </td><td valign=bottom align=left width=50%>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:24pt; color:#ff9900;">Exchange (2.0)</span>
+    </td></tr>
+    </table>
   </div>
   <div class="col-md-4">
     <div class="card">
