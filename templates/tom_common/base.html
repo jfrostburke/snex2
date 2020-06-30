@@ -8,7 +8,7 @@
 
     <!-- Bootstrap CSS -->
     {% bootstrap_css %}
-    <link rel="stylesheet" href="{% static 'tom_common/css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'tom_common/css/main_snexclone.css' %}">
     {% block additional_css %}
     {% endblock %}
     <link rel="icon" type="image/x-icon" href="{% static 'tom_common/img/favicon-32.ico' %}" sizes="32x32" />
@@ -53,6 +53,9 @@
           </li>
           <li class="nav-item {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
             <a class="nav-link" href="{% url 'user-list' %}">Users</a>
+          </li>
+	  <li class="nav-item {% if request.resolver_match.namespace == 'custom_code' %}active{% endif %}">
+            <a class="nav-link" href="{% url 'custom_code:tns-targets' %}" style="font-family: 'Montserrat', sans-serif;">TNS Targets</a>
           </li>
         </ul>
         <ul class="navbar-nav ml-auto">
