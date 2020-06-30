@@ -7,9 +7,19 @@
 {% block content %}
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
-    <h3>Submit Observation</h3>
+      <ul class="nav mr-auto">
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.name }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.ra|deg_to_sexigesimal:"hms" }} {{ target.dec|deg_to_sexigesimal:"dms" }}<br>{{ target.ra|floatformat:4 }} {{ target.dec|floatformat:4 }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target|target_extra_field:"classification" }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">z = {{ target|target_extra_field:"redshift" }}</a></li>
+      </ul>
   </div>
 </nav>
+<!--nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Submit Observation</h3>
+  </div>
+</nav-->
 <h3>Submit an observation to {{ form.facility.value }}</h3>
 {% if target.type == 'SIDEREAL' %}
 <div class="row">
