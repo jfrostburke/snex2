@@ -8,3 +8,5 @@ boto3
 requests_oauthlib
 python-magic
 sqlalchemy
+dash
+django_plotly_dash

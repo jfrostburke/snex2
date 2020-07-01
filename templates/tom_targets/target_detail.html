@@ -1,6 +1,7 @@
 {% extends 'tom_common/base.html' %}
 {% load comments bootstrap4 tom_common_extras targets_extras observation_extras dataproduct_extras static cache %}
 {% load custom_code_tags %}
+{% load plotly_dash %}
 {% block title %}Target {{ object.name }}{% endblock %}
 {% block additional_css %}
 <link rel="stylesheet" href="{% static 'tom_targets/css/main.css' %}">
@@ -55,7 +56,7 @@
       </div>
       <div class="tab-pane" id="spectra">
         <h4>Spectra</h4>
-        {% spectra_plot target %}
+        {% plotly_app name="spectra" ratio=1.0 initial_arguments=dash_context %}
       </div>
       <div class="tab-pane" id="images">
         <h4>Examine Images</h4>
