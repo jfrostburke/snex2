@@ -36,10 +36,10 @@ def airmass_collapse(target):
         hovermode='closest',
         width=250,
         height=200,
-        showlegend=False
+        showlegend=False,
     )
     visibility_graph = offline.plot(
-        go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False
+            go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False, config={'staticPlot': True}, include_plotlyjs='cdn'
     )
     return {
         'target': target,
@@ -196,6 +196,70 @@ def lightcurve(target):
             'plot': 'No photometry for this target yet.'
         }
 
+
+@register.inclusion_tag('custom_code/lightcurve_collapse.html')
+def lightcurve_collapse(target):
+    def get_color(filter_name):
+        filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
+            'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
+            'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2', 
+            'UVW1': 'UVW1'}
+        colors = {'U': 'rgb(59,0,113)',
+            'B': 'rgb(0,87,255)',
+            'V': 'rgb(120,255,0)',
+            'g': 'rgb(0,204,255)',
+            'r': 'rgb(255,124,0)',
+            'i': 'rgb(144,0,43)',
+            'g_ZTF': 'rgb(0,204,255)',
+            'r_ZTF': 'rgb(255,124,0)',
+            'i_ZTF': 'rgb(144,0,43)',
+            'UVW2': '#FE0683',
+            'UVM2': '#BF01BC',
+            'UVW1': '#8B06FF',
+            'other': 'rgb(0,0,0)'}
+        try: color = colors[filter_translate[filter_name]]
+        except: color = colors['other']
+        return color
+         
+    photometry_data = {}
+    for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
+        value = json.loads(rd.value)
+        photometry_data.setdefault(value.get('filter', ''), {})
+        photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
+        photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
+        photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
+    plot_data = [
+        go.Scatter(
+            x=filter_values['time'],
+            y=filter_values['magnitude'], mode='markers',
+            marker=dict(color=get_color(filter_name)),
+            #name=filter_name,
+            error_y=dict(
+                type='data',
+                array=filter_values['error'],
+                visible=True,
+                color=get_color(filter_name)
+            )
+        ) for filter_name, filter_values in photometry_data.items()]
+    layout = go.Layout(
+        yaxis=dict(autorange='reversed'),
+        margin=dict(l=30, r=10, b=30, t=40),
+        hovermode='closest',
+        height=200,
+        width=250,
+        showlegend=False,
+    )
+    if plot_data:
+        return {
+            'target': target,
+            'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False, config={'staticPlot': True}, include_plotlyjs='cdn')
+        }
+    else:
+        return {
+            'target': target,
+            'plot': 'No photometry for this target yet.'
+        }
+
 @register.inclusion_tag('custom_code/moon.html')
 def moon_vis(target):
 
@@ -287,6 +351,45 @@ def spectra_plot(target, dataproduct=None):
             'plot': 'No spectra for this target yet.'
         }
 
+@register.inclusion_tag('custom_code/spectra_collapse.html')
+def spectra_collapse(target):
+    spectra = []
+    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy')
+    for spectrum in spectral_dataproducts:
+        datum = json.loads(spectrum.value)
+        wavelength = []
+        flux = []
+        for key, value in datum.items():
+            wavelength.append(value['wavelength'])
+            flux.append(float(value['flux']))
+        spectra.append((wavelength, flux))
+    plot_data = [
+        go.Scatter(
+            x=spectrum[0],
+            y=spectrum[1]
+        ) for spectrum in spectra]
+    layout = go.Layout(
+        height=200,
+        width=250,
+        margin=dict(l=30, r=10, b=30, t=40),
+        showlegend=False,
+        yaxis={'visible': False},
+    )
+    if plot_data:
+      return {
+          'target': target,
+          'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False, config={'staticPlot': True}, include_plotlyjs='cdn')
+      }
+    else:
+        return {
+            'target': target,
+            'plot': 'No spectra for this target yet.'
+        }
+
 @register.inclusion_tag('custom_code/aladin_collapse.html')
 def aladin_collapse(target):
     return {'target': target}
+
+@register.filter
+def sort_targets_by_id(object_list):
+    return Target.objects.all().filter(id__in=object_list).order_by('-id')

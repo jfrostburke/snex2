@@ -63,3 +63,4 @@ class TNSTargets(FilterView):
             target.mag_recent = make_magrecent(target.all_phot, jd_now)
             target.link = TNS_URL + target.name
         return context
+
