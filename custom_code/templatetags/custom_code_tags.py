@@ -31,12 +31,14 @@ def airmass_collapse(target):
 
     plot_data = get_24hr_airmass(obj, interval, airmass_limit)
     layout = go.Layout(
-        yaxis=dict(range=[airmass_limit,1.0]),
+        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        yaxis=dict(range=[airmass_limit,1.0],gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         margin=dict(l=20,r=10,b=30,t=40),
         hovermode='closest',
         width=250,
         height=200,
         showlegend=False,
+        plot_bgcolor='white'
     )
     visibility_graph = offline.plot(
             go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False, config={'staticPlot': True}, include_plotlyjs='cdn'
@@ -53,11 +55,13 @@ def airmass_plot(context):
     airmass_limit = 3.0
     plot_data = get_24hr_airmass(context['object'], interval, airmass_limit)
     layout = go.Layout(
-        yaxis=dict(range=[airmass_limit,1.0]),
+        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        yaxis=dict(range=[airmass_limit,1.0],gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         margin=dict(l=20,r=10,b=30,t=40),
         hovermode='closest',
         width=600,
-        height=300
+        height=300,
+        plot_bgcolor='white'
     )
     visibility_graph = offline.plot(
         go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False
@@ -96,6 +100,16 @@ def get_24hr_airmass(target, interval, airmass_limit):
         )
     )
 
+    #Colors to match SNEx1
+    colors = {
+        'Siding Spring': '#3366cc',
+        'Sutherland': '#dc3912',
+        'Teide': '#8c6239',
+        'Cerro Tololo': '#ff9900',
+        'McDonald': '#109618',
+        'Haleakala': '#990099'
+    }
+
     for observing_facility in facility.get_service_classes():
 
         if observing_facility != 'LCO':
@@ -129,7 +143,7 @@ def get_24hr_airmass(target, interval, airmass_limit):
             )
 
             plot_data.append(
-                go.Scatter(x=time_plot, y=obj_airmass, mode='lines', name=label, )
+                go.Scatter(x=time_plot, y=obj_airmass, mode='lines', name=label, marker=dict(color=colors[site]))
             )
 
     return plot_data
@@ -179,9 +193,11 @@ def lightcurve(target):
             )
         ) for filter_name, filter_values in photometry_data.items()]
     layout = go.Layout(
-        yaxis=dict(autorange='reversed'),
+        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         margin=dict(l=30, r=10, b=30, t=40),
-        hovermode='closest'
+        hovermode='closest',
+        plot_bgcolor='white'
         #height=500,
         #width=500
     )
@@ -242,12 +258,14 @@ def lightcurve_collapse(target):
             )
         ) for filter_name, filter_values in photometry_data.items()]
     layout = go.Layout(
-        yaxis=dict(autorange='reversed'),
+        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         margin=dict(l=30, r=10, b=30, t=40),
         hovermode='closest',
         height=200,
         width=250,
         showlegend=False,
+        plot_bgcolor='white'
     )
     if plot_data:
         return {
@@ -333,12 +351,21 @@ def spectra_plot(target, dataproduct=None):
         hovermode='closest',
         xaxis=dict(
             tickformat="d",
-            title='Wavelength (angstroms)'
+            title='Wavelength (angstroms)',
+            gridcolor='#D3D3D3',
+            showline=True,
+            linecolor='#D3D3D3',
+            mirror=True
         ),
         yaxis=dict(
             tickformat=".1eg",
-            title='Flux'
-        )
+            title='Flux',
+            gridcolor='#D3D3D3',
+            showline=True,
+            linecolor='#D3D3D3',
+            mirror=True
+        ),
+        plot_bgcolor='white'
     )
     if plot_data:
       return {
@@ -373,7 +400,20 @@ def spectra_collapse(target):
         width=250,
         margin=dict(l=30, r=10, b=30, t=40),
         showlegend=False,
-        yaxis={'visible': False},
+        xaxis=dict(
+            gridcolor='#D3D3D3',
+            showline=True,
+            linecolor='#D3D3D3',
+            mirror=True
+        ),
+        yaxis=dict(
+            showticklabels=False,
+            gridcolor='#D3D3D3',
+            showline=True,
+            linecolor='#D3D3D3',
+            mirror=True
+        ),
+        plot_bgcolor='white'
     )
     if plot_data:
       return {
