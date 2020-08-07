@@ -3,7 +3,9 @@ from tom_targets.models import Target, TargetList#
 from tom_targets.filters import filter_for_field#
 from django.conf import settings
 import django_filters
-from django.db.models import Q
+from django.db.models import ExpressionWrapper, FloatField, Q
+from math import radians
+from django.db.models.functions.math import ACos, Cos, Radians, Pi, Sin
 from astropy.time import Time
 from datetime import datetime
 from django import forms
@@ -103,16 +105,31 @@ class CustomTargetFilter(django_filters.FilterSet):
             else:
                 return queryset.filter(name=None)
 
-        half_pi = 90
+        ra = float(ra)
+        dec = float(dec)
+
+        double_radius = float(radius) * 2
+        queryset = queryset.filter(ra__gte=ra - double_radius, ra__lte=ra + double_radius,
+                                   dec__gte=dec - double_radius, dec__lte=dec + double_radius)
 
         separation = ExpressionWrapper(
-            ACos(
-                (Cos(half_pi - float(dec)) * Cos(half_pi - F('dec'))) +
-                (Sin(half_pi - float(dec)) * Sin(half_pi - F('dec')) * Cos(float(ra) - F('ra')))
-            ), FloatField()
+            180 * ACos(
+                (Sin(radians(dec)) * Sin(Radians('dec'))) +
+                (Cos(radians(dec)) * Cos(Radians('dec')) * Cos(radians(ra) - Radians('ra')))
+            ) / Pi(), FloatField()
         )
 
         return queryset.annotate(separation=separation).filter(separation__lte=radius)
+#        half_pi = 90
+#
+#        separation = ExpressionWrapper(
+#            ACos(
+#                (Cos(half_pi - float(dec)) * Cos(half_pi - F('dec'))) +
+#                (Sin(half_pi - float(dec)) * Sin(half_pi - F('dec')) * Cos(float(ra) - F('ra')))
+#            ), FloatField()
+#        )
+#
+#        return queryset.annotate(separation=separation).filter(separation__lte=radius)
 
     def filter_target_cone_search(self, queryset, name, value):
         return queryset
