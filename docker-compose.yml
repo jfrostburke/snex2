@@ -30,6 +30,8 @@ services:
             - DB_PORT=5432
             - SNEX2_DB_USER=${SNEX2_DB_USER}
             - SNEX2_DB_PASSWORD=${SNEX2_DB_PASSWORD}
+            - SNEX1_DB_USER=${SNEX1_DB_USER}
+            - SNEX1_DB_PASSWORD=${SNEX1_DB_PASSWORD}
             - SNEX2_DB_BACKEND=postgres
             - LCO_APIKEY=${SNEX2_LCO_APIKEY}
             - SNEXBOT_APIKEY=${SNEX2_SNEXBOT_APIKEY}
