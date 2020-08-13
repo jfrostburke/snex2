@@ -84,17 +84,38 @@ class ReducedDatumExtra(models.Model):
         max_length=100, default='', verbose_name='Data Type', 
         help_text='Type of data (either photometry or spectroscopy)'
     )
-    filetype = models.IntegerField(
-        verbose_name='Filetype', help_text='Filetype of the photometry row in the SNEx1 DB', 
-        blank=True, null=True
+    key = models.CharField(
+        max_length=200, default='', verbose_name='Key',
+        help_text='Keyword for information being stored'
     )
-    ext_upload = models.BooleanField(
-        verbose_name='External Upload', help_text='Is the reduceddatum externally uploaded or not',
-        default=False
+    value = models.TextField(
+        blank=True, default='', verbose_name='Value',
+        help_text='String value of the information being stored'
     )
-    is_swift = models.BooleanField(
-        verbose_name='Is Swift', help_text='Is the reduceddatum a Swift data point', default=False
+    float_value = models.FloatField(
+        null=True, blank=True, verbose_name='Float Value',
+        help_text='Float value of the information being stored, if applicable'
+    )
+    bool_value = models.BooleanField(
+        null=True, blank=True, verbose_name='Boolean Value',
+        help_text='Boolean value of the information being stored, if applicable'
     )
 
     class Meta:
-        get_latest_by = ('timestamp,')
+        get_latest_by = ('id,')
+        unique_together = ['target', 'key']
+
+    def __str__(self):
+        return f'{self.key}: {self.value}'
+
+    def save(self, *args, **kwargs):
+        try:
+            self.float_value = float(self.value)
+        except (TypeError, ValueError, OverflowError):
+            self.float_value = None
+        try:
+            self.bool_value = bool(self.value)
+        except (TypeError, ValueError, OverflowError):
+            self.bool_value = None
+
+        super().save(*args, **kwargs)
