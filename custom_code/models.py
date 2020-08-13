@@ -1,4 +1,5 @@
 from django.db import models
+from tom_dataproducts.models import ReducedDatum
 
 # Create your models here.
 
@@ -69,3 +70,52 @@ class TNSTarget(models.Model):
     class Meta:
         ordering = ('-id',)
         get_latest_by = ('-name',)
+
+
+class ReducedDatumExtra(models.Model):
+    
+    snex_id = models.IntegerField(
+        verbose_name='SNEx1 ID', help_text='ID of the reduceddatum row in the SNEx1 DB'
+    )
+    reduced_datum = models.ForeignKey(
+        ReducedDatum, on_delete=models.CASCADE
+    )
+    data_type = models.CharField(
+        max_length=100, default='', verbose_name='Data Type', 
+        help_text='Type of data (either photometry or spectroscopy)'
+    )
+    key = models.CharField(
+        max_length=200, default='', verbose_name='Key',
+        help_text='Keyword for information being stored'
+    )
+    value = models.TextField(
+        blank=True, default='', verbose_name='Value',
+        help_text='String value of the information being stored'
+    )
+    float_value = models.FloatField(
+        null=True, blank=True, verbose_name='Float Value',
+        help_text='Float value of the information being stored, if applicable'
+    )
+    bool_value = models.BooleanField(
+        null=True, blank=True, verbose_name='Boolean Value',
+        help_text='Boolean value of the information being stored, if applicable'
+    )
+
+    class Meta:
+        get_latest_by = ('id,')
+        unique_together = ['target', 'key']
+
+    def __str__(self):
+        return f'{self.key}: {self.value}'
+
+    def save(self, *args, **kwargs):
+        try:
+            self.float_value = float(self.value)
+        except (TypeError, ValueError, OverflowError):
+            self.float_value = None
+        try:
+            self.bool_value = bool(self.value)
+        except (TypeError, ValueError, OverflowError):
+            self.bool_value = None
+
+        super().save(*args, **kwargs)
