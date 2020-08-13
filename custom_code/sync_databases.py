@@ -83,6 +83,7 @@ Target_Extra = load_table('tom_targets_targetextra', db_address=_SNEX2_DB)
 Targetname = load_table('tom_targets_targetname', db_address=_SNEX2_DB)
 Auth_Group = load_table('auth_group', db_address=_SNEX2_DB)
 Group_Perm = load_table('guardian_groupobjectpermission', db_address=_SNEX2_DB)
+Datum_Extra = load_table('custom_code_reduceddatumextra', db_address=_SNEX2_DB)
 
 ### Make a dictionary of the groups in the SNex1 db
 with get_session(db_address=_SNEX1_DB) as db_session:
@@ -182,37 +183,49 @@ def update_phot(action, db_address=_SNEX2_DB):
     for result in phot_result:
         try:
             id_ = result.rowid # The ID of the row in the photlco table
-            phot_row = get_current_row(Photlco, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the photlco table
-            
-            targetid = phot_row.targetid
-            time = '{} {}'.format(phot_row.dateobs, phot_row.ut) 
-            if int(phot_row.mag) != 9999:
-                phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag)})
-            else:
-                phot = json.dumps({})
 
-            phot_groupid = phot_row.groupidcode
-
-            with get_session(db_address=_SNEX1_DB) as db_session:
-                standard_list = db_session.query(Targets).filter(Targets.classificationid==1)
-                standard_ids = [x.id for x in standard_list]
-            if targetid not in standard_ids and int(phot_row.filetype) == 1:
+            if action=='delete':
+                #Look up the dataproductid from the datum_extra table
                 with get_session(db_address=db_address) as db_session:
-                    criteria = and_(Datum.data_type=='photometry', Datum.timestamp==time)
-                    if action=='update':
-                        db_session.query(Datum).filter(criteria).update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
-                
-                    elif action=='insert':
-                        newphot = Datum(target_id=targetid, timestamp=time, value=phot, data_type='photometry', source_name='', source_location='')
-                        db_session.add(newphot)
-                        db_session.flush()
-                        if phot_groupid is not None:
-                            update_permissions(int(phot_groupid), 77, newphot.id, 19) #View reduceddatum
-
-                    elif action=='delete':
-                        db_session.query(Datum).filter(criteria).delete()
-
+                    snex2_id = db_session.query(Datum_Extra).filter(and_(Datum_Extra.snex_id==id_, Datum_Extra.data_type=='photometry')).first().reduced_datum_id
+                    db_session.query(Datum).filter(Datum.id==snex2_id).delete()
                     db_session.commit()
+                    
+            else:
+
+                phot_row = get_current_row(Photlco, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the photlco table
+                
+                targetid = phot_row.targetid
+                time = '{} {}'.format(phot_row.dateobs, phot_row.ut) 
+                if int(phot_row.mag) != 9999:
+                    phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag)})
+                else:
+                    phot = json.dumps({})
+    
+                phot_groupid = phot_row.groupidcode
+    
+                with get_session(db_address=_SNEX1_DB) as db_session:
+                    standard_list = db_session.query(Targets).filter(Targets.classificationid==1)
+                    standard_ids = [x.id for x in standard_list]
+                if targetid not in standard_ids and int(phot_row.filetype) in (1,3):
+                    with get_session(db_address=db_address) as db_session:
+                        #criteria = and_(Datum.data_type=='photometry', Datum.timestamp==time)
+                        if action=='update':
+                            snex2_id = db_session.query(Datum_Extra).filter(and_(Datum_Extra.snex_id==id_, Datum_Extra.data_type=='photometry')).first().reduced_datum_id
+                            db_session.query(Datum).filter(Datum.id==snex2_id).update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
+                    
+                        elif action=='insert':
+                            newphot = Datum(target_id=targetid, timestamp=time, value=phot, data_type='photometry', source_name='', source_location='')
+                            db_session.add(newphot)
+                            db_session.flush()
+    
+                            if phot_groupid is not None:
+                                update_permissions(int(phot_groupid), 77, newphot.id, 19) #View reduceddatum
+
+                            newphot_extra = Datum_Extra(snex_id=int(id_), reduced_datum=newphot, data_type='photometry', key='filetype', value=phot.filetype, float_value = float(phot.filetype))
+                            db_session.add(newphot_extra)
+
+                        db_session.commit()
             delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
 
         except:
@@ -246,33 +259,44 @@ def update_spec(action, db_address=_SNEX2_DB):
     for result in spec_result:
         try:
             id_ = result.rowid # The ID of the row in the spec table
-            spec_row = get_current_row(Spec, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the spec table
 
-            targetid = spec_row.targetid
-            time = '{} {}'.format(spec_row.dateobs, spec_row.ut) 
-            spec = read_spec(spec_row.filepath + spec_row.filename.replace('.fits', '.ascii'))
-            spec_groupid = spec_row.groupidcode
-
-            with get_session(db_address=_SNEX1_DB) as db_session:
-                standard_list = db_session.query(Targets).filter(Targets.classificationid==1)
-                standard_ids = [x.id for x in standard_list]
-            if targetid not in standard_ids:
+            if action=='delete':
+                #Look up the dataproductid from the datum_extra table
                 with get_session(db_address=db_address) as db_session:
-                    criteria = and_(Datum.data_type=='spectroscopy', Datum.timestamp==time)
-                    if action=='update':
-                        db_session.query(Datum).filter(criteria).update({'target_id': targetid, 'timestamp': time, 'value': spec, 'data_type': 'spectroscopy', 'source_name': '', 'source_location': ''})
-
-                    elif action=='insert':
-                        newspec = Datum(target_id=targetid, timestamp=time, value=spec, data_type='spectroscopy', source_name='', source_location='')
-                        db_session.add(newspec)
-                        db_session.flush()
-                        if spec_groupid is not None:
-                            update_permissions(int(spec_groupid), 77, newspec.id, 19) #View reduceddatum
-
-                    elif action=='delete':
-                        db_session.query(Datum).filter(criteria).delete()
-
+                    snex2_id = db_session.query(Datum_Extra).filter(and_(Datum_Extra.snex_id==id_, Datum_Extra.data_type=='spectroscopy')).first().reduced_datum_id
+                    db_session.query(Datum).filter(Datum.id==snex2_id).delete()
                     db_session.commit()
+
+            else:
+                spec_row = get_current_row(Spec, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the spec table
+
+                targetid = spec_row.targetid
+                time = '{} {}'.format(spec_row.dateobs, spec_row.ut) 
+                spec = read_spec(spec_row.filepath + spec_row.filename.replace('.fits', '.ascii'))
+                spec_groupid = spec_row.groupidcode
+    
+                with get_session(db_address=_SNEX1_DB) as db_session:
+                    standard_list = db_session.query(Targets).filter(Targets.classificationid==1)
+                    standard_ids = [x.id for x in standard_list]
+                if targetid not in standard_ids:
+                    with get_session(db_address=db_address) as db_session:
+                        #criteria = and_(Datum.data_type=='spectroscopy', Datum.timestamp==time)
+                        if action=='update':
+                            snex2_id = db_session.query(Datum_Extra).filter(and_(Datum_Extra.snex_id==id_, Datum_Extra.data_type=='spectroscopy')).first().reduced_datum_id
+                            db_session.query(Datum).filter(Datum.id==snex2_id).update({'target_id': targetid, 'timestamp': time, 'value': spec, 'data_type': 'spectroscopy', 'source_name': '', 'source_location': ''})
+
+                        elif action=='insert':
+                            newspec = Datum(target_id=targetid, timestamp=time, value=spec, data_type='spectroscopy', source_name='', source_location='')
+                            db_session.add(newspec)
+                            db_session.flush()
+
+                            if spec_groupid is not None:
+                                update_permissions(int(spec_groupid), 77, newspec.id, 19) #View reduceddatum
+ 
+                            newspec_extra = Datum_Extra(snex_id=int(id_), reduced_datum=newspec, data_type='spectroscopy', key='', value='')
+                            db_session.add(newspec_extra)
+
+                        db_session.commit()
             delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
 
         except:
@@ -300,6 +324,8 @@ def update_target(action, db_address=_SNEX2_DB):
             t_dec = target_row.dec0
             t_modified = target_row.lastmodified
             t_created = target_row.datecreated
+            if t_created is None:
+                t_created = t_modified
             t_groupid = int(target_row.groupidcode)
 
             ### Get the name of the target
@@ -372,11 +398,11 @@ def update_target_extra(action, db_address=_SNEX2_DB):
             target_id = tresult.rowid # The ID of the row in the targets table
             target_row = get_current_row(Targets, target_id, db_address=_SNEX1_DB) # The row corresponding to target_id in the targets table
 
-            t_id = target_row.id
+            #t_id = target_row.id
             value = target_row.redshift
             if value is not None:
                 with get_session(db_address=db_address) as db_session:
-                    z_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='redshift') # Criteria for updating the redshift info in the targetextra table
+                    z_criteria = and_(Target_Extra.target_id==target_id, Target_Extra.key=='redshift') # Criteria for updating the redshift info in the targetextra table
                     
                     if action=='update':
                         if db_session.query(Target_Extra).filter(z_criteria).first() is not None:
@@ -385,7 +411,7 @@ def update_target_extra(action, db_address=_SNEX2_DB):
                             db_session.add(Target_Extra(target_id=t_id, key='redshift', value=str(value), float_value=float(value)))
                     
                     elif action=='insert':
-                        db_session.add(Target_Extra(target_id=t_id, key='redshift', value=str(value), float_value=float(value)))
+                        db_session.add(Target_Extra(target_id=target_id, key='redshift', value=str(value), float_value=float(value)))
                     
                     elif action=='delete':
                         db_session.query(Target_Extra).filter(z_criteria).delete()
@@ -395,7 +421,7 @@ def update_target_extra(action, db_address=_SNEX2_DB):
             if class_id is not None:
                 class_name = get_current_row(Classifications, class_id, db_address=_SNEX1_DB).name # Get the classification from the classifications table based on the classification id in the targets table (wtf)
                 with get_session(db_address=db_address) as db_session:
-                    c_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='classification') # Criteria for updating the classification info in the targetextra table
+                    c_criteria = and_(Target_Extra.target_id==target_id, Target_Extra.key=='classification') # Criteria for updating the classification info in the targetextra table
                     if action=='update':
                         if db_session.query(Target_Extra).filter(c_criteria).first() is not None:
                             db_session.query(Target_Extra).filter(c_criteria).update({'value': class_name})
@@ -403,7 +429,7 @@ def update_target_extra(action, db_address=_SNEX2_DB):
                             db_session.add(Target_Extra(target_id=t_id, key='classification', value=class_name))
 
                     elif action=='insert':
-                        db_session.add(Target_Extra(target_id=t_id, key='classification', value=class_name))
+                        db_session.add(Target_Extra(target_id=target_id, key='classification', value=class_name))
 
                     elif action=='delete':
                         db_session.query(Target_Extra).filter(c_criteria).delete()
