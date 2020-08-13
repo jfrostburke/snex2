@@ -1,4 +1,5 @@
 from django.db import models
+from tom_dataproducts.models import ReducedDatum
 
 # Create your models here.
 
@@ -69,3 +70,31 @@ class TNSTarget(models.Model):
     class Meta:
         ordering = ('-id',)
         get_latest_by = ('-name',)
+
+
+class ReducedDatumExtra(models.Model):
+    
+    snex_id = models.IntegerField(
+        verbose_name='SNEx1 ID', help_text='ID of the reduceddatum row in the SNEx1 DB'
+    )
+    reduced_datum = models.ForeignKey(
+        ReducedDatum, on_delete=models.CASCADE
+    )
+    data_type = models.CharField(
+        max_length=100, default='', verbose_name='Data Type', 
+        help_text='Type of data (either photometry or spectroscopy)'
+    )
+    filetype = models.IntegerField(
+        verbose_name='Filetype', help_text='Filetype of the photometry row in the SNEx1 DB', 
+        blank=True, null=True
+    )
+    ext_upload = models.BooleanField(
+        verbose_name='External Upload', help_text='Is the reduceddatum externally uploaded or not',
+        default=False
+    )
+    is_swift = models.BooleanField(
+        verbose_name='Is Swift', help_text='Is the reduceddatum a Swift data point', default=False
+    )
+
+    class Meta:
+        get_latest_by = ('timestamp,')
