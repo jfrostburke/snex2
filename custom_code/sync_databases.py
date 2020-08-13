@@ -379,21 +379,28 @@ def update_target_extra(action, db_address=_SNEX2_DB):
                     z_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='redshift') # Criteria for updating the redshift info in the targetextra table
                     
                     if action=='update':
-                        db_session.query(Target_Extra).filter(z_criteria).update({'value': str(value), 'float_value': float(value)})
+                        if db_session.query(Target_Extra).filter(z_criteria).first() is not None:
+                            db_session.query(Target_Extra).filter(z_criteria).update({'value': str(value), 'float_value': float(value)})
+                        else:
+                            db_session.add(Target_Extra(target_id=t_id, key='redshift', value=str(value), float_value=float(value)))
                     
                     elif action=='insert':
                         db_session.add(Target_Extra(target_id=t_id, key='redshift', value=str(value), float_value=float(value)))
                     
                     elif action=='delete':
                         db_session.query(Target_Extra).filter(z_criteria).delete()
-            
+                    db_session.commit()
+
             class_id = target_row.classificationid
             if class_id is not None:
                 class_name = get_current_row(Classifications, class_id, db_address=_SNEX1_DB).name # Get the classification from the classifications table based on the classification id in the targets table (wtf)
                 with get_session(db_address=db_address) as db_session:
                     c_criteria = and_(Target_Extra.target_id==t_id, Target_Extra.key=='classification') # Criteria for updating the classification info in the targetextra table
                     if action=='update':
-                        db_session.query(Target_Extra).filter(c_criteria).update({'value': class_name})
+                        if db_session.query(Target_Extra).filter(c_criteria).first() is not None:
+                            db_session.query(Target_Extra).filter(c_criteria).update({'value': class_name})
+                        else:
+                            db_session.add(Target_Extra(target_id=t_id, key='classification', value=class_name))
 
                     elif action=='insert':
                         db_session.add(Target_Extra(target_id=t_id, key='classification', value=class_name))
@@ -401,7 +408,7 @@ def update_target_extra(action, db_address=_SNEX2_DB):
                     elif action=='delete':
                         db_session.query(Target_Extra).filter(c_criteria).delete()
 
-                db_session.commit()
+                    db_session.commit()
             delete_row(Db_Changes, tresult.id, db_address=_SNEX1_DB)
 
         except:
