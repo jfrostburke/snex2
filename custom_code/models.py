@@ -103,7 +103,7 @@ class ReducedDatumExtra(models.Model):
 
     class Meta:
         get_latest_by = ('id,')
-        unique_together = ['target', 'key']
+        unique_together = ['reduced_datum', 'key']
 
     def __str__(self):
         return f'{self.key}: {self.value}'

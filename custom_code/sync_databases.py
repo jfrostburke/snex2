@@ -446,7 +446,7 @@ def migrate_data():
     Migrates all changes from the SNex1 db to the SNex2 db,
     and afterwards deletes all the rows in the db_changes table
     """
-    actions = ['insert', 'update']#, 'delete']
+    actions = ['insert', 'update', 'delete']
     for action in actions:
         update_target(action, db_address=_SNEX2_DB)
         update_target_extra(action, db_address=_SNEX2_DB)
