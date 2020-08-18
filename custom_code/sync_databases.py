@@ -188,7 +188,15 @@ def update_phot(action, db_address=_SNEX2_DB):
                 #Look up the dataproductid from the datum_extra table
                 with get_session(db_address=db_address) as db_session:
                     snex2_id = db_session.query(Datum_Extra).filter(and_(Datum_Extra.snex_id==id_, Datum_Extra.data_type=='photometry')).first().reduced_datum_id
-                    db_session.query(Datum).filter(Datum.id==snex2_id).delete()
+                    datum = db_session.query(Datum).filter(Datum.id==snex2_id).first()
+                    db_session.delete(datum)
+                    db_session.commit()
+
+                #Delete all other rows corresponding to this dataproduct in the db_changes table
+                with get_session(db_address=_SNEX1_DB) as db_session:
+                    all_other_rows = db_session.query(Db_Changes).filter(and_(Db_Changes.tablename=='photlco', Db_Changes.rowid==id_))
+                    for row in all_other_rows:
+                        db_session.delete(row)
                     db_session.commit()
                     
             else:
@@ -211,9 +219,23 @@ def update_phot(action, db_address=_SNEX2_DB):
                     with get_session(db_address=db_address) as db_session:
                         #criteria = and_(Datum.data_type=='photometry', Datum.timestamp==time)
                         if action=='update':
-                            snex2_id = db_session.query(Datum_Extra).filter(and_(Datum_Extra.snex_id==id_, Datum_Extra.data_type=='photometry')).first().reduced_datum_id
+                            snex2_id_query = db_session.query(Datum_Extra).filter(and_(Datum_Extra.snex_id==id_, Datum_Extra.data_type=='photometry')).first()
+                            #if snex2_id_query is not None:
+                            snex2_id = snex2_id_query.reduced_datum_id
                             db_session.query(Datum).filter(Datum.id==snex2_id).update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
-                    
+                            #else:
+                                
+                                #newphot = Datum(target_id=targetid, timestamp=time, value=phot, data_type='photometry', source_name='', source_location='')
+                                #db_session.add(newphot)
+                                #db_session.flush()
+    
+                                #if phot_groupid is not None:
+                                #    update_permissions(int(phot_groupid), 77, newphot.id, 19) #View reduceddatum
+
+                                #newphot_extra = Datum_Extra(snex_id=int(id_), reduced_datum_id=int(newphot.id), data_type='photometry', key='filetype', value=phot_row.filetype, float_value = float(phot_row.filetype))
+                                #db_session.add(newphot_extra)
+
+                            #db_session.commit()
                         elif action=='insert':
                             newphot = Datum(target_id=targetid, timestamp=time, value=phot, data_type='photometry', source_name='', source_location='')
                             db_session.add(newphot)
@@ -222,7 +244,7 @@ def update_phot(action, db_address=_SNEX2_DB):
                             if phot_groupid is not None:
                                 update_permissions(int(phot_groupid), 77, newphot.id, 19) #View reduceddatum
 
-                            newphot_extra = Datum_Extra(snex_id=int(id_), reduced_datum=newphot, data_type='photometry', key='filetype', value=phot.filetype, float_value = float(phot.filetype))
+                            newphot_extra = Datum_Extra(snex_id=int(id_), reduced_datum_id=int(newphot.id), data_type='photometry', key='filetype', value=phot_row.filetype, float_value = float(phot_row.filetype))
                             db_session.add(newphot_extra)
 
                         db_session.commit()
@@ -293,7 +315,7 @@ def update_spec(action, db_address=_SNEX2_DB):
                             if spec_groupid is not None:
                                 update_permissions(int(spec_groupid), 77, newspec.id, 19) #View reduceddatum
  
-                            newspec_extra = Datum_Extra(snex_id=int(id_), reduced_datum=newspec, data_type='spectroscopy', key='', value='')
+                            newspec_extra = Datum_Extra(snex_id=int(id_), reduced_datum_id=int(newspec.id), data_type='spectroscopy', key='', value='')
                             db_session.add(newspec_extra)
 
                         db_session.commit()
