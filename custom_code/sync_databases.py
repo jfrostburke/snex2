@@ -187,9 +187,11 @@ def update_phot(action, db_address=_SNEX2_DB):
             if action=='delete':
                 #Look up the dataproductid from the datum_extra table
                 with get_session(db_address=db_address) as db_session:
-                    snex2_id = db_session.query(Datum_Extra).filter(and_(Datum_Extra.snex_id==id_, Datum_Extra.data_type=='photometry')).first().reduced_datum_id
-                    datum = db_session.query(Datum).filter(Datum.id==snex2_id).first()
-                    db_session.delete(datum)
+                    snex2_id_query = db_session.query(Datum_Extra).filter(and_(Datum_Extra.snex_id==id_, Datum_Extra.data_type=='photometry')).first()
+                    if snex2_id_query is not None: #Is none if row gets inserted and deleted in same 5 min block
+                        snex2_id = snex2_id_query.reduced_datum_id
+                        datum = db_session.query(Datum).filter(Datum.id==snex2_id).first()
+                        db_session.delete(datum)
                     db_session.commit()
 
                 #Delete all other rows corresponding to this dataproduct in the db_changes table
@@ -248,7 +250,7 @@ def update_phot(action, db_address=_SNEX2_DB):
                             db_session.add(newphot_extra)
 
                         db_session.commit()
-            delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
+                delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
 
         except:
             raise #continue
@@ -381,8 +383,9 @@ def update_target(action, db_address=_SNEX2_DB):
             name_id = nresult.rowid # The ID of the row in the targetnames table
             name_row = get_current_row(Target_Names, name_id, db_address=_SNEX1_DB) # The row corresponding to name_id in the targetnames table
 
-            n_id = name_row.targetid
-            t_name = name_row.name
+            if action!='delete':
+                n_id = name_row.targetid
+                t_name = name_row.name
 
             with get_session(db_address=db_address) as db_session:
                 targetname_criteria = and_(Targetname.name==t_name, Targetname.target_id==n_id)
@@ -394,8 +397,9 @@ def update_target(action, db_address=_SNEX2_DB):
                 elif action=='insert':
                     db_session.add(Targetname(name=t_name, target_id=n_id, created=datetime.datetime.utcnow(), modified=datetime.datetime.utcnow()))
 
-                elif action=='delete':
-                    db_session.query(Targetname).filter(targetname_criteria).delete()
+                #elif action=='delete': #Currently doesn't work, need to fix?
+                #    name_delete = db_session.query(Targetname).filter(targetname_criteria).first()
+                #    db_session.delete(name_delete)
 
                 db_session.commit()
             delete_row(Db_Changes, nresult.id, db_address=_SNEX1_DB)
@@ -430,10 +434,11 @@ def update_target_extra(action, db_address=_SNEX2_DB):
                         if db_session.query(Target_Extra).filter(z_criteria).first() is not None:
                             db_session.query(Target_Extra).filter(z_criteria).update({'value': str(value), 'float_value': float(value)})
                         else:
-                            db_session.add(Target_Extra(target_id=t_id, key='redshift', value=str(value), float_value=float(value)))
-                    
-                    elif action=='insert':
-                        db_session.add(Target_Extra(target_id=target_id, key='redshift', value=str(value), float_value=float(value)))
+                            db_session.add(Target_Extra(target_id=target_id, key='redshift', value=str(value), float_value=float(value)))
+
+                    #Don't think the below are necessary, but need to double check
+                    #elif action=='insert':
+                        #db_session.add(Target_Extra(target_id=target_id, key='redshift', value=str(value), float_value=float(value)))
                     
                     elif action=='delete':
                         db_session.query(Target_Extra).filter(z_criteria).delete()
@@ -448,7 +453,7 @@ def update_target_extra(action, db_address=_SNEX2_DB):
                         if db_session.query(Target_Extra).filter(c_criteria).first() is not None:
                             db_session.query(Target_Extra).filter(c_criteria).update({'value': class_name})
                         else:
-                            db_session.add(Target_Extra(target_id=t_id, key='classification', value=class_name))
+                            db_session.add(Target_Extra(target_id=target_id, key='classification', value=class_name))
 
                     elif action=='insert':
                         db_session.add(Target_Extra(target_id=target_id, key='classification', value=class_name))
@@ -468,7 +473,7 @@ def migrate_data():
     Migrates all changes from the SNex1 db to the SNex2 db,
     and afterwards deletes all the rows in the db_changes table
     """
-    actions = ['insert', 'update', 'delete']
+    actions = ['delete', 'insert', 'update']
     for action in actions:
         update_target(action, db_address=_SNEX2_DB)
         update_target_extra(action, db_address=_SNEX2_DB)
