@@ -1,12 +1,13 @@
 from django_filters.views import FilterView
 from django.shortcuts import redirect #
 from django.db.models import Q #
+from django.http import HttpResponse
 
 from custom_code.models import TNSTarget
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter #
 from tom_targets.models import TargetList
 
-from tom_targets.models import Target
+from tom_targets.models import Target, TargetExtra
 from guardian.mixins import PermissionListMixin
 
 from astropy.coordinates import SkyCoord
@@ -153,3 +154,13 @@ def target_redirect_view(request):
 
         else: 
             return(redirect('/targets/?name={}'.format(search_entry)))
+
+def update_redshift_view(request):
+    targetid = request.GET.get('targetid', None)
+    new_value = request.GET.get('new_value', None)
+    obj = TargetExtra.objects.get(key='redshift', target_id=targetid)
+    obj.value = new_value
+    obj.float_value = float(new_value)
+    obj.save()
+    response_data = {'success':1}
+    return HttpResponse(json.dumps(response_data), content_type='application/json')
