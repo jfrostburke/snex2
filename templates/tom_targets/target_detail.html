@@ -15,7 +15,61 @@
 
 .show {display: block;}
 </style>
-<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+<table class="header-table" cellpadding="0" cellspacing="0" style="background: #174460; font-family: 'Open Sans', sans-serif; color: white; width: 104.45%; margin-left: -39px; margin-top: -100px;">
+  <tr height="89">
+    <td align="left">
+      <span style="display: inline-block; font-size: 30px; margin-left: 30px;">{{ target.name }}</span>
+    </td>
+    <td align="left">
+      <span style="display: inline-block; font-size: 20px;">{{ target|target_extra_field:"classification" }}</span>
+    </td>
+    <td align="left">
+      <form style="display: inline; font-size: 20px" name="form_redshift_theredshift" autocomplete="off" action="javascript: edit_redshift()">
+        <span id="zpre">z=</span>
+        <input type="hidden" name="targetid" id="thetargetid" value={{ target.id }}>
+        <input type="text" name="redshift" id="thenewredshift" value={{ target|target_extra_field:"redshift" }} autocomplete="off" style="background: none; border: 0px solid #174460; font-family: 'Open Sans', sans-serif; font-size: 16; color: white;">
+      </form>
+    </td>
+    <script>
+    /* When the user clicks on the button,
+    toggle between hiding and showing the dropdown content */
+    // function myFunction() {
+    //   document.getElementById("myDropdown").classList.toggle("show");
+    // }
+    // 
+    // // Close the dropdown if the user clicks outside of it
+    // window.onclick = function(event) {
+    //   if (!event.target.matches('.dropbtn')) {
+    //     var dropdowns = document.getElementsByClassName("dropdown-content");
+    //     var i;
+    //     for (i = 0; i < dropdowns.length; i++) {
+    //       var openDropdown = dropdowns[i];
+    //       if (openDropdown.classList.contains('show')) {
+    //         openDropdown.classList.remove('show');
+    //       }
+    //     }
+    //   }
+    // }
+    function edit_redshift() {
+      // var targetid = $('#thetargetid').val();
+      var targetid = {{ target.id }};
+      var new_value = $('#thenewredshift').val();
+      $.ajax({
+        url: '{% url "update_redshift" %}',
+        data: {
+          'targetid': targetid,
+          'new_value': new_value
+        },
+        dataType: 'json'
+      })
+    }
+    </script>
+    <td align="left">
+      <span style="display: inline-block; font-size: 20px;">{{ target.ra|deg_to_sexigesimal:"hms" }} {{ target.dec|deg_to_sexigesimal:"dms" }}<br>{{ target.ra|floatformat:4 }} {{ target.dec|floatformat:4 }}</span>
+    </td>
+  </tr>
+</table>
+<!--nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
       <ul class="nav mr-auto">
         <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.name }}</a></li>
@@ -23,7 +77,7 @@
 	<li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target|target_extra_field:"classification" }}</a></li>
         <li style="float: left;"><a style="display: inline-block; list-style-type: none;">z = {{ target|target_extra_field:"redshift" }}</a></li>
       </ul>
-  </div>
+  </div-->
 </nav>
 <ul class="nav nav-tabs" id="tabs">
   <li class="nav-item">
@@ -74,7 +128,7 @@
         <div class="col-md-6">
           {% aladin object %}
         </div>
-	<div class="col-md-6">
+	<!--div class="col-md-6">
 	  <div class="dropdown" style="position: relative;display: inline-block;">
 	    <button onclick="myFunction()" class="dropbtn">{{ target|target_extra_field:"classification" }}</button>
 	    <div id="myDropdown" class="dropdown-content">
@@ -82,58 +136,7 @@
 	      <p>SN II</p>
 	    </div>
 	  </div>
-	  <!--form style="display: inline;" name="form_redshift" action="/edit_redshift">
-	    <input type="hidden" name="targetid" value={{ target.id }}>
-	    <input type="hidden" name="redshift" value={{ target|target_extra_field:"redshift" }}>
-	  </form-->
-	  <form style="display: inline;" name="form_redshift_theredshift" autocomplete="off" action="javascript: edit_redshift()">
-	    <span id="zpre">z=</span>
-	    <input type="hidden" name="targetid" id="thetargetid" value={{ target.id }}>
-	    <input type="text" name="redshift" id="thenewredshift" value={{ target|target_extra_field:"redshift" }} autocomplete="off">
-	  </form>
-	</div>
-	<script>
-        /* When the user clicks on the button,
-        toggle between hiding and showing the dropdown content */
-        function myFunction() {
-          document.getElementById("myDropdown").classList.toggle("show");
-        }
-        
-        // Close the dropdown if the user clicks outside of it
-        window.onclick = function(event) {
-          if (!event.target.matches('.dropbtn')) {
-            var dropdowns = document.getElementsByClassName("dropdown-content");
-            var i;
-            for (i = 0; i < dropdowns.length; i++) {
-              var openDropdown = dropdowns[i];
-              if (openDropdown.classList.contains('show')) {
-                openDropdown.classList.remove('show');
-              }
-            }
-          }
-        }
-        function edit_redshift() {
-	  // var targetid = $('#thetargetid').val();
-	  var targetid = {{ target.id }};
-	  var new_value = $('#thenewredshift').val();
-	  var myArr = [targetid, new_value]
-	  console.log(myArr);
-	  $.ajax({
-	    url: '{% url "update_redshift" %}',
-	    data: {
-	      'targetid': targetid,
-	      'new_value': new_value
-	    },
-	    dataType: 'json'
-	  })
-	  // $.get('/update_redshift/',function (r){console.log(r);})
-	}
-	  // var theForm = document.getElementById("form_redshift");
-	  // theForm.redshift.value = document.getElementById("thenewredshift").value;
-	
-	  // document.getElementById("head_redshift").value=theForm.redshift.value;
-	// }
-	</script>
+	</div-->
 	</div>
         <hr/>
         <div class="row">
