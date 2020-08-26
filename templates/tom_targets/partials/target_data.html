@@ -6,7 +6,32 @@
   {% for target_name in target.names %}
     {{ target_name }}<br> 
   {% endfor %}
-</dl>  
+  <form style="display: inline"; name="form_addname" action="javascript: add_name()">
+    <input type="hidden" name="targetid" id="thetargetid" value={{ target.id }}>
+    <input type="show" name="newname" id="thenewname" placeholder="Add a new name" style="background: none; border: 0px solid #174460; font-family: 'Open Sans', sans-serif; color: black;">
+  </form>
+  <script>
+  function add_name() {
+    var targetid = {{ target.id }};
+    var newname = $('#thenewname').val();
+    $.ajax({
+      url: '/api/targets/' + targetid + '/',
+      type: "PATCH",
+      headers: {"X-CSRFToken": '{{ csrf_token }}'},
+      data: JSON.stringify({
+	"aliases": [
+	  {"name": newname}
+	]
+      }),
+      contentType: "application/JSON",
+      dataType: "json",
+      error: function(e) {
+        console.log(e);
+      }
+    })
+  }
+  </script>
+</dl> 
 <dl class="row">
   <a href="{% url 'tom_targets:update' pk=target.id %}" title="Update target" class="btn-sm  btn-primary">Update Target</a>
 </dl>

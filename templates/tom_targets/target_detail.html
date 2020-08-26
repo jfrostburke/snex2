@@ -51,16 +51,35 @@
     //   }
     // }
     function edit_redshift() {
-      // var targetid = $('#thetargetid').val();
       var targetid = {{ target.id }};
+      var redshiftid = {{ target|get_redshift_id }};
       var new_value = $('#thenewredshift').val();
+      var newdata = {
+        "key": "redshift",
+        "value": new_value
+      };
+      if (redshiftid != null) {
+	newdata = {
+	  "id": redshiftid,
+	  "key": "redshift",
+	  "value": new_value
+	};
+      }
+      console.log(targetid, redshiftid, new_value);
       $.ajax({
-        url: '{% url "update_redshift" %}',
-        data: {
-          'targetid': targetid,
-          'new_value': new_value
-        },
-        dataType: 'json'
+	url: '/api/targets/' + targetid + '/',
+	type: "PATCH",
+	headers: {"X-CSRFToken": '{{ csrf_token }}'}, 
+	data: JSON.stringify({
+	  "targetextra_set": [
+	    newdata
+	  ]
+	}),
+	contentType: "application/json",
+	dataType: "json",
+	error: function(e) {
+	  console.log(e);
+	}
       })
     }
     </script>

@@ -2,7 +2,7 @@ from plotly import offline
 import plotly.graph_objs as go
 from django import template
 
-from tom_targets.models import Target
+from tom_targets.models import Target, TargetExtra
 from tom_targets.forms import TargetVisibilityForm
 from tom_observations import utils, facility
 from tom_dataproducts.models import DataProduct, ReducedDatum, ObservationRecord
@@ -433,3 +433,11 @@ def aladin_collapse(target):
 @register.filter
 def sort_targets_by_id(object_list):
     return Target.objects.all().filter(id__in=object_list).order_by('-id')
+
+@register.filter
+def get_redshift_id(target):
+    try:
+        redshift = TargetExtra.objects.get(target_id=target.id, key='redshift')
+        return redshift.id
+    except:
+        return json.dumps(None)
