@@ -1,6 +1,7 @@
 from plotly import offline
 import plotly.graph_objs as go
 from django import template
+from django.conf import settings
 
 from tom_targets.models import Target, TargetExtra
 from tom_targets.forms import TargetVisibilityForm
@@ -435,9 +436,15 @@ def sort_targets_by_id(object_list):
     return Target.objects.all().filter(id__in=object_list).order_by('-id')
 
 @register.filter
-def get_redshift_id(target):
+def get_targetextra_id(target, keyword):
     try:
-        redshift = TargetExtra.objects.get(target_id=target.id, key='redshift')
-        return redshift.id
+        targetextra = TargetExtra.objects.get(target_id=target.id, key=keyword)
+        return targetextra.id
     except:
         return json.dumps(None)
+
+@register.inclusion_tag('custom_code/classifications_dropdown.html')
+def classifications_dropdown(target):
+    classifications = [i for i in settings.TARGET_CLASSIFICATIONS]
+    return {'target': target,
+            'classifications': classifications}

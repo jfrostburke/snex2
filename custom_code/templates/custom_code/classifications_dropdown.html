@@ -1,0 +1,85 @@
+{% load targets_extras custom_code_tags %}
+<style>
+.dropdown-content {
+  display: none;
+  position: absolute;
+  color: white;
+  background-color: #174460
+}
+
+.dropbtn {
+  background-color: #174460;
+  color: white;
+  border: none;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 20px
+}
+
+.show {display: block;}
+</style>
+<div class="dropdown" style="position: relative;display: inline-block;">
+  {% if target|target_extra_field:"classification" is None %}
+    <button onclick="display_classification()" class="dropbtn">set type</button>
+  {% else %}
+    <button onclick="display_classification()" class="dropbtn">{{ target|target_extra_field:"classification" }}</button>
+  {% endif %}
+  <div id="classification_dropdown" class="dropdown-content" style="height: 180px; overflow-y: scroll; z-index: 1; width: 130px; cursor: pointer;">
+    {% for class in classifications %}
+    <span onclick="edit_classification('{{ class }}')" id="classification--{{ class }}" value="{{ class }}" onmouseover="this.style.fontWeight=1000;" onmouseout="this.style.fontWeight=300;">{{ class }}</span><br>
+    {% endfor %}
+  </div>
+</div>
+<script>
+  /* When the user clicks on the button,
+  toggle between hiding and showing the dropdown content */
+  function display_classification() {
+    document.getElementById("classification_dropdown").classList.toggle("show");
+  }
+  
+  // Close the dropdown if the user clicks outside of it
+  window.onclick = function(event) {
+    if (!event.target.matches('.dropbtn')) {
+      var dropdowns = document.getElementsByClassName("dropdown-content");
+      var i;
+      for (i = 0; i < dropdowns.length; i++) {
+        var openDropdown = dropdowns[i];
+        if (openDropdown.classList.contains('show')) {
+          openDropdown.classList.remove('show');
+        }
+      }
+    }
+  }
+
+  function edit_classification(classification) {
+    var targetid = {{ target.id }};
+    var classid = {{ target|get_targetextra_id:"classification" }};
+    var new_class = classification; //$('#classification--' + classification).val();
+    var newdata = {
+      "key": "classification",
+      "value": new_class
+    };
+    if (classid != null) {
+      newdata = {
+        "id": classid,
+	"key": "classification",
+	"value": new_class
+      };
+    }
+    console.log(targetid, classid, new_class);
+    $.ajax({
+      url: '/api/targets/' + targetid + '/',
+      type: "PATCH",
+      headers: {"X-CSRFToken": '{{ csrf_token }}'}, 
+      data: JSON.stringify({
+        "targetextra_set": [
+          newdata
+        ]
+      }),
+      contentType: "application/json",
+      dataType: "json",
+      error: function(e) {
+        console.log(e);
+      }
+    })
+  }
+</script>

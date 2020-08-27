@@ -7,52 +7,28 @@
 <link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
 {% endblock %}
 {% block content %}
-<style>
-.dropdown-content {
-  display: none;
-  position: absolute;
-}
-
-.show {display: block;}
-</style>
 <table class="header-table" cellpadding="0" cellspacing="0" style="background: #174460; font-family: 'Open Sans', sans-serif; color: white; width: 104.45%; margin-left: -39px; margin-top: -100px;">
   <tr height="89">
     <td align="left">
       <span style="display: inline-block; font-size: 30px; margin-left: 30px;">{{ target.name }}</span>
     </td>
-    <td align="left">
+    <!--td align="left">
       <span style="display: inline-block; font-size: 20px;">{{ target|target_extra_field:"classification" }}</span>
+    </td-->
+    <td align="left">
+      {% classifications_dropdown target%}
     </td>
     <td align="left">
       <form style="display: inline; font-size: 20px" name="form_redshift_theredshift" autocomplete="off" action="javascript: edit_redshift()">
         <span id="zpre">z=</span>
         <input type="hidden" name="targetid" id="thetargetid" value={{ target.id }}>
-        <input type="text" name="redshift" id="thenewredshift" value={{ target|target_extra_field:"redshift" }} autocomplete="off" style="background: none; border: 0px solid #174460; font-family: 'Open Sans', sans-serif; font-size: 16; color: white;">
+        <input type="text" name="redshift" id="thenewredshift" value={{ target|target_extra_field:"redshift" }} autocomplete="off" style="background: none; border: 0px solid #174460; font-family: 'Open Sans', sans-serif; color: white;">
       </form>
     </td>
     <script>
-    /* When the user clicks on the button,
-    toggle between hiding and showing the dropdown content */
-    // function myFunction() {
-    //   document.getElementById("myDropdown").classList.toggle("show");
-    // }
-    // 
-    // // Close the dropdown if the user clicks outside of it
-    // window.onclick = function(event) {
-    //   if (!event.target.matches('.dropbtn')) {
-    //     var dropdowns = document.getElementsByClassName("dropdown-content");
-    //     var i;
-    //     for (i = 0; i < dropdowns.length; i++) {
-    //       var openDropdown = dropdowns[i];
-    //       if (openDropdown.classList.contains('show')) {
-    //         openDropdown.classList.remove('show');
-    //       }
-    //     }
-    //   }
-    // }
     function edit_redshift() {
       var targetid = {{ target.id }};
-      var redshiftid = {{ target|get_redshift_id }};
+      var redshiftid = {{ target|get_targetextra_id:"redshift" }};
       var new_value = $('#thenewredshift').val();
       var newdata = {
         "key": "redshift",
@@ -147,15 +123,6 @@
         <div class="col-md-6">
           {% aladin object %}
         </div>
-	<!--div class="col-md-6">
-	  <div class="dropdown" style="position: relative;display: inline-block;">
-	    <button onclick="myFunction()" class="dropbtn">{{ target|target_extra_field:"classification" }}</button>
-	    <div id="myDropdown" class="dropdown-content">
-	      <p>SN Ia</p>
-	      <p>SN II</p>
-	    </div>
-	  </div>
-	</div-->
 	</div>
         <hr/>
         <div class="row">
