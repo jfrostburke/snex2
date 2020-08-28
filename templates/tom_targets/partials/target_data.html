@@ -37,8 +37,48 @@
 <!--dl class="row">
   <a href="{% url 'tom_targets:update' pk=target.id %}" title="Update target" class="btn-sm  btn-primary">Update Target</a>
 </dl-->
-<dl class="row">
+<dl class="row" style="display: block;">
   <h5>Science Interests:</h5>
+  <div id="display-SNIa" class="displayed" style="display: none;">A Sample of SNe Ia</div>
+  <div id="display-SNII" class="displayed" style="display: none;">A Sample of SNe II</div>
+</dl>
+<dl class="row">
+  <div id="tag-list" class="dropdown-check-list">
+    <button onclick="display_tags()" class="dropbtn" style="background-color: white; color: black; font-size: 16px; border: none;">Select Science Tags</button>
+    <div id="tag-dropdown" class="dropdown-content" style="background-color: white; color: black; font-size: 14px;">
+      <span id="select-SNIa"><input type="checkbox" class="check" data-target="display-SNIa"/>A Sample of SNIa</span><br>
+      <span id="select-SNII"><input type="checkbox" class="check" data-target="display-SNII"/>A Sample of SNII</span><br>
+    </div>
+  </div>
+  <script>
+  /* When the user clicks on the button,
+  toggle between hiding and showing the dropdown content */
+  function display_tags() {
+    document.getElementById("tag-dropdown").classList.toggle("show");
+  }
+  
+  //function show_tag() {
+    //document.getElementById("hidden-SNIa").style.display = "block";
+  $('.check').change(function () {
+    $('#' + this.dataset.target).toggle(this.checked);
+    });
+  //Close the dropdown if the user clicks outside of it
+  //window.onclick = function(event) {
+  //  if (!event.target.matches('.dropbtn')) {
+  //    var dropdowns = document.getElementsByClassName("dropdown-content");
+  //    var i;
+  //    for (i = 0; i < dropdowns.length; i++) {
+  //      var openDropdown = dropdowns[i];
+  //      if (openDropdown.classList.contains('show')) {
+  //        openDropdown.classList.remove('show');
+  //      }
+  //    }
+  //  }
+  //}
+  $('.dropdown-content').click(function(e) {
+    e.stopPropagation();
+  });
+  </script>
 </dl>
 <dl class="row">
   <h5>Interested Persons:</h5>
