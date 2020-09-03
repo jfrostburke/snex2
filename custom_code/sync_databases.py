@@ -206,7 +206,11 @@ def update_phot(action, db_address=_SNEX2_DB):
                 phot_row = get_current_row(Photlco, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the photlco table
                 
                 targetid = phot_row.targetid
-                time = '{} {}'.format(phot_row.dateobs, phot_row.ut) 
+                dobs = phot_row.dateobs
+                tobs = phot_row.ut
+                if tobs is None:
+                    tobs = '00:00:00'
+                time = '{} {}'.format(dobs, tobs) 
                 if int(phot_row.mag) != 9999:
                     phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag)})
                 else:
