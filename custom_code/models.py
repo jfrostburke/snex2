@@ -69,3 +69,18 @@ class TNSTarget(models.Model):
     class Meta:
         ordering = ('-id',)
         get_latest_by = ('-name',)
+
+
+class ScienceTags(models.Model):
+
+    tag = models.TextField(
+        verbose_name='Science Tag', help_text='Science Tag', default=''
+    )
+
+    userid = models.CharField(
+        max_length=100, default='', verbose_name='User ID', 
+        help_text='ID of user who created this tag', blank=True, null=True
+    )
+
+    class Meta:
+        get_latest_by = ('id',)

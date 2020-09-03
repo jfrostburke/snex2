@@ -17,6 +17,8 @@ from astropy.coordinates import get_moon, get_sun, SkyCoord, AltAz
 import numpy as np
 import time
 
+from custom_code.models import ScienceTags
+
 register = template.Library()
 
 @register.inclusion_tag('custom_code/airmass_collapse.html')
@@ -448,3 +450,10 @@ def classifications_dropdown(target):
     classifications = [i for i in settings.TARGET_CLASSIFICATIONS]
     return {'target': target,
             'classifications': classifications}
+
+@register.inclusion_tag('custom_code/science_tags_dropdown.html')
+def science_tags_dropdown(target):
+    tag_query = ScienceTags.objects.all()
+    tags = [i.tag for i in tag_query]
+    return{'target': target,
+           'sciencetags': tags}
