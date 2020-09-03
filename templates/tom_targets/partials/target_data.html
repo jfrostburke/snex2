@@ -46,11 +46,16 @@
   <div id="tag-list" class="dropdown-check-list">
     <button onclick="display_tags()" class="dropbtn" style="background-color: white; color: black; font-size: 16px; border: none;">Select Science Tags</button>
     <div id="tag-dropdown" class="dropdown-content" style="background-color: white; color: black; font-size: 14px;">
-      <span id="select-SNIa"><input type="checkbox" class="check" data-target="display-SNIa"/>A Sample of SNIa</span><br>
-      <span id="select-SNII"><input type="checkbox" class="check" data-target="display-SNII"/>A Sample of SNII</span><br>
+      <span><input type="checkbox" class="check" id="select-SNIa" data-target="display-SNIa"/>A Sample of SNIa</span><br>
+      <span><input type="checkbox" class="check" id="select-SNII" data-target="display-SNII"/>A Sample of SNII</span><br>
     </div>
   </div>
   <script>
+  window.onload = onPageLoad();
+  function onPageLoad() {
+    document.getElementById("select-SNIa").checked = true;
+  }
+
   /* When the user clicks on the button,
   toggle between hiding and showing the dropdown content */
   function display_tags() {

@@ -19,9 +19,9 @@
 </style>
 <div class="dropdown" style="position: relative;display: inline-block;">
   {% if target|target_extra_field:"classification" is None %}
-    <button onclick="display_classification()" class="dropbtn">set type</button>
+    <button onclick="display_classification()" class="dropbtn" id="class-display-btn">set type</button>
   {% else %}
-    <button onclick="display_classification()" class="dropbtn">{{ target|target_extra_field:"classification" }}</button>
+    <button onclick="display_classification()" class="dropbtn" id="class-display-btn">{{ target|target_extra_field:"classification" }}</button>
   {% endif %}
   <div id="classification_dropdown" class="dropdown-content" style="height: 180px; overflow-y: scroll; z-index: 1; width: 130px; cursor: pointer;">
     {% for class in classifications %}
@@ -65,6 +65,7 @@
 	"value": new_class
       };
     }
+    document.getElementById("class-display-btn").innerHTML=new_class;
     console.log(targetid, classid, new_class);
     $.ajax({
       url: '/api/targets/' + targetid + '/',
