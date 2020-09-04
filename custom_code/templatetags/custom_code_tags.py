@@ -2,6 +2,7 @@ from plotly import offline
 import plotly.graph_objs as go
 from django import template
 from django.conf import settings
+from django.db.models.functions import Lower
 
 from tom_targets.models import Target, TargetExtra
 from tom_targets.forms import TargetVisibilityForm
@@ -453,7 +454,7 @@ def classifications_dropdown(target):
 
 @register.inclusion_tag('custom_code/science_tags_dropdown.html')
 def science_tags_dropdown(target):
-    tag_query = ScienceTags.objects.all()
+    tag_query = ScienceTags.objects.all().order_by(Lower('tag'))
     tags = [i.tag for i in tag_query]
     return{'target': target,
            'sciencetags': tags}

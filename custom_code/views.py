@@ -3,7 +3,7 @@ from django.shortcuts import redirect #
 from django.db.models import Q #
 from django.http import HttpResponse
 
-from custom_code.models import TNSTarget
+from custom_code.models import TNSTarget, ScienceTags
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter #
 from tom_targets.models import TargetList
 
@@ -155,3 +155,10 @@ def target_redirect_view(request):
         else: 
             return(redirect('/targets/?name={}'.format(search_entry)))
 
+
+def add_tag_view(request):
+    new_tag = request.GET.get('new_tag', None)
+    username = request.user.username
+    tag, _ = ScienceTags.objects.get_or_create(tag=new_tag, userid=username)
+    response_data = {'success': 1}
+    return HttpResponse(json.dumps(response_data), content_type='application/json')
