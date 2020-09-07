@@ -18,7 +18,7 @@ from astropy.coordinates import get_moon, get_sun, SkyCoord, AltAz
 import numpy as np
 import time
 
-from custom_code.models import ScienceTags
+from custom_code.models import ScienceTags, TargetTags
 
 register = template.Library()
 
@@ -458,3 +458,15 @@ def science_tags_dropdown(target):
     tags = [i.tag for i in tag_query]
     return{'target': target,
            'sciencetags': tags}
+
+@register.filter
+def get_target_tags(target):
+    #try:
+    target_tag_query = TargetTags.objects.filter(target_id=target.id)
+    tags = ''
+    for i in target_tag_query:
+        tag_name = ScienceTags.objects.filter(id=i.tag_id).first().tag
+        tags+=(str(tag_name) + ',')
+    return json.dumps(tags)
+    #except:
+    #    return json.dumps(None)

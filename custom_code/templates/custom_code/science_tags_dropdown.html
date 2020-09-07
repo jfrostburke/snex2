@@ -1,9 +1,17 @@
 {% load custom_code_tags %}
 <dl class="row" style="display: block;">
   <h5>Science Interests:</h5>
-  {% for tag in sciencetags %}
-    <div id="display-{{ tag|cut:" " }}" class="displayed" style="display: none;">{{ tag }}</div>
-  {% endfor %}
+  {% with target|get_target_tags as targets_tags %}
+    {% for tag in sciencetags %}
+      {% with cuttag=tag|cut:" " %}
+      {% if tag in targets_tags %}
+        <div id="display-{{ cuttag|cut:"/" }}" class="displayed" style="display: block;">{{ tag }}</div>
+      {% else %}
+        <div id="display-{{ cuttag|cut:"/" }}" class="displayed" style="display: none;">{{ tag }}</div>
+      {% endif %}
+      {% endwith %}
+    {% endfor %}
+  {% endwith %}
   <!--div id="display-SNIa" class="displayed" style="display: none;">A Sample of SNe Ia</div>
   <div id="display-SNII" class="displayed" style="display: none;">A Sample of SNe II</div-->
 </dl>
@@ -12,20 +20,28 @@
     <button onclick="display_tags()" class="dropbtn" style="background-color: white; color: black; font-size: 16px; border: none;">Select Science Tags</button>
     <div id="tag-dropdown" class="dropdown-content" style="background-color: white; color: black; font-size: 14px; height: 200px; overflow-y: scroll; width: 200px;">
       {% for tag in sciencetags %}
-        <span><input type="checkbox" class="check" id="select-{{ tag|cut:" " }}" value="{{ tag }}" data-target="display-{{ tag|cut:" " }}"/>{{ tag }}</span><br>
+        {% with cuttag=tag|cut:" " %}
+        <span><input type="checkbox" class="check" id="select-{{ cuttag|cut:"/" }}" value="{{ tag }}" data-target="display-{{ cuttag|cut:"/" }}"/>{{ tag }}</span><br>
+	{% endwith %}
       {% endfor %}
       <form style="display: inline; font-size: 12px;" name="form_science_tag">
 	<input type="text" name="newtag" id="newtag" placeholder="Add a new tag">
       </form>
       <button onclick="submit_tags()" class="btn" style="background-color: #174460; color: white; border: none;">Apply</button>
-      <!--span><input type="checkbox" class="check" id="select-SNIa" data-target="display-SNIa"/>A Sample of SNIa</span><br>
-      <span><input type="checkbox" class="check" id="select-SNII" data-target="display-SNII"/>A Sample of SNII</span><br-->
     </div>
   </div>
   <script>
   window.onload = onPageLoad();
   function onPageLoad() {
-    document.getElementById("select-c").checked = true;
+    {% with target|get_target_tags as targets_tags %}
+      {% for tag in sciencetags %}
+	{% with cuttag=tag|cut:" " %}
+	{% if tag in targets_tags %}
+	  document.getElementById("select-{{ cuttag|cut:"/" }}").checked = true;
+	{% endif %}
+	{% endwith %}
+      {% endfor %}
+    {% endwith %}
   }
 
   function display_tags() {
@@ -40,6 +56,7 @@
 	checkboxesChecked.push(checkboxes[i].value);
       }
     }
+
     // Get any new tag that was entered
     if (document.getElementById("newtag").value !== "") {
       var newEnteredTag = document.getElementById("newtag").value;
@@ -52,7 +69,19 @@
 	dataType: 'json'
       })
     }
+
     console.log(checkboxesChecked);
+
+    // Save the tag to this target
+    $.ajax({
+      url: '{% url "save_target_tag" %}',
+      data: { 
+	'tags': JSON.stringify(checkboxesChecked),
+        'targetid': {{ target.id }}
+      },
+      dataType: 'json'
+    })
+
   }
 
   /* When the user clicks on the button,

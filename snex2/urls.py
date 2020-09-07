@@ -18,12 +18,13 @@ from django.urls import path
 
 from django.urls import include
 
-from custom_code.views import TargetListView, target_redirect_view, add_tag_view
+from custom_code.views import TargetListView, target_redirect_view, add_tag_view, save_target_tag_view
 
 urlpatterns = [
     path('targets/', TargetListView.as_view(), name='list'),
     path('redirect/', target_redirect_view, name='redirect'),
     path('add_tag/', add_tag_view, name='add_tag'),
+    path('save_target_tag/', save_target_tag_view, name='save_target_tag'),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls'))
 ]

@@ -1,4 +1,5 @@
 from django.db import models
+from tom_targets.models import Target
 
 # Create your models here.
 
@@ -84,3 +85,14 @@ class ScienceTags(models.Model):
 
     class Meta:
         get_latest_by = ('id',)
+
+
+class TargetTags(models.Model):
+
+    target = models.ForeignKey(
+        Target, on_delete=models.CASCADE
+    )
+
+    tag = models.ForeignKey(
+        ScienceTags, on_delete=models.CASCADE
+    )
