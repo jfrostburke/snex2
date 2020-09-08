@@ -71,7 +71,11 @@
           </td>
           <td>{{ target.ra|deg_to_sexigesimal:"hms" }}</td>
           <td>{{ target.dec|deg_to_sexigesimal:"dms" }}</td>
-	  <td>{{ target|target_extra_field:"classification" }}</td>
+	  {% if not target|target_extra_field:"classification" %}
+	    <td>None</td>
+	  {% else %}
+	    <td>{{ target|target_extra_field:"classification" }}</td>
+	  {% endif %}
 	  <td>{{ target|target_extra_field:"redshift" }}</td>
         </tr>
         <tr>
