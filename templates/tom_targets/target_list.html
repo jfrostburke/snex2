@@ -5,6 +5,9 @@
 <link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
 {% endblock %}
 {% block content %}
+<head>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
     <h3>Targets</h3>
@@ -81,9 +84,9 @@
         <tr>
           <td colspan=5 style="border-top:none;">
             <div class="collapse show" id="show-both-{{target.name|cut:" "}}">
-      	      <div style="display: inline-block;, text-align: center">{% lightcurve_collapse target %}</div>
-	      <div style="display: inline-block;, text-align: center">{% spectra_collapse target %}</div>
-      	      <div style="display: inline-block;, text-align: center">{% airmass_collapse target %}</div>
+	      <div id="lightcurve-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+	      <div id="spectra-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+	      <div id="airmass-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
             </div>
           </td>
         </tr>
@@ -117,4 +120,23 @@
     </form>
   </div>
 </div>
+{% for target in object_list|sort_targets_by_id %}
+<script>
+  $(document).ready(function() {
+    $.ajax({
+      url: '{% url "targetlist_collapse" %}',
+      data: {'target_id': {{ target.id }} },
+      dataType: 'json',
+      success: function(response) {
+        var lightcurve_plot = response.lightcurve_plot;
+        $('#lightcurve-{{target.name|cut:" "}}').html(lightcurve_plot);
+        var spectra_plot = response.spectra_plot;
+        $('#spectra-{{target.name|cut:" "}}').html(spectra_plot);
+        var airmass_plot = response.airmass_plot;
+        $('#airmass-{{target.name|cut:" "}}').html(airmass_plot);
+      }
+    });
+  });
+</script>
+{% endfor %}
 {% endblock %}
