@@ -1,10 +1,13 @@
 {% extends 'tom_common/base.html' %}
-{% load bootstrap4 observation_extras static %}
+{% load bootstrap4 observation_extras targets_extras static custom_code_tags %}
 {% block title %}Observations{% endblock %}
 {% block additional_css %}
 <link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
 {% endblock %}
 {% block content %}
+<head>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
     <h3>Observations</h3>
@@ -22,7 +25,7 @@
         </span>
       </div>
     </div>
-    {% observation_distribution filter.qs %}
+    {#% observation_distribution filter.qs %#}
     <table class="table">
       <thead>
         <tr>
@@ -34,6 +37,7 @@
           <th>End</th>
           <th>Saved Data</th>
           <th>Download All</th>
+	  <th>Classification</th>
         </tr>
       </thead>
       <tbody>
@@ -56,7 +60,39 @@
             </form>
             {% endif %}
           </td>
+	  <td>
+	    {% if observation.target|target_extra_field:"classification" %}
+	      {{ observation.target|target_extra_field:"classification" }}
+	    {% else %}
+	      None
+	    {% endif %}
+	  </td>
         </tr>
+	  <td colspan=10 style="border-top:none;">
+            <div class="collapse show" id="show-both-{{observation.target.name|cut:" "}}">
+	      <div id="lightcurve-{{observation.id}}" class="lightcurve-{{observation.target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+	      <div id="spectra-{{observation.id}}" class="spectra-{{observation.target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+	      <div id="airmass-{{observation.id}}" class="airmass-{{observation.target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+            </div>
+          </td>
+        </tr>
+	<script>
+          $(document).ready(function() {
+            $.ajax({
+              url: '{% url "targetlist_collapse" %}',
+              data: {'target_id': {{ observation.target.id }} },
+              dataType: 'json',
+              success: function(response) {
+                var lightcurve_plot = response.lightcurve_plot;
+                $('#lightcurve-{{observation.id}}').html(lightcurve_plot);
+                var spectra_plot = response.spectra_plot;
+                $('#spectra-{{observation.id}}').html(spectra_plot);
+                var airmass_plot = response.airmass_plot;
+                $('#airmass-{{observation.id}}').html(airmass_plot);
+              }
+            });
+          });
+        </script>
         {% empty %}
         <tr>
           <td colspan="7">
