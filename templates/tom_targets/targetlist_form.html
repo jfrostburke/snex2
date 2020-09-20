@@ -1,0 +1,17 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 static%}
+{% block title %}New Target Group{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Create a New Target Grouping</h3>
+  </div>
+</nav>
+<form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <input type="submit" value="Create">
+</form>
+{% endblock %}

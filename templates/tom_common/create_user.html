@@ -1,0 +1,30 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 static %}
+{% block title %}Create user{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Create New User</h3>
+  </div>
+</nav>
+{% if object %}
+<form action="{% url 'user-update' object.id %}" method="POST">
+{% else %}
+<form action="{% url 'user-create' %}" method="POST">
+{% endif %}
+{% csrf_token %}
+{% bootstrap_form form %}
+{% buttons %}
+  <button type="submit" class="btn btn-primary">
+    {% if object %}
+    Update
+    {% else %}
+    Create User
+    {% endif %}
+  </button>
+{% endbuttons %}
+</form>
+{% endblock %}

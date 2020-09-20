@@ -1,31 +1,52 @@
-{% load tom_common_extras targets_extras %}
-<a href="{% url 'tom_targets:update' pk=target.id %}" title="Update target" class="btn  btn-primary">Update Target</a>
-<a href="{% url 'tom_targets:delete' pk=target.id %}" title="Delete target" class="btn  btn-warning">Delete Target</a>
+{% load tom_common_extras targets_extras custom_code_tags %}
+<dl class="row">
+  <h4>Known as: </h4>
+</dl>
 <dl class="row">
   {% for target_name in target.names %}
-    {% if forloop.first %}
-      <dt class="col-sm-6">Names</dt>
-    {% else %}
-      <dt class="col-sm-6">&nbsp;</dt>
-    {% endif %}
-    <dd class="col-sm-6">{{ target_name }}</dd>
+    {{ target_name }}<br> 
   {% endfor %}
-  {% for key, value in target.as_dict.items %}
-  {% if key == 'ra' %}
-    <dt class="col-sm-6">{% verbose_name target key %}</dt>
-    <dd class="col-sm-6">{{ value }}</dd>
-    <dt class="col-sm-6">&nbsp;</dt>
-    <dd class="col-sm-6">{{ value|deg_to_sexigesimal:"hms" }}</dd>
-  {% endif%}
-  {% if key == 'dec' %}
-    <dt class="col-sm-6">{% verbose_name target key %}</dt>
-    <dd class="col-sm-6">{{ value }}</dd>
-    <dt class="col-sm-6">&nbsp;</dt>
-    <dd class="col-sm-6">{{ value|deg_to_sexigesimal:"dms" }}</dd>
-  {% endif%}
-  {% endfor %}
-  <dt class="col-sm-6">Redshift</dt>
-  <dd class="col-sm-6">{{ target|target_extra_field:"redshift" }}</dd>
-  <dt class="col-sm-6">Classification</dt>
-  <dd class="col-sm-6">{{ target|target_extra_field:"classification" }}</dd>
+</dl>
+<dl class"row" style="margin-left: -15px;">
+  <form style="display: inline"; name="form_addname" action="javascript: add_name()">
+    <input type="hidden" name="targetid" id="targetid" value={{ target.id }}>
+    <input type="show" name="newname" id="thenewname" placeholder="Add a new name" style="background: none; border: 0px solid #174460; font-family: 'Open Sans', sans-serif; color: black;">
+  </form>
+  <script>
+  function add_name() {
+    var targetid = {{ target.id }};
+    var newname = $('#thenewname').val();
+    $.ajax({
+      url: '/api/targets/' + targetid + '/',
+      type: "PATCH",
+      headers: {"X-CSRFToken": '{{ csrf_token }}'},
+      data: JSON.stringify({
+	"aliases": [
+	  {"name": newname}
+	]
+      }),
+      contentType: "application/JSON",
+      dataType: "json",
+      error: function(e) {
+        console.log(e);
+      }
+    })
+  }
+  </script>
+</dl> 
+<!--dl class="row">
+  <a href="{% url 'tom_targets:update' pk=target.id %}" title="Update target" class="btn-sm  btn-primary">Update Target</a>
+</dl-->
+{% science_tags_dropdown target %}
+<dl class="row">
+  <h5>Interested Persons:</h5>
+</dl>
+<dl class="row">
+  <h5>Data Used In:</h5>
+</dl>
+<dl class="row">
+  <h5>Reference Status:</h5>
+</dl>
+<dl class="row">
+  <h5>Known to:</h5>
 </dl>

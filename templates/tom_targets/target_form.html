@@ -1,8 +1,16 @@
 {% extends 'tom_common/base.html' %}
-{% load bootstrap4 %}
+{% load bootstrap4 targets_extras static %}
 {% block title %}New target{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
 {% block content %}
 {% if not object %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Create a New Target</h3>
+  </div>
+</nav>
 <a href="{% url 'tom_catalogs:query' %}" class="btn btn-primary float-right">Search online sources</a>
 {% endif %}
 <ul class="nav nav-tabs">
@@ -15,13 +23,22 @@
   {% endfor %}
 </ul>
   {% if object %}
+  <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+    <div class="collapse navbar-collapse" id="targetInfo">
+      <ul class="nav mr-auto">
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.name }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.ra|deg_to_sexigesimal:"hms" }} {{ target.dec|deg_to_sexigesimal:"dms" }}<br>{{ target.ra|floatformat:4 }} {{ target.dec|floatformat:4 }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target|target_extra_field:"classification" }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">z = {{ target|target_extra_field:"redshift" }}</a></li>
+    </div>
+  </nav>
   <form action="{% url 'targets:update' pk=object.id %}" method="post" class="form">
   {% bootstrap_form form exclude='tweet,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err' %}
   {% else %}
   <form action="{% url 'targets:create' %}" method="post" class="form">
   {% bootstrap_form form exclude='tweet,redshift,classification,name2,name3,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err' %}
   <p>Tweet this target out automatically on <a href="https://twitter.com/Snex2B">snex2_bot</a>? (Note: in progress, not currently functioning.)</p>
-  {% bootstrap_field form.tweet %}
+  {# bootstrap_field form.tweet #}
   {% endif %}
   {% bootstrap_formset names_form %}
   {% bootstrap_formset extra_form %} 

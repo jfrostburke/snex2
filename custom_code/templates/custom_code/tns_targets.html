@@ -2,7 +2,15 @@
 {% load static bootstrap4 crispy_forms_tags %}
 {% load targets_extras custom_code_tags %}
 {% block title %}TNS Targets{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
 {% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>View TNS Targets</h3>
+  </div>
+</nav>
 <h2 class="text-center">Recent targets from the TNS</h2>
 <div>
   <form action="" method="get" class="form">

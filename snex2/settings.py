@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'ks#e!w3m*y1g_=)%vmrdcyn*5dt0$)o^mq2f=vtj#myw#&amp;p3%i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'tom_dataproducts',
     'tom_publications',
     'custom_code',
+    'rest_framework'
 ]
 
 SITE_ID = 2
@@ -134,7 +135,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
@@ -314,6 +315,18 @@ TOM_LATEX_PROCESSORS = {
     'ObservationGroup': 'tom_publications.processors.observation_group_latex_processor.ObservationGroupLatexProcessor',
     'TargetList': 'tom_publications.processors.target_list_latex_processor.TargetListLatexProcessor'
 }
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+    ],
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 100
+}
+
+TARGET_CLASSIFICATIONS = [
+    'Afterglow', 'Afterglow?', 'AGN', 'AGN?', 'Ca-rich', 'Ca-rich?', 'CV', 'CV?', 'Galaxy', 'ILRN', 'ILRN?', 'Junk', 'Kilonova', 'Kilonova?', 'LBV', 'LBV?', 'Nova', 'Nova?', 'SLSN-I', 'SLSN-I?', 'SLSN-II', 'SLSN-II?', 'SLSN-R', 'SLSN-R?', 'SN', 'SN I-faint', 'SN I-faint?', 'SN Ia', 'SN Ia 02cx-like', 'SN Ia 02cx-like?', 'SN Ia 02es-like', 'SN Ia 02es-like?', 'SN Ia 02ic-like', 'SN Ia 02ic-like?', 'SN Ia 91bg-like', 'SN Ia 91bg-like?', 'SN Ia 91T-like', 'SN Ia 91T-like?', 'SN Ia pec', 'SN Ia pec?', 'SN Ia?', 'SN Ib', 'SN Ib/c', 'SN Ib/c?', 'SN Ib?', 'SN Ibn', 'SN Ibn?', 'SN Ic', 'SN Ic-BL', 'SN Ic-BL?', 'SN Ic?', 'SN II', 'SN II?', 'SN IIb', 'SN IIb?', 'SN IIL', 'SN IIL?', 'SN IIn', 'SN IIn?', 'SN IIP', 'SN IIP?', 'SN?', 'Standard', 'TDE', 'TDE?', 'Unknown', 'Varstar', 'Varstar?'
+]
 
 HINTS_ENABLED = False
 HINT_LEVEL = 20

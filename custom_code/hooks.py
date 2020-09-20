@@ -89,6 +89,10 @@ def target_post_save(target, created):
   ztf_name = next((name for name in target.names if 'ZTF' in name), None)
   if ztf_name:
     alerts = get(ztf_name)
+
+  #if 'ZTF' in target.name:
+  #  objectId = target.name 
+  #  alerts = get(objectId)
     
     filters = {1: 'g_ZTF', 2: 'r_ZTF', 3: 'i_ZTF'}
     for alert in alerts:

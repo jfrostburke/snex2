@@ -1,0 +1,14 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 crispy_forms_tags static%}
+{% block title %}Query a Broker{% endblock %}
+{% block additional_css%}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>{{ form.broker.value }} Query Form</h3>
+  </div>
+</nav>
+{% crispy form %}
+{% endblock %}
