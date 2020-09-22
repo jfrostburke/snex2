@@ -136,6 +136,9 @@ class ScienceTags(models.Model):
     class Meta:
         get_latest_by = ('id',)
 
+    def __str__(self):
+        return self.tag
+
 
 class TargetTags(models.Model):
 

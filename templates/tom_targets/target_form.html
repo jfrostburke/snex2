@@ -6,6 +6,17 @@
 {% endblock %}
 {% block content %}
 {% if not object %}
+<style>
+#id_groups {
+    list-style: none;
+    font-size: 14px;
+}
+
+#id_sciencetags {
+    list-style: none;
+    font-size: 14px;
+}
+</style>
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
     <h3>Create a New Target</h3>
@@ -13,7 +24,7 @@
 </nav>
 <a href="{% url 'tom_catalogs:query' %}" class="btn btn-primary float-right">Search online sources</a>
 {% endif %}
-<ul class="nav nav-tabs">
+<!--ul class="nav nav-tabs">
   {% for k, v in type_choices %}
     {% if k == 'SIDEREAL' %}
       <li class="nav-item">
@@ -21,7 +32,7 @@
       </li>
     {% endif %}
   {% endfor %}
-</ul>
+</ul-->
   {% if object %}
   <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
     <div class="collapse navbar-collapse" id="targetInfo">
@@ -35,18 +46,28 @@
   <form action="{% url 'targets:update' pk=object.id %}" method="post" class="form">
   {% bootstrap_form form exclude='tweet,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err' %}
   {% else %}
-  <form action="{% url 'targets:create' %}" method="post" class="form">
-  {% bootstrap_form form exclude='tweet,redshift,classification,name2,name3,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err' %}
-  <p>Tweet this target out automatically on <a href="https://twitter.com/Snex2B">snex2_bot</a>? (Note: in progress, not currently functioning.)</p>
+  <form action="{% url "create-target" %}" method="post" class="form">
+  {% bootstrap_form form exclude='tweet,redshift,classification,name2,name3,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err,groups,sciencetags' %}
+  <div class="row">
+    <div class="column" style="width: 30%;">
+      {{ form.groups.label_tag }}</br>
+      {{ form.groups }}
+    </div>
+    <div class="column" style="width: 30%;">
+      {{ form.sciencetags.label_tag }}</br>
+      {{ form.sciencetags }}
+    </div>
+  </div>
+  <!--p>Tweet this target out automatically on <a href="https://twitter.com/Snex2B">snex2_bot</a>? (Note: in progress, not currently functioning.)</p-->
   {# bootstrap_field form.tweet #}
   {% endif %}
-  {% bootstrap_formset names_form %}
-  {% bootstrap_formset extra_form %} 
+  {#% bootstrap_formset names_form %#}
+  {#% bootstrap_formset extra_form %#} 
   {% csrf_token %}
   {% buttons %}
     <button type="submit" class="btn btn-primary">
       Submit
     </button>
   {% endbuttons %}
-</form>
+  </form>
 {% endblock %}

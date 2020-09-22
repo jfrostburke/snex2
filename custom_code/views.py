@@ -27,6 +27,10 @@ from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
 from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse
 
+from .forms import CustomTargetCreateForm
+from tom_targets.views import TargetCreateView
+from tom_common.hooks import run_hook
+
 # Create your views here.
 
 def make_coords(ra, dec):
@@ -201,3 +205,19 @@ def targetlist_collapse_view(request):
     }
 
     return HttpResponse(json.dumps(context), content_type='application/json')
+
+class CustomTargetCreateView(TargetCreateView):
+
+    def get_form_class(self):
+        return CustomTargetCreateForm
+
+    def get_context_data(self, **kwargs):
+        context = super(CustomTargetCreateView, self).get_context_data(**kwargs)
+        context['type_choices'] = Target.TARGET_TYPES
+        return context
+
+    def form_valid(self, form):
+        self.object = form.save(commit=True)
+        #logger.info('Target post save hook: %s created: %s', self.object, True)
+        run_hook('target_post_save', target=self.object, created=True)
+        return redirect(self.get_success_url())
