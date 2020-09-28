@@ -7,6 +7,11 @@
 <link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
 {% endblock %}
 {% block content %}
+<style>
+  #id_comment {
+    height: 100px;
+  }
+</style>
 <table class="header-table" cellpadding="0" cellspacing="0" style="background: #174460; font-family: 'Open Sans', sans-serif; color: white; width: 104.45%; margin-left: -39px; margin-top: -100px;">
   <tr height="89">
     <td align="left">
@@ -61,16 +66,6 @@
     </td>
   </tr>
 </table>
-<!--nav class="navbar navbar-expand-md fixed-top fixed-top-2">
-  <div class="collapse navbar-collapse" id="targetInfo">
-      <ul class="nav mr-auto">
-        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.name }}</a></li>
-        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.ra|deg_to_sexigesimal:"hms" }} {{ target.dec|deg_to_sexigesimal:"dms" }}<br>{{ target.ra|floatformat:4 }} {{ target.dec|floatformat:4 }}</a></li>
-	<li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target|target_extra_field:"classification" }}</a></li>
-        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">z = {{ target|target_extra_field:"redshift" }}</a></li>
-      </ul>
-  </div-->
-</nav>
 <ul class="nav nav-tabs" id="tabs">
   <li class="nav-item">
     <span class="nav-link active" data-target="#observe" data-toggle="tab">Overview</span>
@@ -91,7 +86,7 @@
     <span class="nav-link" data-target="#spectroscopy" data-toggle="tab">Spectroscopy</span>
   </li>
 </ul>
-<div class="row">
+<div class="row" style="padding-top: 10px;">
   <div class="col-md-2" id="target-info">
     {% target_data object %}
   </div>
