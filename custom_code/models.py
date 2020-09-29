@@ -1,5 +1,6 @@
 from django.db import models
 from tom_dataproducts.models import ReducedDatum
+from tom_targets.models import Target
 
 # Create your models here.
 
@@ -119,3 +120,32 @@ class ReducedDatumExtra(models.Model):
             self.bool_value = None
 
         super().save(*args, **kwargs)
+
+
+class ScienceTags(models.Model):
+
+    tag = models.TextField(
+        verbose_name='Science Tag', help_text='Science Tag', default=''
+    )
+
+    userid = models.CharField(
+        max_length=100, default='', verbose_name='User ID', 
+        help_text='ID of user who created this tag', blank=True, null=True
+    )
+
+    class Meta:
+        get_latest_by = ('id',)
+
+    def __str__(self):
+        return self.tag
+
+
+class TargetTags(models.Model):
+
+    target = models.ForeignKey(
+        Target, on_delete=models.CASCADE
+    )
+
+    tag = models.ForeignKey(
+        ScienceTags, on_delete=models.CASCADE
+    )

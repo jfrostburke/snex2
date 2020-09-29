@@ -1,0 +1,40 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 crispy_forms_tags observation_extras targets_extras static %}
+{% block title %}Submit Observation{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+      <ul class="nav mr-auto">
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.name }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.ra|deg_to_sexigesimal:"hms" }} {{ target.dec|deg_to_sexigesimal:"dms" }}<br>{{ target.ra|floatformat:4 }} {{ target.dec|floatformat:4 }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target|target_extra_field:"classification" }}</a></li>
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">z = {{ target|target_extra_field:"redshift" }}</a></li>
+      </ul>
+  </div>
+</nav>
+<!--nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Submit Observation</h3>
+  </div>
+</nav-->
+<h3>Submit an observation to {{ form.facility.value }}</h3>
+{% if target.type == 'SIDEREAL' %}
+<div class="row">
+    <div class="col">
+    {% observation_plan target form.facility.value %}
+    </div>
+</div>
+{% endif %}
+<div class="row">
+    <div class="col-md-4">
+        {% target_data target %}
+    </div>
+    <div class="col-md-8">
+        {% observation_type_tabs %}
+        {% crispy form %}
+    </div>
+</div>
+{% endblock %}
