@@ -65,7 +65,7 @@
         </tr>
       </thead>
       <tbody>
-	{% for target in object_list|sort_targets_by_id %}
+	{% for target in object_list %}
         <tr>
           <td><input type="checkbox" name="selected-target" value="{{ target.id }}" onClick="single_select()"/></td>
           <td rowspan=2>
@@ -120,7 +120,7 @@
     </form>
   </div>
 </div>
-{% for target in object_list|sort_targets_by_id %}
+{% for target in object_list %}
 <script>
   $(document).ready(function() {
     $.ajax({

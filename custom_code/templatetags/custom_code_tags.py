@@ -435,10 +435,6 @@ def aladin_collapse(target):
     return {'target': target}
 
 @register.filter
-def sort_targets_by_id(object_list):
-    return Target.objects.all().filter(id__in=object_list).order_by('-id')
-
-@register.filter
 def get_targetextra_id(target, keyword):
     try:
         targetextra = TargetExtra.objects.get(target_id=target.id, key=keyword)
@@ -470,3 +466,83 @@ def get_target_tags(target):
     return json.dumps(tags)
     #except:
     #    return json.dumps(None)
+
+@register.inclusion_tag('tom_dataproducts/partials/photometry_for_target.html', takes_context=True)
+def custom_photometry_for_target(context, target):
+    """
+    Renders a photometric plot for a target.
+    This templatetag requires all ``ReducedDatum`` objects with a data_type of ``photometry`` to be structured with the
+    following keys in the JSON representation: magnitude, error, filter
+    """
+    def get_color(filter_name):
+        filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
+            'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
+            'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2', 
+            'UVW1': 'UVW1'}
+        colors = {'U': 'rgb(59,0,113)',
+            'B': 'rgb(0,87,255)',
+            'V': 'rgb(120,255,0)',
+            'g': 'rgb(0,204,255)',
+            'r': 'rgb(255,124,0)',
+            'i': 'rgb(144,0,43)',
+            'g_ZTF': 'rgb(0,204,255)',
+            'r_ZTF': 'rgb(255,124,0)',
+            'i_ZTF': 'rgb(144,0,43)',
+            'UVW2': '#FE0683',
+            'UVM2': '#BF01BC',
+            'UVW1': '#8B06FF',
+            'other': 'rgb(0,0,0)'}
+        try: color = colors[filter_translate[filter_name]]
+        except: color = colors['other']
+        return color
+    photometry_data = {}
+    if settings.TARGET_PERMISSIONS_ONLY:
+        datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
+    else:
+        datums = get_objects_for_user(context['request'].user,
+                                      'tom_dataproducts.view_reduceddatum',
+                                      klass=ReducedDatum.objects.filter(
+                                        target=target,
+                                        data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
+
+    for datum in datums:
+        values = json.loads(datum.value)
+        if bool(values):
+            photometry_data.setdefault(values['filter'], {})
+            photometry_data[values['filter']].setdefault('time', []).append(datum.timestamp)
+            photometry_data[values['filter']].setdefault('magnitude', []).append(values.get('magnitude'))
+            photometry_data[values['filter']].setdefault('error', []).append(values.get('error'))
+    plot_data = [
+        go.Scatter(
+            x=filter_values['time'],
+            y=filter_values['magnitude'], mode='markers',
+            name=filter_name,
+            error_y=dict(
+                type='data',
+                array=filter_values['error'],
+                visible=True
+            )
+        ) for filter_name, filter_values in photometry_data.items()]
+    layout = go.Layout(        
+        xaxis=dict(
+            gridcolor='#D3D3D3',
+            showline=True,
+            linecolor='#D3D3D3',
+            mirror=True
+        ),
+        yaxis=dict(
+            showticklabels=False,
+            gridcolor='#D3D3D3',
+            showline=True,
+            linecolor='#D3D3D3',
+            mirror=True,
+            autorange='reversed'
+        ),
+        plot_bgcolor='white',
+        height=600,
+        width=700
+    )
+    return {
+        'target': target,
+        'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)
+    }
