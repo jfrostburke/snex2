@@ -179,6 +179,8 @@ def lightcurve(target):
     photometry_data = {}
     for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
         value = json.loads(rd.value)
+        if not value:  # empty
+            continue
         photometry_data.setdefault(value.get('filter', ''), {})
         photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
         photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
