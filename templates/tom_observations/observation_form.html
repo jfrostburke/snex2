@@ -15,11 +15,6 @@
       </ul>
   </div>
 </nav>
-<!--nav class="navbar navbar-expand-md fixed-top fixed-top-2">
-  <div class="collapse navbar-collapse" id="targetInfo">
-    <h3>Submit Observation</h3>
-  </div>
-</nav-->
 <h3>Submit an observation to {{ form.facility.value }}</h3>
 {% if target.type == 'SIDEREAL' %}
 <div class="row">
@@ -33,7 +28,7 @@
         {% target_data target %}
     </div>
     <div class="col-md-8">
-        {% custom_observation_type_tabs %}
+        {#% custom_observation_type_tabs %#}
         {% crispy form %}
     </div>
 </div>
