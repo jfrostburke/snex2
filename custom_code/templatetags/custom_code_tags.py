@@ -194,6 +194,8 @@ def lightcurve(context, target):
     for rd in datums:
     #for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
         value = json.loads(rd.value)
+        if not value:  # empty
+            continue
         photometry_data.setdefault(value.get('filter', ''), {})
         photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
         photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
@@ -469,54 +471,6 @@ def get_target_tags(target):
     #except:
     #    return json.dumps(None)
 
-@register.inclusion_tag('tom_dataproducts/partials/photometry_for_target.html', takes_context=True)
-def custom_photometry_for_target(context, target):
-    """
-    Renders a photometric plot for a target.
-    This templatetag requires all ``ReducedDatum`` objects with a data_type of ``photometry`` to be structured with the
-    following keys in the JSON representation: magnitude, error, filter
-    """
-    photometry_data = {}
-    if settings.TARGET_PERMISSIONS_ONLY:
-        datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
-    else:
-        datums = get_objects_for_user(context['request'].user,
-                                      'tom_dataproducts.view_reduceddatum',
-                                      klass=ReducedDatum.objects.filter(
-                                        target=target,
-                                        data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
-    for rd in datums:
-        value = json.loads(rd.value)
-        photometry_data.setdefault(value.get('filter', ''), {})
-        photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-        photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-        photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
-    plot_data = [
-        go.Scatter(
-            x=filter_values['time'],
-            y=filter_values['magnitude'], mode='markers',
-            marker=dict(color=get_color(filter_name)),
-            name=filter_name,
-            error_y=dict(
-                type='data',
-                array=filter_values['error'],
-                visible=True,
-                color=get_color(filter_name)
-            )
-        ) for filter_name, filter_values in photometry_data.items()]
-    layout = go.Layout(
-        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
-        yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
-        margin=dict(l=30, r=10, b=30, t=40),
-        hovermode='closest',
-        plot_bgcolor='white',
-        height=600,
-        width=700
-    )
-    return {
-        'target': target,
-        'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)
-    }
 
 @register.inclusion_tag('custom_code/custom_upload_dataproduct.html', takes_context=True)
 def custom_upload_dataproduct(context, obj):
