@@ -3,6 +3,7 @@ import plotly.graph_objs as go
 from django import template
 from django.conf import settings
 from django.db.models.functions import Lower
+from django.shortcuts import reverse
 
 from tom_targets.models import Target, TargetExtra
 from tom_targets.forms import TargetVisibilityForm
@@ -19,6 +20,8 @@ import numpy as np
 import time
 
 from custom_code.models import ScienceTags, TargetTags
+from custom_code.forms import CustomDataProductUploadForm
+from urllib.parse import urlencode
 
 register = template.Library()
 
@@ -152,32 +155,44 @@ def get_24hr_airmass(target, interval, airmass_limit):
 
     return plot_data
 
-@register.inclusion_tag('custom_code/lightcurve.html')
-def lightcurve(target):
-    def get_color(filter_name):
-        filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
-            'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
-            'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2', 
-            'UVW1': 'UVW1'}
-        colors = {'U': 'rgb(59,0,113)',
-            'B': 'rgb(0,87,255)',
-            'V': 'rgb(120,255,0)',
-            'g': 'rgb(0,204,255)',
-            'r': 'rgb(255,124,0)',
-            'i': 'rgb(144,0,43)',
-            'g_ZTF': 'rgb(0,204,255)',
-            'r_ZTF': 'rgb(255,124,0)',
-            'i_ZTF': 'rgb(144,0,43)',
-            'UVW2': '#FE0683',
-            'UVM2': '#BF01BC',
-            'UVW1': '#8B06FF',
-            'other': 'rgb(0,0,0)'}
-        try: color = colors[filter_translate[filter_name]]
-        except: color = colors['other']
-        return color
+
+def get_color(filter_name):
+    filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
+        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
+        'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2', 
+        'UVW1': 'UVW1'}
+    colors = {'U': 'rgb(59,0,113)',
+        'B': 'rgb(0,87,255)',
+        'V': 'rgb(120,255,0)',
+        'g': 'rgb(0,204,255)',
+        'r': 'rgb(255,124,0)',
+        'i': 'rgb(144,0,43)',
+        'g_ZTF': 'rgb(0,204,255)',
+        'r_ZTF': 'rgb(255,124,0)',
+        'i_ZTF': 'rgb(144,0,43)',
+        'UVW2': '#FE0683',
+        'UVM2': '#BF01BC',
+        'UVW1': '#8B06FF',
+        'other': 'rgb(0,0,0)'}
+    try: color = colors[filter_translate[filter_name]]
+    except: color = colors['other']
+    return color
+
+
+@register.inclusion_tag('custom_code/lightcurve.html', takes_context=True)
+def lightcurve(context, target):
          
     photometry_data = {}
-    for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
+    if settings.TARGET_PERMISSIONS_ONLY:
+        datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
+    else:
+        datums = get_objects_for_user(context['request'].user,
+                                      'tom_dataproducts.view_reduceddatum',
+                                      klass=ReducedDatum.objects.filter(
+                                        target=target,
+                                        data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
+    for rd in datums:
+    #for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
         value = json.loads(rd.value)
         if not value:  # empty
             continue
@@ -220,31 +235,19 @@ def lightcurve(target):
 
 
 @register.inclusion_tag('custom_code/lightcurve_collapse.html')
-def lightcurve_collapse(target):
-    def get_color(filter_name):
-        filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
-            'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
-            'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2', 
-            'UVW1': 'UVW1'}
-        colors = {'U': 'rgb(59,0,113)',
-            'B': 'rgb(0,87,255)',
-            'V': 'rgb(120,255,0)',
-            'g': 'rgb(0,204,255)',
-            'r': 'rgb(255,124,0)',
-            'i': 'rgb(144,0,43)',
-            'g_ZTF': 'rgb(0,204,255)',
-            'r_ZTF': 'rgb(255,124,0)',
-            'i_ZTF': 'rgb(144,0,43)',
-            'UVW2': '#FE0683',
-            'UVM2': '#BF01BC',
-            'UVW1': '#8B06FF',
-            'other': 'rgb(0,0,0)'}
-        try: color = colors[filter_translate[filter_name]]
-        except: color = colors['other']
-        return color
+def lightcurve_collapse(target, user):
          
     photometry_data = {}
-    for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
+    if settings.TARGET_PERMISSIONS_ONLY:
+        datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
+    else:
+        datums = get_objects_for_user(user,
+                                      'tom_dataproducts.view_reduceddatum',
+                                      klass=ReducedDatum.objects.filter(
+                                        target=target,
+                                        data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
+    #for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'): 
+    for rd in datums:
         value = json.loads(rd.value)
         photometry_data.setdefault(value.get('filter', ''), {})
         photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
@@ -255,7 +258,6 @@ def lightcurve_collapse(target):
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
             marker=dict(color=get_color(filter_name)),
-            #name=filter_name,
             error_y=dict(
                 type='data',
                 array=filter_values['error'],
@@ -437,10 +439,6 @@ def aladin_collapse(target):
     return {'target': target}
 
 @register.filter
-def sort_targets_by_id(object_list):
-    return Target.objects.all().filter(id__in=object_list).order_by('-id')
-
-@register.filter
 def get_targetextra_id(target, keyword):
     try:
         targetextra = TargetExtra.objects.get(target_id=target.id, key=keyword)
@@ -472,3 +470,38 @@ def get_target_tags(target):
     return json.dumps(tags)
     #except:
     #    return json.dumps(None)
+
+
+@register.inclusion_tag('custom_code/custom_upload_dataproduct.html', takes_context=True)
+def custom_upload_dataproduct(context, obj):
+    user = context['user']
+    initial = {}
+    if isinstance(obj, Target):
+        initial['target'] = obj
+        initial['referrer'] = reverse('tom_targets:detail', args=(obj.id,))
+    elif isinstance(obj, ObservationRecord):
+        initial['observation_record'] = obj
+        initial['referrer'] = reverse('tom_observations:detail', args=(obj.id,))
+    form = CustomDataProductUploadForm(initial=initial)
+    if not settings.TARGET_PERMISSIONS_ONLY:
+        if user.is_superuser:
+            form.fields['groups'].queryset = Group.objects.all()
+        else:
+            form.fields['groups'].queryset = user.groups.all()
+    return {'data_product_form': form}
+
+@register.inclusion_tag('tom_observations/partials/observation_type_tabs.html', takes_context=True)
+def custom_observation_type_tabs(context):
+    """
+    Displays tabs in observation creation form representing each available observation type.
+    """
+    request = context['request']
+    query_params = request.GET.copy()
+    observation_type = query_params.pop('observation_type', None)
+    return {
+        'params': urlencode(query_params),
+        'type_choices': context['observation_type_choices'],
+        'observation_type': observation_type,
+        'facility': context['form']['facility'].value,
+        'target_id': request.GET.get('target_id')
+    }

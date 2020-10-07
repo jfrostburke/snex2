@@ -138,7 +138,7 @@
       </div>
       <div class="tab-pane" id="manage-data">
 	{% if user.is_authenticated %}
-	  {% upload_dataproduct object %}
+	  {% custom_upload_dataproduct object %}
 	{% endif %}
         {% dataproduct_list_for_target object %}
       </div>

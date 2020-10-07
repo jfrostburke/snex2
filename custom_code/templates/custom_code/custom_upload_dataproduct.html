@@ -1,0 +1,94 @@
+{% load bootstrap4 static %}
+<style>
+#id_data_product_type {
+    list-style: none;
+    font-size: 16px;
+}
+
+#id_photometry_type {
+    list-style: none;
+    font-size: 16px;
+}
+
+#id_instrument {
+    list-style: none;
+    font-size: 16px;
+}
+
+#id_subtraction_algorithm {
+    list-style: none;
+    font-size: 16px;
+}
+
+#id_reducer_group_0 {
+    list-style: none;
+    font-size: 16px;
+}
+</style>
+<h4>Upload a data product</h4>
+<form method="POST" action="{% url 'tom_dataproducts:upload' %}" enctype="multipart/form-data">
+  {% csrf_token %}
+  {% bootstrap_form data_product_form exclude='data_product_type,photometry_type,instrument,background_subtracted,subtraction_algorithm,reducer_group,used_in,final_reduction' %}
+  <div class="row">
+    <div class="column" id="column-dataproducttype" style="width: 25%;">
+      {{ data_product_form.data_product_type.label_tag }}</br>
+      {{ data_product_form.data_product_type }}
+    </div>
+    <div class="column" id="column-photometrytype" style="width: 25%; display: none;">
+      {{ data_product_form.photometry_type.label_tag }}</br>
+      {{ data_product_form.photometry_type }}
+    </div>
+    <div class="column" id="column-instrument" style="width: 25%; display: none;">
+      {{ data_product_form.instrument.label_tag }}</br>
+      {{ data_product_form.instrument }}
+    </div>
+    <div class="column" id="column-background" style="width: 25%; display: none;">
+      <div class="row" id="row-background" style="display: block;">
+        {{ data_product_form.background_subtracted }} Background Subtracted?</br>
+      </div>
+      <div class="row" id="row-algorithm" style="display: none; padding-top: 10px;">
+	{{ data_product_form.subtraction_algorithm.label_tag }}</br>
+	{{ data_product_form.subtraction_algorithm }}
+      </div>
+    </div>
+  </div>
+  <div class="row" style="padding-bottom: 20px;">
+    <div class="column" id="column-reducergroup" style="width: 25%;">
+      {{ data_product_form.reducer_group.label_tag }}</br>
+      {{ data_product_form.reducer_group }}
+    </div>
+    <div class="column" id="column-usedin" style="width: 25%;">
+      {{ data_product_form.used_in.label_tag }}</br>
+      {{ data_product_form.used_in }}
+    </div>
+    <div class="column" id="column-finalreduction" style="width: 25%;">
+      {{ data_product_form.final_reduction }} Final Reduction?</br>
+    </div>
+  </div>
+  {% buttons %}
+  <input type="submit" class="btn btn-primary" value="Upload" name="upload_dataproduct_form">
+  {% endbuttons %}
+</form>
+<script>
+  $(document).ready(function() {
+    $('#id_data_product_type_0').change(function() {
+      document.getElementById("column-photometrytype").style.display = "block";
+      document.getElementById("column-instrument").style.display = "block";
+      document.getElementById("column-background").style.display = "block";
+    });
+    for (var i = 1; i < 4; i++) {
+      $('#id_data_product_type_'+i).change(function() {
+        document.getElementById("column-photometrytype").style.display = "none";
+        document.getElementById("column-instrument").style.display = "none";
+        document.getElementById("column-background").style.display = "none";
+      });
+    };
+  });
+  $('#id_background_subtracted').change(function() {
+    if (document.getElementById("id_background_subtracted").checked == true) {
+      document.getElementById("row-algorithm").style.display = "block";
+    } else {
+      document.getElementById("row-algorithm").style.display = "none";
+    };
+  });
+</script>

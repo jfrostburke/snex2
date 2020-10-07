@@ -9,6 +9,7 @@ from tom_targets.models import TargetList
 
 from tom_targets.models import Target, TargetExtra
 from guardian.mixins import PermissionListMixin
+from django.contrib.auth.models import User
 
 from astropy.coordinates import SkyCoord
 from astropy import units as u
@@ -95,6 +96,7 @@ class TargetListView(PermissionListMixin, FilterView):
     model = Target
     filterset_class = CustomTargetFilter
     permission_required = 'tom_targets.view_target'
+    ordering = ['-id']
 
     def get_context_data(self, *args, **kwargs):
         """
@@ -160,7 +162,7 @@ def target_redirect_view(request):
             return(redirect('/targets/?cone_search={ra}%2C{dec}%2C1'.format(ra=ra,dec=dec)))
 
     else:
-        target_match_list = Target.objects.filter(Q(name__icontains=search_entry) | Q(aliases__name__icontains=search_entry))
+        target_match_list = Target.objects.filter(Q(name__icontains=search_entry) | Q(aliases__name__icontains=search_entry)).distinct()
 
         if len(target_match_list) == 1:
             target_id = target_match_list[0].id
@@ -193,8 +195,10 @@ def targetlist_collapse_view(request):
 
     target_id = request.GET.get('target_id', None)
     target = Target.objects.get(id=target_id)
+    user_id = request.GET.get('user_id', None)
+    user = User.objects.get(id=user_id)
 
-    lightcurve_plot = lightcurve_collapse(target)['plot']
+    lightcurve_plot = lightcurve_collapse(target, user)['plot']
     spectra_plot = spectra_collapse(target)['plot']
     airmass_plot = airmass_collapse(target)['figure']
 
