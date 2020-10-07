@@ -1,5 +1,6 @@
 from tom_targets.forms import SiderealTargetCreateForm, TargetForm
 from tom_targets.models import TargetExtra
+from tom_dataproducts.forms import DataProductUploadForm
 from guardian.shortcuts import assign_perm, get_groups_with_perms, remove_perm
 from django import forms
 from custom_code.models import ScienceTags, TargetTags
@@ -39,3 +40,79 @@ class CustomTargetCreateForm(SiderealTargetCreateForm):
                 )
 
         return instance
+
+
+class ReducerGroupWidget(forms.widgets.MultiWidget):
+    def __init__(self, attrs=None):
+        choices = [('LCO', 'LCO'), ('UC Davis', 'UC Davis'), ('UofA', 'UofA')]
+        help_text="Add your own group"
+        widget = (forms.widgets.RadioSelect(choices=choices),
+                  forms.widgets.TextInput(attrs={'placeholder': help_text})
+                )
+        super(ReducerGroupWidget, self).__init__(widget, attrs=attrs)
+
+    def decompress(self, value):
+        if value:
+            if value.text_val:
+                return [value.text_val]
+            elif value.choice_val:
+                return [value.choice_val]
+        return [None]
+
+
+class ReducerGroupField(forms.MultiValueField):
+    widget = ReducerGroupWidget
+
+    def __init__(self, required=False, widget=None, label=None, initial=None, help_text=None, choices=None):
+        #choices = kwargs.pop("choices",[])
+        field = (forms.ChoiceField(choices=choices), forms.CharField())
+        super(ReducerGroupField, self).__init__(fields=field, widget=widget, label=label, initial=initial, help_text=help_text)
+
+
+class CustomDataProductUploadForm(DataProductUploadForm):
+    photometry_type = forms.ChoiceField(
+        choices=[('Aperture', 'Aperture'), 
+                 ('PSF', 'PSF')
+        ],
+        widget=forms.RadioSelect(),
+        required=False
+    )
+
+    instrument = forms.ChoiceField(
+        choices=[('LCO', 'LCO'), 
+                 ('Swift', 'Swift'), 
+                 ('Gaia', 'Gaia'),
+                 ('Tess', 'Tess')
+        ],
+        widget=forms.RadioSelect(),
+        required=False
+    )
+
+    background_subtracted = forms.BooleanField(
+        required=False
+    )
+
+    subtraction_algorithm = forms.ChoiceField(
+        choices=[('Hotpants', 'Hotpants'),
+                 ('PyZOGY', 'PyZOGY')
+        ],
+        widget=forms.RadioSelect(),
+        required=False
+    )
+
+    reducer_group = ReducerGroupField(#forms.ChoiceField(
+        choices=[('LCO', 'LCO'),
+                 ('UC Davis', 'UC Davis'),
+                 ('U of A', 'U of A')
+        ],
+        required=False
+    )
+
+    used_in = forms.ChoiceField(
+        choices=[('Papers go here', 'Papers go here')],
+        required=False
+    )
+
+    final_reduction = forms.BooleanField(
+        required=False
+    )

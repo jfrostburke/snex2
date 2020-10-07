@@ -125,7 +125,9 @@
   $(document).ready(function() {
     $.ajax({
       url: '{% url "targetlist_collapse" %}',
-      data: {'target_id': {{ target.id }} },
+      data: {'target_id': {{ target.id }},
+             'user_id': {{ user.id }}
+      },
       dataType: 'json',
       success: function(response) {
         var lightcurve_plot = response.lightcurve_plot;
