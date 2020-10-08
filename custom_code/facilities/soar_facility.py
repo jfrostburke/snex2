@@ -118,8 +118,8 @@ class SOARFacility(SOARFacility):
         _target = observation_payload['requests'][0]['configurations'][0]['target']
         _constraints = observation_payload['requests'][0]['configurations'][0]['constraints']
         instrument_type = observation_payload['requests'][0]['configurations'][0]['instrument_type']
-        rotator_angle= observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['extra_params']['rotator_angle']
-        slit= observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['optical_elements']['slit']
+        rotator_angle= observation_payload['requests'][0]['configurations'][0]['instrument_configs']['extra_params']['rotator_angle']
+        slit= observation_payload['requests'][0]['configurations'][0]['instrument_configs']['optical_elements']['slit']
 
         template_calibration= {
             "instrument_type": instrument_type,
@@ -154,6 +154,9 @@ class SOARFacility(SOARFacility):
         flat["type"] = "LAMP_FLAT"
         flat["instrument_configs"][0]["exposure_time"] = 2
         observation_payload['requests'][0]['configurations'].append(flat)
+
+        # default spec form busted?
+        observation_payload['requests'][0]['configurations'][0]['instrument_configs'] = [observation_payload['requests'][0]['configurations'][0]['instrument_configs']]
 
         return observation_payload
 
