@@ -49,3 +49,8 @@ nav {
 .input-group-text {
     font-family: monospace;
 }
+
+.btn-primary {
+    background-color: #164560;
+      border: #164560;
+}

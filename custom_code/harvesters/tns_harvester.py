@@ -35,11 +35,9 @@ class TNSHarvester(AbstractHarvester):
         target = super().to_target()
         target.type = 'SIDEREAL'
         target.identifier = (self.catalog_data['name_prefix'] +
-            self.catalog_data['name'])
+            self.catalog_data['objname'])
         target.name = target.identifier
         target.ra = self.catalog_data['radeg']
         target.dec = self.catalog_data['decdeg']
         target.epoch = 2000
-        if self.catalog_data['redshift'] is not None:
-            target.redshift = self.catalog_data['redshift']
         return target
