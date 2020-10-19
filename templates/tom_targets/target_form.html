@@ -47,7 +47,7 @@
   {% bootstrap_form form exclude='tweet,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err' %}
   {% else %}
   <form action="{% url "create-target" %}" method="post" class="form">
-  {% bootstrap_form form exclude='tweet,redshift,classification,name2,name3,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err,groups,sciencetags' %}
+  {% bootstrap_form form exclude='tweet,redshift,classification,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err,groups,sciencetags' %}
   <div class="row">
     <div class="column" style="width: 30%;">
       {{ form.groups.label_tag }}</br>
@@ -58,16 +58,15 @@
       {{ form.sciencetags }}
     </div>
   </div>
-  <!--p>Tweet this target out automatically on <a href="https://twitter.com/Snex2B">snex2_bot</a>? (Note: in progress, not currently functioning.)</p-->
-  {# bootstrap_field form.tweet #}
   {% endif %}
-  {#% bootstrap_formset names_form %#}
-  {#% bootstrap_formset extra_form %#} 
+  <div id="names_and_extras" style="display: none">
+      {% bootstrap_formset names_form %}
+      {% bootstrap_formset extra_form %} 
+  </div>
   {% csrf_token %}
   {% buttons %}
-    <button type="submit" class="btn btn-primary">
-      Submit
-    </button>
+    <button type="submit" formaction="{% url 'targets:create' %}"class="btn btn-primary">Submit</button>
+
   {% endbuttons %}
   </form>
 {% endblock %}

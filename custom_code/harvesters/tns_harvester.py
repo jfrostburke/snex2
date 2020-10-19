@@ -34,10 +34,14 @@ class TNSHarvester(AbstractHarvester):
     def to_target(self):
         target = super().to_target()
         target.type = 'SIDEREAL'
-        target.identifier = (self.catalog_data['name_prefix'] +
-            self.catalog_data['objname'])
-        target.name = target.identifier
         target.ra = self.catalog_data['radeg']
         target.dec = self.catalog_data['decdeg']
         target.epoch = 2000
+        target.identifier = (self.catalog_data['name_prefix'] +
+            self.catalog_data['objname'])
+        target.name = target.identifier
+        extra_names = self.catalog_data['internal_names'].split(',')
+        extra_names = list(filter(None, extra_names))
+        extra_names = [x.replace(' ','') for x in extra_names]
+        target.extra_names = extra_names
         return target
