@@ -24,11 +24,16 @@
     list-style: none;
     font-size: 16px;
 }
+
+#id_template_source {
+    list-style: none;
+    font-size: 16px;
+}
 </style>
 <h4>Upload a data product</h4>
-<form method="POST" action="{% url 'tom_dataproducts:upload' %}" enctype="multipart/form-data">
+<form method="POST" action="{% url "custom-data-upload" %}" enctype="multipart/form-data">
   {% csrf_token %}
-  {% bootstrap_form data_product_form exclude='data_product_type,photometry_type,instrument,background_subtracted,subtraction_algorithm,reducer_group,used_in,final_reduction' %}
+  {% bootstrap_form data_product_form exclude='data_product_type,photometry_type,instrument,background_subtracted,subtraction_algorithm,reducer_group,used_in,final_reduction,template_source' %}
   <div class="row">
     <div class="column" id="column-dataproducttype" style="width: 25%;">
       {{ data_product_form.data_product_type.label_tag }}</br>
@@ -49,6 +54,10 @@
       <div class="row" id="row-algorithm" style="display: none; padding-top: 10px;">
 	{{ data_product_form.subtraction_algorithm.label_tag }}</br>
 	{{ data_product_form.subtraction_algorithm }}
+      </div>
+      <div class="row" id="row-template" style="display: none; padding-top: 10px;">
+	{{ data_product_form.template_source.label_tag }}</br>
+	{{ data_product_form.template_source }}
       </div>
     </div>
   </div>
@@ -87,8 +96,10 @@
   $('#id_background_subtracted').change(function() {
     if (document.getElementById("id_background_subtracted").checked == true) {
       document.getElementById("row-algorithm").style.display = "block";
+      document.getElementById("row-template").style.display = "block";
     } else {
       document.getElementById("row-algorithm").style.display = "none";
+      document.getElementById("row-template").style.display = "none";
     };
   });
 </script>

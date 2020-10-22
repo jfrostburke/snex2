@@ -12,16 +12,16 @@ from tom_dataproducts.exceptions import InvalidFileFormatException
 
 class PhotometryProcessor(DataProcessor):
 
-    def process_data(self, data_product):
+    def process_data(self, data_product, extras):
 
         mimetype = mimetypes.guess_type(data_product.data.name)[0]
         if mimetype in self.PLAINTEXT_MIMETYPES:
-            photometry = self._process_photometry_from_plaintext(data_product)
+            photometry = self._process_photometry_from_plaintext(data_product, extras)
             return [(datum.pop('timestamp'), json.dumps(datum)) for datum in photometry]
         else:
             raise InvalidFileFormatException('Unsupported file type')
 
-    def _process_photometry_from_plaintext(self, data_product):
+    def _process_photometry_from_plaintext(self, data_product, extras):
 
         photometry = []
 
@@ -42,6 +42,8 @@ class PhotometryProcessor(DataProcessor):
                 'filter': datum['filter'],
                 'error': datum['error']
             }
+            value.update(extras)
+
             photometry.append(value)
 
         return photometry

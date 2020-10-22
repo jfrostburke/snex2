@@ -6,6 +6,7 @@ from django import forms
 from custom_code.models import ScienceTags, TargetTags
 from django.conf import settings
 from django.db.models.functions import Lower
+from django.core.exceptions import ValidationError
 
 class CustomTargetCreateForm(SiderealTargetCreateForm):
 
@@ -45,7 +46,7 @@ class CustomTargetCreateForm(SiderealTargetCreateForm):
 class ReducerGroupWidget(forms.widgets.MultiWidget):
     def __init__(self, attrs=None):
         choices = [('LCO', 'LCO'), ('UC Davis', 'UC Davis'), ('UofA', 'UofA')]
-        help_text="Add your own group"
+        help_text="Or add your own group"
         widget = (forms.widgets.RadioSelect(choices=choices),
                   forms.widgets.TextInput(attrs={'placeholder': help_text})
                 )
@@ -53,11 +54,12 @@ class ReducerGroupWidget(forms.widgets.MultiWidget):
 
     def decompress(self, value):
         if value:
-            if value.text_val:
-                return [value.text_val]
-            elif value.choice_val:
-                return [value.choice_val]
-        return [None]
+            if value in [x[0] for x in self.choices]:
+                return [value, ""]
+            else:
+                return ["", value]
+        else:
+            return ["", ""]
 
 
 class ReducerGroupField(forms.MultiValueField):
@@ -65,8 +67,18 @@ class ReducerGroupField(forms.MultiValueField):
 
     def __init__(self, required=False, widget=None, label=None, initial=None, help_text=None, choices=None):
         #choices = kwargs.pop("choices",[])
-        field = (forms.ChoiceField(choices=choices), forms.CharField())
-        super(ReducerGroupField, self).__init__(fields=field, widget=widget, label=label, initial=initial, help_text=help_text)
+        field = (forms.ChoiceField(choices=choices, required=False), forms.CharField(required=False))
+        super(ReducerGroupField, self).__init__(required=False, fields=field, widget=widget, label=label, initial=initial, help_text=help_text)
+
+    #def __init__(self, choices, *args, **kwargs):
+    #    fields = (forms.ChoiceField(choices=choices, required=False), forms.CharField(required=False))
+    #    self.widget = ReducerGroupWidget(widgets=[f.widget for f in fields])
+    #    super(ReducerGroupField, self).__init__(required=False, fields=fields, *args, **kwargs)
+
+    def compress(self, data_list):
+        if not data_list:
+            raise ValidationError('Select choice or enter text for this field')
+        return data_list[0] or data_list[1]
 
 
 class CustomDataProductUploadForm(DataProductUploadForm):
@@ -100,12 +112,23 @@ class CustomDataProductUploadForm(DataProductUploadForm):
         required=False
     )
 
-    reducer_group = ReducerGroupField(#forms.ChoiceField(
+    template_source = forms.ChoiceField(
+        choices=[('LCO', 'LCO'),
+                 ('SDSS', 'SDSS'),
+                 ('other', 'other')
+        ],
+        widget=forms.RadioSelect(),
+        required=False
+    )
+
+    reducer_group = ReducerGroupField(
+    #reducer_group = forms.ChoiceField(
         choices=[('LCO', 'LCO'),
                  ('UC Davis', 'UC Davis'),
                  ('U of A', 'U of A')
         ],
-        required=False
+        help_text="Or add your own group",
+        #required=False
     )
 
     used_in = forms.ChoiceField(

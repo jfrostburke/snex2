@@ -3,13 +3,15 @@ from django.shortcuts import redirect, render
 from django.db.models import Q #
 from django.http import HttpResponse, JsonResponse
 
-from custom_code.models import TNSTarget, ScienceTags, TargetTags
+from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter #
 from tom_targets.models import TargetList
 
 from tom_targets.models import Target, TargetExtra
 from guardian.mixins import PermissionListMixin
 from django.contrib.auth.models import User
+from django.contrib import messages
+from django.conf import settings
 
 from astropy.coordinates import SkyCoord
 from astropy import units as u
@@ -28,9 +30,14 @@ from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
 from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse
 
-from .forms import CustomTargetCreateForm
+from .forms import CustomTargetCreateForm, CustomDataProductUploadForm
 from tom_targets.views import TargetCreateView
 from tom_common.hooks import run_hook
+from tom_dataproducts.views import DataProductUploadView, DataProductDeleteView
+from tom_dataproducts.models import DataProduct
+from tom_dataproducts.exceptions import InvalidFileFormatException
+from custom_code.processors.data_processor import run_custom_data_processor
+from guardian.shortcuts import assign_perm
 
 # Create your views here.
 
@@ -225,3 +232,107 @@ class CustomTargetCreateView(TargetCreateView):
         #logger.info('Target post save hook: %s created: %s', self.object, True)
         run_hook('target_post_save', target=self.object, created=True)
         return redirect(self.get_success_url())
+
+
+class CustomDataProductUploadView(DataProductUploadView):
+
+    form_class = CustomDataProductUploadForm
+
+    def form_valid(self, form):
+
+        target = form.cleaned_data['target']
+        if not target:
+            observation_record = form.cleaned_data['observation_record']
+            target = observation_record.target
+        else:
+            observation_record = None
+        dp_type = form.cleaned_data['data_product_type']
+        data_product_files = self.request.FILES.getlist('files')
+        successful_uploads = []
+        for f in data_product_files:
+            dp = DataProduct(
+                target=target,
+                observation_record=observation_record,
+                data=f,
+                product_id=None,
+                data_product_type=dp_type
+            )
+            dp.save()
+            try:
+                #run_hook('data_product_post_upload', dp)
+
+                ### ------------------------------------------------------------------
+                ### Create row in ReducedDatumExtras with the extra info
+                extras = {'reduction_type': 'manual'}
+                rdextra_value = {'data_product_id': int(dp.id)}
+                if dp_type == 'photometry':
+                    rdextra_value['photometry_type'] = form.cleaned_data['photometry_type']
+                    rdextra_value['instrument'] = form.cleaned_data['instrument']
+                    background_subtracted = form.cleaned_data['background_subtracted']
+                    if background_subtracted:
+                        extras['background_subtracted'] = True
+                        extras['subtraction_algorithm'] = form.cleaned_data['subtraction_algorithm']
+                        extras['template_source'] = form.cleaned_data['template_source']
+
+                reducer_group = form.cleaned_data['reducer_group']
+                if reducer_group != 'LCO':
+                    rdextra_value['reducer_group'] = reducer_group
+
+                used_in = form.cleaned_data['used_in']
+                if used_in is not None:
+                    rdextra_value['used_in'] = used_in
+                rdextra_value['final_reduction'] = form.cleaned_data['final_reduction']
+
+                reduced_data = run_custom_data_processor(dp, extras)
+                
+                reduced_datum_extra = ReducedDatumExtra(
+                    data_type = dp_type,
+                    key = 'upload_extras',
+                    value = json.dumps(rdextra_value)
+                )
+                reduced_datum_extra.save()
+
+                ### -------------------------------------------------------------------
+                
+                if not settings.TARGET_PERMISSIONS_ONLY:
+                    for group in form.cleaned_data['groups']:
+                        assign_perm('tom_dataproducts.view_dataproduct', group, dp)
+                        assign_perm('tom_dataproducts.delete_dataproduct', group, dp)
+                        assign_perm('tom_dataproducts.view_reduceddatum', group, reduced_data)
+                successful_uploads.append(str(dp))
+            except InvalidFileFormatException as iffe:
+                ReducedDatum.objects.filter(data_product=dp).delete()
+                dp.delete()
+                ReducedDatumExtra.objects.filter(value=json.dumps(rdextra_value)).delete()
+                messages.error(
+                    self.request,
+                    'File format invalid for file {0} -- error was {1}'.format(str(dp), iffe)
+                )
+            except Exception as e:
+                ReducedDatum.objects.filter(data_product=dp).delete()
+                dp.delete()
+                ReducedDatumExtra.objects.filter(value=json.dumps(rdextra_value)).delete()
+                messages.error(self.request, 'There was a problem processing your file: {0}'.format(str(dp)))
+                print(e)
+        if successful_uploads:
+            messages.success(
+                self.request,
+                'Successfully uploaded: {0}'.format('\n'.join([p for p in successful_uploads]))
+            )
+
+        return redirect(form.cleaned_data.get('referrer', '/'))
+
+
+class CustomDataProductDeleteView(DataProductDeleteView):
+
+    def delete(self, request, *args, **kwargs):
+        ReducedDatum.objects.filter(data_product=self.get_object()).delete()
+        # Delete the ReducedDatumExtra row
+        reduced_datum_query = ReducedDatumExtra.objects.filter(data_type='photometry', key='upload_extras')
+        for row in reduced_datum_query:
+            value = json.loads(row.value) 
+            if value.get('data_product_id', '') == int(self.get_object().id):
+                row.delete()
+                break
+        self.get_object().data.delete()
+        return super().delete(request, *args, **kwargs)

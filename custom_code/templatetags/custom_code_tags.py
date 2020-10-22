@@ -19,7 +19,7 @@ from astropy.coordinates import get_moon, get_sun, SkyCoord, AltAz
 import numpy as np
 import time
 
-from custom_code.models import ScienceTags, TargetTags
+from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra
 from custom_code.forms import CustomDataProductUploadForm
 from urllib.parse import urlencode
 
@@ -182,7 +182,10 @@ def get_color(filter_name):
 @register.inclusion_tag('custom_code/lightcurve.html', takes_context=True)
 def lightcurve(context, target):
          
-    photometry_data = {}
+    lco_bs_data = {} # Background subtracted
+    lco_nonbs_data = {} # Non-background subtracted
+    swift_photometry_data = {}
+
     if settings.TARGET_PERMISSIONS_ONLY:
         datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
     else:
@@ -191,16 +194,45 @@ def lightcurve(context, target):
                                       klass=ReducedDatum.objects.filter(
                                         target=target,
                                         data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
+    plot_lco_data = []
+    plot_swift_data = []
+    plot_background_subtr_data = []
+
     for rd in datums:
     #for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
         value = json.loads(rd.value)
         if not value:  # empty
             continue
-        photometry_data.setdefault(value.get('filter', ''), {})
-        photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-        photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-        photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
-    plot_data = [
+   
+        instrument = ''
+        data_product_id = rd.data_product_id
+        datumextras = ReducedDatumExtra.objects.filter(key='upload_extras', data_type='photometry')
+        for de in datumextras:
+            de_value = json.loads(de.value)
+            if de_value.get('data_product_id', '') == data_product_id:
+                instrument = de_value.get('instrument', '')
+                break
+
+        if not instrument or instrument == 'LCO': #LCO observations
+            if value.get('background_subtracted', '') == True:
+                lco_bs_data.setdefault(value.get('filter', ''), {})
+                lco_bs_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
+                lco_bs_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
+                lco_bs_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
+            else:
+                lco_nonbs_data.setdefault(value.get('filter', ''), {})
+                lco_nonbs_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
+                lco_nonbs_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
+                lco_nonbs_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
+        
+        if instrument == 'Swift': # Swift observations
+            swift_photometry_data.setdefault(value.get('filter', ''), {})
+            swift_photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
+            swift_photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
+            swift_photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))        
+
+
+    plot_lco_data = [
         go.Scatter(
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
@@ -212,16 +244,121 @@ def lightcurve(context, target):
                 visible=True,
                 color=get_color(filter_name)
             )
-        ) for filter_name, filter_values in photometry_data.items()]
+        ) for filter_name, filter_values in lco_bs_data.items()]+ [
+        go.Scatter(
+            x=filter_values['time'],
+            y=filter_values['magnitude'], mode='markers',
+            marker=dict(color=get_color(filter_name)),
+            name=filter_name,
+            error_y=dict(
+                type='data',
+                array=filter_values['error'],
+                visible=True,
+                color=get_color(filter_name)
+            )
+        ) for filter_name, filter_values in lco_nonbs_data.items()]
+        
+    
+    plot_swift_data = [
+        go.Scatter(
+            x=filter_values['time'],
+            y=filter_values['magnitude'], mode='markers',
+            marker=dict(color=get_color(filter_name)),
+            name=filter_name,
+            error_y=dict(
+                type='data',
+                array=filter_values['error'],
+                visible=True,
+                color=get_color(filter_name)
+            )
+        ) for filter_name, filter_values in swift_photometry_data.items()]
+    
+    #plot_background_subtr_data = [
+    #    go.Scatter(
+    #        x=filter_values['time'],
+    #        y=filter_values['magnitude'], mode='markers',
+    #        marker=dict(color=get_color(filter_name)),
+    #        name=filter_name,
+    #        error_y=dict(
+    #            type='data',
+    #            array=filter_values['error'],
+    #            visible=True,
+    #            color=get_color(filter_name)
+    #        )
+    #    ) for filter_name, filter_values in background_subtr_data.items()]
+
+    # Set instrument visibility
+    visible_all = [True for i in range(len(plot_lco_data) + len(swift_photometry_data))]
+    visible_lco = [True for i in range(len(plot_lco_data))] + [False for i in range(len(swift_photometry_data))]
+    visible_swift = [False for i in range(len(plot_lco_data))] + [True for i in range(len(swift_photometry_data))]
+    # Set subtraction visibility
+    visible_bs = [True for i in range(len(lco_bs_data))] + [False for i in range(len(lco_nonbs_data))] + [False for i in range(len(swift_photometry_data))]
+    visible_nonbs = [False for i in range(len(lco_bs_data))] + [True for i in range(len(lco_nonbs_data))] + [False for i in range(len(swift_photometry_data))]
+
+    updatemenus = [
+        dict(
+            active = 0,
+            buttons = list([
+                dict(label="All",
+                     method = "update",
+                     args=[{"visible": visible_all},
+                          {"title": "All Observations"}]),
+                dict(label="LCO",
+                     method = "update",
+                     args=[{"visible": visible_lco},
+                          {"title": "LCO Observations"}]),
+                dict(label="Swift",
+                    method = "update",
+                    args=[{"visible": visible_swift},
+                         {"title": "Swift Observations"}])
+            ]),
+            direction="up",
+            pad={"l": 10, "b": 10},
+            showactive=True,
+            x=0.0,
+            y=-0.2,
+            xanchor="left",
+            yanchor="bottom"
+        ),
+        dict(
+            active = -1,
+            buttons = list([
+                dict(label="Yes",
+                     method="update",
+                     args=[{"visible": visible_bs},
+                          {"title": "Background Subtracted?"}]),
+                dict(label="No",
+                     method="update",
+                     args=[{"visible": visible_nonbs},
+                          {"title": "Background Subtracted?"}])
+            ]),
+            direction="up",
+            pad={"l": 10, "b": 10},
+            showactive=True,
+            x=0.2,
+            y=-0.2,
+            xanchor="left",
+            yanchor="bottom"
+        )
+    ]
+
+    annotations = [
+        dict(text="Instrument", x=0.0, xref="paper", y=-0.25, yref="paper", align="left", showarrow=False),
+        dict(text="Background \nSubtracted", x=0.17, xref="paper", y=-0.25, yref="paper", align="left", showarrow=False)
+    ]
+
     layout = go.Layout(
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
-        margin=dict(l=30, r=10, b=30, t=40),
+        margin=dict(l=30, r=10, b=100, t=40),
         hovermode='closest',
-        plot_bgcolor='white'
+        plot_bgcolor='white',
+        updatemenus=updatemenus,
+        annotations=annotations
         #height=500,
         #width=500
     )
+    plot_data = plot_lco_data + plot_swift_data
     if plot_data:
       return {
           'target': target,
@@ -490,18 +627,3 @@ def custom_upload_dataproduct(context, obj):
             form.fields['groups'].queryset = user.groups.all()
     return {'data_product_form': form}
 
-@register.inclusion_tag('tom_observations/partials/observation_type_tabs.html', takes_context=True)
-def custom_observation_type_tabs(context):
-    """
-    Displays tabs in observation creation form representing each available observation type.
-    """
-    request = context['request']
-    query_params = request.GET.copy()
-    observation_type = query_params.pop('observation_type', None)
-    return {
-        'params': urlencode(query_params),
-        'type_choices': context['observation_type_choices'],
-        'observation_type': observation_type,
-        'facility': context['form']['facility'].value,
-        'target_id': request.GET.get('target_id')
-    }
