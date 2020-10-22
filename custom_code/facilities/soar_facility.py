@@ -1,3 +1,5 @@
+import copy
+
 from tom_observations.facilities.soar import SOARFacility, SOARBaseObservationForm
 from tom_observations.facilities.lco import LCOSpectroscopyObservationForm, make_request
 from django import forms
@@ -58,20 +60,16 @@ class SOARObservationForm(SOARBaseObservationForm, LCOSpectroscopyObservationFor
         cleaned_data['filter'] = list(self.filter_choices())[0][0] # Only 1.0" slit
 
     def _build_instrument_config(self):
-        instrument_config = {
-            'exposure_count': self.cleaned_data['exposure_count'],
-            'exposure_time': self.cleaned_data['exposure_time'],
-            'rotator_mode': 'SKY',
-            'extra_params': {
-                'rotator_angle': self.cleaned_data['rotator_angle']
-            },
-            'optical_elements': {
-                'slit': self.cleaned_data['filter'],
-                'grating': SPECTRAL_GRATING
-            }
-        }
+        instrument_configs = super()._build_instrument_config()
 
-        return instrument_config
+        instrument_configs[0]['optical_elements'] = {
+            'slit': self.cleaned_data['filter'],
+            'grating': SPECTRAL_GRATING
+        }
+        instrument_configs[0]['rotator_mode'] = 'SKY'
+
+        return instrument_configs
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -118,8 +116,8 @@ class SOARFacility(SOARFacility):
         _target = observation_payload['requests'][0]['configurations'][0]['target']
         _constraints = observation_payload['requests'][0]['configurations'][0]['constraints']
         instrument_type = observation_payload['requests'][0]['configurations'][0]['instrument_type']
-        rotator_angle= observation_payload['requests'][0]['configurations'][0]['instrument_configs']['extra_params']['rotator_angle']
-        slit= observation_payload['requests'][0]['configurations'][0]['instrument_configs']['optical_elements']['slit']
+        rotator_angle= observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['extra_params']['rotator_angle']
+        slit= observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['optical_elements']['slit']
 
         template_calibration= {
             "instrument_type": instrument_type,
@@ -145,18 +143,15 @@ class SOARFacility(SOARFacility):
             'constraints': _constraints
         }
 
-        arc = template_calibration
+        arc = copy.deepcopy(template_calibration)
         arc["type"] = "ARC"
         arc["instrument_configs"][0]["exposure_time"] = 0.5
         observation_payload['requests'][0]['configurations'].append(arc)
 
-        flat = template_calibration
+        flat = copy.deepcopy(template_calibration)
         flat["type"] = "LAMP_FLAT"
         flat["instrument_configs"][0]["exposure_time"] = 2
         observation_payload['requests'][0]['configurations'].append(flat)
-
-        # default spec form busted?
-        observation_payload['requests'][0]['configurations'][0]['instrument_configs'] = [observation_payload['requests'][0]['configurations'][0]['instrument_configs']]
 
         return observation_payload
 
@@ -179,4 +174,3 @@ class SOARFacility(SOARFacility):
             headers=self._portal_headers()
         )
         return [r['id'] for r in response.json()['requests']]
-
