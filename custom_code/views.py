@@ -336,3 +336,4 @@ class CustomDataProductDeleteView(DataProductDeleteView):
                 break
         self.get_object().data.delete()
         return super().delete(request, *args, **kwargs)
+

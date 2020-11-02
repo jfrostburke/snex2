@@ -7,13 +7,17 @@ from rest_framework.mixins import CreateModelMixin
 from tom_dataproducts.models import DataProduct, ReducedDatum
 from custom_code.models import ReducedDatumExtra
 from tom_common.hooks import run_hook
-from .processors.data_processor import run_custom_data_processor
+from .processors.data_processor import run_custom_data_processor, run_pipeline_data_processor
 import json
 
 from tom_dataproducts.serializers import DataProductSerializer
 from django_filters import rest_framework as drf_filters
 from tom_dataproducts.filters import DataProductFilter
 from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import AllowAny
+
+import logging
+logger = logging.getLogger(__name__)
 
 class CustomDataProductViewSet(DataProductViewSet):
 
@@ -21,15 +25,17 @@ class CustomDataProductViewSet(DataProductViewSet):
     serializer_class = DataProductSerializer
     filter_backends = (drf_filters.DjangoFilterBackend,)
     filterset_class = DataProductFilter
-    permission_required = 'tom_dataproducts.view_dataproduct'
+    #permission_required = 'tom_dataproducts.view_dataproduct'
+    permission_classes = [AllowAny]
     parser_classes = [MultiPartParser]
 
     def create(self, request, *args, **kwargs):
-        request.data['data'] = request.FILES['file']
         
         # Send the upload extras dictionary as json in the request, like:
-        upload_extras = request.json
+        upload_extras = json.loads(request.data['upload_extras'])
         dp_type = request.data['data_product_type']
+        
+        request.data['data'] = request.FILES['file']
 
         # Sort the extras keywords into the appropriate dictionaries
         extras = {}
@@ -40,12 +46,12 @@ class CustomDataProductViewSet(DataProductViewSet):
             extras['subtraction_algorithm'] = upload_extras.pop('subtraction_algorithm', '')
             extras['template_source'] = upload_extras.pop('template_source', '')
 
-        response = CreateModelMixin.create(request, *args, **kwargs)
+        response = CreateModelMixin.create(self, request, *args, **kwargs)
         if response.status_code == status.HTTP_201_CREATED:
             dp = DataProduct.objects.get(pk=response.data['id'])
             try:
                 #run_hook('data_product_post_upload', dp)
-                reduced_data = run_custom_data_processor(dp, extras) 
+                reduced_data = run_pipeline_data_processor(dp, extras)
                 if not settings.TARGET_PERMISSIONS_ONLY:
                     for group in response.data['group']:
                         assign_perm('tom_dataproducts.view_dataproduct', group, dp)
