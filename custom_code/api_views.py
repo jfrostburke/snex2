@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth.models import User, Group
 from guardian.shortcuts import assign_perm
 from tom_dataproducts.api_views import DataProductViewSet
 from rest_framework import status
@@ -30,12 +31,24 @@ class CustomDataProductViewSet(DataProductViewSet):
     parser_classes = [MultiPartParser]
 
     def create(self, request, *args, **kwargs):
-        
+        # Test if the username exists
+        username = request.data['username']
+        if not User.objects.filter(username=username).exists():
+            return Response({'User does not exist'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # Send the upload extras dictionary as json in the request, like:
         upload_extras = json.loads(request.data['upload_extras'])
         dp_type = request.data['data_product_type']
         
         request.data['data'] = request.FILES['file']
+        
+        # Add default list of groups to request
+        default_group_names = ['ANU', 'ARIES', 'CSP', 'CU Boulder', 'e/PESSTO', 'ex-LCOGT', 
+                'KMTNet', 'LBNL', 'LCOGT', 'LSQ', 'NAOC', 'Padova', 'QUB', 'SAAO', 'SIRAH', 
+                'Skymapper', 'Tel Aviv U', 'U Penn', 'UC Berkeley', 'US GSP', 'UT Austin']
+        default_group_ids = []
+        for g in default_group_names:
+            default_group_ids.append(Group.objects.get(name=g).id)
+        request.data['group'] = default_group_ids
 
         # Sort the extras keywords into the appropriate dictionaries
         extras = {}
@@ -45,7 +58,6 @@ class CustomDataProductViewSet(DataProductViewSet):
             extras['background_subtracted'] = background_subtracted
             extras['subtraction_algorithm'] = upload_extras.pop('subtraction_algorithm', '')
             extras['template_source'] = upload_extras.pop('template_source', '')
-
         response = CreateModelMixin.create(self, request, *args, **kwargs)
         if response.status_code == status.HTTP_201_CREATED:
             dp = DataProduct.objects.get(pk=response.data['id'])
