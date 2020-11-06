@@ -146,7 +146,8 @@
         {% target_groups target %}
       </div>
       <div class="tab-pane" id="photometry">
-        {% lightcurve object %}
+        {#% lightcurve object %#}
+	{% dash_lightcurve object %}
       </div>
       <div class="tab-pane" id="spectroscopy">
         {% spectra_plot object %}

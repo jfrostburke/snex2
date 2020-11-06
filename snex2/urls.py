@@ -21,6 +21,7 @@ from django.urls import include
 from custom_code.views import TargetListView, CustomTargetCreateView, CustomDataProductUploadView, CustomDataProductDeleteView, target_redirect_view, add_tag_view, save_target_tag_view, targetlist_collapse_view
 from custom_code.api_views import CustomDataProductViewSet
 from rest_framework.routers import DefaultRouter
+from custom_code.dash_apps import lightcurve
 
 custom_router = DefaultRouter()
 custom_router.register(r'photometry-upload', CustomDataProductViewSet, 'photometry-upload')
@@ -37,5 +38,6 @@ urlpatterns = [
     path('custom-upload-delete/<int:pk>', CustomDataProductDeleteView.as_view(), name='custom-upload-delete'),
     path('pipeline-upload/', include(custom_router.urls)),
     path('', include('tom_common.urls')),
-    path('snex2/', include('custom_code.urls'))
+    path('snex2/', include('custom_code.urls')),
+    path('django_plotly_dash/', include('django_plotly_dash.urls'))
 ]

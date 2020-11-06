@@ -627,3 +627,9 @@ def custom_upload_dataproduct(context, obj):
             form.fields['groups'].queryset = user.groups.all()
     return {'data_product_form': form}
 
+
+@register.inclusion_tag('custom_code/dash_lightcurve.html', takes_context=True)
+def dash_lightcurve(context, target):
+    request = context['request']
+    return {'dash_context': {'target_id': {'value': target.id}},
+            'request': request}
