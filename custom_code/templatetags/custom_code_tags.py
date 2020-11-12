@@ -182,9 +182,7 @@ def get_color(filter_name):
 @register.inclusion_tag('custom_code/lightcurve.html', takes_context=True)
 def lightcurve(context, target):
          
-    lco_bs_data = {} # Background subtracted
-    lco_nonbs_data = {} # Non-background subtracted
-    swift_photometry_data = {}
+    photometry_data = {}
 
     if settings.TARGET_PERMISSIONS_ONLY:
         datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
@@ -194,9 +192,6 @@ def lightcurve(context, target):
                                       klass=ReducedDatum.objects.filter(
                                         target=target,
                                         data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
-    plot_lco_data = []
-    plot_swift_data = []
-    plot_background_subtr_data = []
 
     for rd in datums:
     #for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
@@ -204,35 +199,12 @@ def lightcurve(context, target):
         if not value:  # empty
             continue
    
-        instrument = ''
-        data_product_id = rd.data_product_id
-        datumextras = ReducedDatumExtra.objects.filter(key='upload_extras', data_type='photometry')
-        for de in datumextras:
-            de_value = json.loads(de.value)
-            if de_value.get('data_product_id', '') == data_product_id:
-                instrument = de_value.get('instrument', '')
-                break
+        photometry_data.setdefault(value.get('filter', ''), {})
+        photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
+        photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
+        photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))        
 
-        if not instrument or instrument == 'LCO': #LCO observations
-            if value.get('background_subtracted', '') == True:
-                lco_bs_data.setdefault(value.get('filter', ''), {})
-                lco_bs_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-                lco_bs_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-                lco_bs_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
-            else:
-                lco_nonbs_data.setdefault(value.get('filter', ''), {})
-                lco_nonbs_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-                lco_nonbs_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-                lco_nonbs_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
-        
-        if instrument == 'Swift': # Swift observations
-            swift_photometry_data.setdefault(value.get('filter', ''), {})
-            swift_photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-            swift_photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-            swift_photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))        
-
-
-    plot_lco_data = [
+    plot_data = [
         go.Scatter(
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
@@ -244,121 +216,18 @@ def lightcurve(context, target):
                 visible=True,
                 color=get_color(filter_name)
             )
-        ) for filter_name, filter_values in lco_bs_data.items()]+ [
-        go.Scatter(
-            x=filter_values['time'],
-            y=filter_values['magnitude'], mode='markers',
-            marker=dict(color=get_color(filter_name)),
-            name=filter_name,
-            error_y=dict(
-                type='data',
-                array=filter_values['error'],
-                visible=True,
-                color=get_color(filter_name)
-            )
-        ) for filter_name, filter_values in lco_nonbs_data.items()]
-        
-    
-    plot_swift_data = [
-        go.Scatter(
-            x=filter_values['time'],
-            y=filter_values['magnitude'], mode='markers',
-            marker=dict(color=get_color(filter_name)),
-            name=filter_name,
-            error_y=dict(
-                type='data',
-                array=filter_values['error'],
-                visible=True,
-                color=get_color(filter_name)
-            )
-        ) for filter_name, filter_values in swift_photometry_data.items()]
-    
-    #plot_background_subtr_data = [
-    #    go.Scatter(
-    #        x=filter_values['time'],
-    #        y=filter_values['magnitude'], mode='markers',
-    #        marker=dict(color=get_color(filter_name)),
-    #        name=filter_name,
-    #        error_y=dict(
-    #            type='data',
-    #            array=filter_values['error'],
-    #            visible=True,
-    #            color=get_color(filter_name)
-    #        )
-    #    ) for filter_name, filter_values in background_subtr_data.items()]
-
-    # Set instrument visibility
-    visible_all = [True for i in range(len(plot_lco_data) + len(swift_photometry_data))]
-    visible_lco = [True for i in range(len(plot_lco_data))] + [False for i in range(len(swift_photometry_data))]
-    visible_swift = [False for i in range(len(plot_lco_data))] + [True for i in range(len(swift_photometry_data))]
-    # Set subtraction visibility
-    visible_bs = [True for i in range(len(lco_bs_data))] + [False for i in range(len(lco_nonbs_data))] + [False for i in range(len(swift_photometry_data))]
-    visible_nonbs = [False for i in range(len(lco_bs_data))] + [True for i in range(len(lco_nonbs_data))] + [False for i in range(len(swift_photometry_data))]
-
-    updatemenus = [
-        dict(
-            active = 0,
-            buttons = list([
-                dict(label="All",
-                     method = "update",
-                     args=[{"visible": visible_all},
-                          {"title": "All Observations"}]),
-                dict(label="LCO",
-                     method = "update",
-                     args=[{"visible": visible_lco},
-                          {"title": "LCO Observations"}]),
-                dict(label="Swift",
-                    method = "update",
-                    args=[{"visible": visible_swift},
-                         {"title": "Swift Observations"}])
-            ]),
-            direction="up",
-            pad={"l": 10, "b": 10},
-            showactive=True,
-            x=0.0,
-            y=-0.2,
-            xanchor="left",
-            yanchor="bottom"
-        ),
-        dict(
-            active = -1,
-            buttons = list([
-                dict(label="Yes",
-                     method="update",
-                     args=[{"visible": visible_bs},
-                          {"title": "Background Subtracted?"}]),
-                dict(label="No",
-                     method="update",
-                     args=[{"visible": visible_nonbs},
-                          {"title": "Background Subtracted?"}])
-            ]),
-            direction="up",
-            pad={"l": 10, "b": 10},
-            showactive=True,
-            x=0.2,
-            y=-0.2,
-            xanchor="left",
-            yanchor="bottom"
-        )
-    ]
-
-    annotations = [
-        dict(text="Instrument", x=0.0, xref="paper", y=-0.25, yref="paper", align="left", showarrow=False),
-        dict(text="Background \nSubtracted", x=0.17, xref="paper", y=-0.25, yref="paper", align="left", showarrow=False)
-    ]
+        ) for filter_name, filter_values in photometry_data.items()] 
+     
 
     layout = go.Layout(
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         margin=dict(l=30, r=10, b=100, t=40),
         hovermode='closest',
-        plot_bgcolor='white',
-        updatemenus=updatemenus,
-        annotations=annotations
+        plot_bgcolor='white'
         #height=500,
         #width=500
     )
-    plot_data = plot_lco_data + plot_swift_data
     if plot_data:
       return {
           'target': target,
@@ -631,5 +500,35 @@ def custom_upload_dataproduct(context, obj):
 @register.inclusion_tag('custom_code/dash_lightcurve.html', takes_context=True)
 def dash_lightcurve(context, target):
     request = context['request']
-    return {'dash_context': {'target_id': {'value': target.id}},
+    
+    # Get initial choices and values for some dash elements
+    telescopes = ['LCO']
+    reducer_groups = []
+    papers_used_in = []
+
+    dp_ids = []
+    datumquery = ReducedDatum.objects.filter(target=target, data_type='photometry').order_by().values('data_product_id').distinct()
+    for i in datumquery:
+        dp_ids.append(i['data_product_id'])
+    for de in ReducedDatumExtra.objects.filter(key='upload_extras', data_type='photometry'):
+        de_value = json.loads(de.value)
+        if de_value.get('data_product_id', '') in dp_ids:
+            inst = de_value.get('instrument', '')
+            used_in = de_value.get('used_in', '')
+            group = de_value.get('reducer_group', '')
+
+            if inst and inst not in telescopes:
+                telescopes.append(inst)
+            if used_in and used_in not in papers_used_in:
+                papers_used_in.append(used_in)
+            if group and group not in reducer_groups:
+                reducer_groups.append(group)
+    
+    reducer_group_options = [{'label': 'LCO', 'value': ''}]
+    reducer_group_options.extend([{'label': k, 'value': k} for k in reducer_groups])
+
+    return {'dash_context': {'target_id': {'value': target.id},
+                             'telescopes-checklist': {'options': [{'label': k, 'value': k} for k in telescopes]},
+                             'reducer-group-checklist': {'options': reducer_group_options},
+                             'papers-dropdown': {'options': [{'label': k, 'value': k} for k in papers_used_in]}},
             'request': request}

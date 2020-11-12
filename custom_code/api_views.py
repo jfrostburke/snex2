@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.mixins import CreateModelMixin
 from tom_dataproducts.models import DataProduct, ReducedDatum
+from tom_targets.models import Target, TargetName
 from custom_code.models import ReducedDatumExtra
 from tom_common.hooks import run_hook
 from .processors.data_processor import run_custom_data_processor, run_pipeline_data_processor
@@ -35,12 +36,22 @@ class CustomDataProductViewSet(DataProductViewSet):
         username = request.data['username']
         if not User.objects.filter(username=username).exists():
             return Response({'User does not exist'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        # Send the upload extras dictionary as json in the request, like:
+        
         upload_extras = json.loads(request.data['upload_extras'])
         dp_type = request.data['data_product_type']
         
         request.data['data'] = request.FILES['file']
         
+        # Add the SNEx2 targetid of the target to request
+        targetname = request.data['targetname']
+        targetquery = Target.objects.filter(name=targetname)
+        if not targetquery:
+            targetquery = TargetName.objects.filter(name=targetname)
+            targetid = targetquery.first().target_id
+        else:
+            targetid = targetquery.first().id
+        request.data['target'] = targetid
+
         # Add default list of groups to request
         default_group_names = ['ANU', 'ARIES', 'CSP', 'CU Boulder', 'e/PESSTO', 'ex-LCOGT', 
                 'KMTNet', 'LBNL', 'LCOGT', 'LSQ', 'NAOC', 'Padova', 'QUB', 'SAAO', 'SIRAH', 

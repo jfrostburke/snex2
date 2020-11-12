@@ -8,7 +8,9 @@ from tom_dataproducts.models import ReducedDatum
 from custom_code.models import ReducedDatumExtra
 
 app = DjangoDash(name='Lightcurve')
-telescopes = ['', 'LCO', 'Swift']
+telescopes = ['LCO', 'Swift']
+reducer_groups = []
+papers_used_in = []
 app.layout = html.Div([
     dcc.Graph(
         id='lightcurve-plot'
@@ -18,12 +20,14 @@ app.layout = html.Div([
         type='hidden',
         value=0
     ),
-    dcc.Dropdown(
-        id='telescopes-dropdown',
+    html.H3('Instrument'),
+    dcc.Checklist(
+        id='telescopes-checklist',
         options=[{'label': k, 'value': k} for k in telescopes],
-        value=''
+        value=telescopes
     ),
     html.Hr(),
+    html.H3('Difference Imaging'),
     dcc.Dropdown(
         id='subtracted-dropdown',
         options=[{'label': 'Unsubtracted', 'value': 'Unsubtracted'},
@@ -31,7 +35,66 @@ app.layout = html.Div([
         ],
         value='Unsubtracted',
         style={'display': 'none'}
-    ), 
+    ),
+    html.Div(
+        id='subtracted-extras',
+        children=[
+            html.H4('Subtraction Algorithm'),
+            dcc.Checklist(
+                id='algorithm-checklist',
+                options=[{'label': 'Hotpants', 'value': 'Hotpants'},
+                         {'label': 'PyZOGY', 'value': 'PyZOGY'}
+                ],
+                value=['Hotpants', 'PyZOGY']
+            ),
+            html.H4('Template Source'),
+            dcc.Checklist(
+                id='template-checklist',
+                options=[{'label': 'LCO', 'value': 'LCO'},
+                         {'label': 'SDSS', 'value': 'SDSS'}
+                ],
+                value=['LCO', 'SDSS']
+            )
+        ],
+        style={'display': 'none'}
+    ),
+    html.Hr(),
+    html.H3('Photometry Type'),
+    dcc.RadioItems(
+        id='photometry-type-radio',
+        options=[{'label': 'PSF', 'value': 'PSF'},
+                 {'label': 'Aperture', 'value': 'Aperture'}
+        ],
+        value='PSF'
+    ),
+    html.Hr(),
+    html.H3('Reduction Type'),
+    dcc.RadioItems(
+        id='reduction-type-radio',
+        options=[{'label': 'Automatic', 'value': ''},
+                 {'label': 'Manual', 'value': 'manual'}
+        ],
+        value=''
+    ),
+    dcc.Checklist(
+        id='final-reduction-checklist',
+        options=[{'label': 'Final Reduction?', 'value': 'Final'}],
+        value=''
+    ),
+    html.Hr(),
+    html.H3('Data Used In'),
+    dcc.Dropdown(
+        id='papers-dropdown',
+        options=[{'label': '', 'value': ''}],
+        value=None
+    ),
+    html.Hr(),
+    html.H3('Data from Group'),
+    dcc.Checklist(
+        id='reducer-group-checklist',
+        options=[{'label': 'LCO', 'value': ''}],
+        value=['']
+    ),
     html.Hr(),
     html.Div(
         id='display-selected-values')
@@ -39,27 +102,68 @@ app.layout = html.Div([
 
 @app.callback(
         Output('subtracted-dropdown', 'style'),
-        [Input('telescopes-dropdown', 'value')])
-def update_style(selected_telescope):
-    if selected_telescope=='LCO':
+        [Input('telescopes-checklist', 'value')])
+def update_subtracted_style(selected_telescope):
+    if 'LCO' in selected_telescope:
         return {}
     else:
         return {'display': 'none'}
 
 @app.callback(
+        Output('subtracted-extras', 'style'),
+        [Input('subtracted-dropdown', 'value')])
+def update_algorith_style(selected_subtraction):
+    if selected_subtraction == 'Subtracted':
+        return {}
+    else:
+        return {'display': 'none'}
+
+@app.callback(
+        Output('subtracted-dropdown', 'value'),
+        [Input('telescopes-checklist', 'value')])
+def update_subtracted_value(selected_telescope):
+    return 'Unsubtracted'
+
+@app.callback(
+        Output('algorithm-checklist', 'value'),
+        [Input('subtracted-dropdown', 'value')])
+def update_algorithm_value(selected_subtraction):
+    return ['Hotpants', 'PyZOGY']
+
+@app.callback(
+        Output('template-checklist', 'value'),
+        [Input('subtracted-dropdown', 'value')])
+def update_template_value(selected_subtraction):
+    return ['LCO', 'SDSS']
+
+@app.callback(
         Output('display-selected-values', 'children'),
-        [Input('telescopes-dropdown', 'value'),
+        [Input('telescopes-checklist', 'value'),
          Input('subtracted-dropdown', 'value'),
+         Input('algorithm-checklist', 'value'),
+         Input('template-checklist', 'value'),
+         Input('photometry-type-radio', 'value'),
+         Input('final-reduction-checklist', 'value'),
+         Input('papers-dropdown', 'value'),
+         Input('reducer-group-checklist', 'value'),
          Input('target_id', 'value')])
-def set_display_children(selected_telescope, selected_subtr, value):
-       return u'Telescope {} with subtraction {} for id {}'.format(selected_telescope, selected_subtr, value) 
+def set_display_children(selected_telescope, selected_subtr, selected_algorithm, selected_template, selected_type, selected_final, selected_paper, selected_group, value):
+    return u'Telescope: {}, Subtraction: {}, Algorithm: {}, Template: {}, Type: {}, Final: {}, Paper: {}, Group: {}, id: {}'.format(selected_telescope, selected_subtr, selected_algorithm, selected_template, selected_type, selected_final, selected_paper, selected_group, value) 
 
 
 @app.callback(
         Output('lightcurve-plot', 'figure'),
-        [Input('telescopes-dropdown', 'value'),
+        [Input('telescopes-checklist', 'value'),
+         Input('subtracted-dropdown', 'value'),
+         Input('algorithm-checklist', 'value'),
+         Input('template-checklist', 'value'),
+         Input('photometry-type-radio', 'value'),
+         Input('reduction-type-radio', 'value'),
+         Input('final-reduction-checklist', 'value'),
+         Input('papers-dropdown', 'value'),
+         Input('reducer-group-checklist', 'value'),
          Input('target_id', 'value')])
-def update_graph(selected_telescope, value):
+def update_graph(selected_telescope, subtracted_value, selected_algorithm, selected_template, selected_photometry_type, reduction_type, final_reduction_value, selected_paper, selected_groups, value):
     def get_color(filter_name):
         filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
             'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
@@ -84,9 +188,18 @@ def update_graph(selected_telescope, value):
     
     target_id = value
     photometry_data = {}
+    subtracted_photometry_data = {}
     datumextras = ReducedDatumExtra.objects.filter(key='upload_extras', data_type='photometry')
     
     datums = []
+    
+    ### Check if this is a final reduction or not
+    if 'Final' in final_reduction_value:
+        final_reduction = True
+    else:
+        final_reduction = False
+
+    ### Get the data for the selected telescope
     if not selected_telescope:
         datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry'))
     
@@ -97,12 +210,22 @@ def update_graph(selected_telescope, value):
             dp_ids.append(j['data_product_id'])
         for de in datumextras:
             de_value = json.loads(de.value)
-            if de_value.get('instrument', '') == selected_telescope and de_value.get('data_product_id', '') in dp_ids:
+
+            ### Test that this dataproduct meets the chosen criteria:
+            if all([de_value.get('instrument', '') in selected_telescope,
+                    de_value.get('photometry_type', '')==selected_photometry_type,
+                    de_value.get('final_reduction', '')==final_reduction,
+                    de_value.get('reducer_group', '') in selected_groups,
+                    (selected_paper is None or de_value.get('used_in', '')==selected_paper),
+                    de_value.get('data_product_id', '') in dp_ids]):
                 dp_id = de_value.get('data_product_id', '')
                 datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id=dp_id))
-        if selected_telescope == 'LCO':
+        
+        ### Finally, get the data that was automatically uploaded from snex1 db
+        if 'LCO' in selected_telescope:
             datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id__isnull=True))
     
+    ### Plot the data
     if not datums:
         return 'No photometry yet'
     for data in datums:
@@ -111,11 +234,23 @@ def update_graph(selected_telescope, value):
             if not value:
                 continue
 
-            #data_product_id = rd.data_product_id
-            photometry_data.setdefault(value.get('filter', ''), {})
-            photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-            photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-            photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
+            ### Get subtracted or unsubtracted data
+            if value.get('background_subtracted', '') == True:
+                if value.get('subtraction_algorithm', '') in selected_algorithm and value.get('template_source', '') in selected_template and reduction_type == 'manual':
+                    subtracted_photometry_data.setdefault(value.get('filter', ''), {})
+                    subtracted_photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
+                    subtracted_photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
+                    subtracted_photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
+            elif value.get('reduction_type', '')==reduction_type:
+                photometry_data.setdefault(value.get('filter', ''), {})
+                photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
+                photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
+                photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
+
+    if subtracted_value == 'Unsubtracted':
+        selected_photometry = photometry_data
+    elif subtracted_value == 'Subtracted':
+        selected_photometry = subtracted_photometry_data
     plot_data = [
         go.Scatter(
             x=filter_values['time'],
@@ -128,23 +263,20 @@ def update_graph(selected_telescope, value):
                 visible=True,
                 color=get_color(filter_name)
             )
-        ) for filter_name, filter_values in photometry_data.items()]
+        ) for filter_name, filter_values in selected_photometry.items()]
 
     graph_data = {'data': plot_data}
 
     layout = go.Layout(
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
-        margin=dict(l=30, r=10, b=30, t=40),
+        margin=dict(l=30, r=40, b=30, t=40),
+        width=1000,
+        height=600,
         hovermode='closest',
-        #height=200,
-        #width=250,
-        showlegend=True,
         plot_bgcolor='white'
     )
 
     graph_data['layout'] = layout
 
     return graph_data
-
-
