@@ -311,7 +311,7 @@ DATA_PRODUCT_TYPES = {
 
 DATA_PROCESSORS = {
     'photometry': 'custom_code.processors.photometry_processor.PhotometryProcessor',
-    'spectroscopy': 'tom_dataproducts.processors.spectroscopy_processor.SpectroscopyProcessor',
+    'spectroscopy': 'custom_code.processors.spectroscopy_processor.SpecProcessor',
 }
 
 TOM_LATEX_PROCESSORS = {

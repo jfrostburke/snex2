@@ -263,17 +263,20 @@ class CustomDataProductUploadView(DataProductUploadView):
 
                 ### ------------------------------------------------------------------
                 ### Create row in ReducedDatumExtras with the extra info
-                extras = {'reduction_type': 'manual'}
                 rdextra_value = {'data_product_id': int(dp.id)}
                 if dp_type == 'photometry':
+                    extras = {'reduction_type': 'manual'}
                     rdextra_value['photometry_type'] = form.cleaned_data['photometry_type']
-                    rdextra_value['instrument'] = form.cleaned_data['instrument']
                     background_subtracted = form.cleaned_data['background_subtracted']
                     if background_subtracted:
                         extras['background_subtracted'] = True
                         extras['subtraction_algorithm'] = form.cleaned_data['subtraction_algorithm']
                         extras['template_source'] = form.cleaned_data['template_source']
 
+                elif dp_type == 'spectroscopy':
+                    extras = {}
+                
+                rdextra_value['instrument'] = form.cleaned_data['instrument']
                 reducer_group = form.cleaned_data['reducer_group']
                 if reducer_group != 'LCO':
                     rdextra_value['reducer_group'] = reducer_group

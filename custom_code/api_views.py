@@ -9,7 +9,7 @@ from tom_dataproducts.models import DataProduct, ReducedDatum
 from tom_targets.models import Target, TargetName
 from custom_code.models import ReducedDatumExtra
 from tom_common.hooks import run_hook
-from .processors.data_processor import run_custom_data_processor, run_pipeline_data_processor
+from .processors.data_processor import run_custom_data_processor
 import json
 
 from tom_dataproducts.serializers import DataProductSerializer
@@ -74,7 +74,7 @@ class CustomDataProductViewSet(DataProductViewSet):
             dp = DataProduct.objects.get(pk=response.data['id'])
             try:
                 #run_hook('data_product_post_upload', dp)
-                reduced_data = run_pipeline_data_processor(dp, extras)
+                reduced_data = run_custom_data_processor(dp, extras)
                 if not settings.TARGET_PERMISSIONS_ONLY:
                     for group in response.data['group']:
                         assign_perm('tom_dataproducts.view_dataproduct', group, dp)

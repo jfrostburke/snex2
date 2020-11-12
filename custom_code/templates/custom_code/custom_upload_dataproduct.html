@@ -43,7 +43,7 @@
       {{ data_product_form.photometry_type.label_tag }}</br>
       {{ data_product_form.photometry_type }}
     </div>
-    <div class="column" id="column-instrument" style="width: 25%; display: none;">
+    <div class="column" id="column-instrument" style="width: 25%; display: block;">
       {{ data_product_form.instrument.label_tag }}</br>
       {{ data_product_form.instrument }}
     </div>
@@ -82,13 +82,11 @@
   $(document).ready(function() {
     $('#id_data_product_type_0').change(function() {
       document.getElementById("column-photometrytype").style.display = "block";
-      document.getElementById("column-instrument").style.display = "block";
       document.getElementById("column-background").style.display = "block";
     });
     for (var i = 1; i < 4; i++) {
       $('#id_data_product_type_'+i).change(function() {
         document.getElementById("column-photometrytype").style.display = "none";
-        document.getElementById("column-instrument").style.display = "none";
         document.getElementById("column-background").style.display = "none";
       });
     };
