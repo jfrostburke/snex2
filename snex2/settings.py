@@ -262,7 +262,7 @@ EXTRA_FIELDS = [
 AUTH_STRATEGY = 'LOCKED'
 #AUTH_STRATEGY = 'READ_ONLY'
 
-TARGET_PERMISSIONS_ONLY = True
+TARGET_PERMISSIONS_ONLY = False
 
 # URLs that should be allowed access even with AUTH_STRATEGY = LOCKED
 # for example: OPEN_URLS = ['/', '/about']

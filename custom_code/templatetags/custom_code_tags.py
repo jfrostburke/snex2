@@ -4,6 +4,8 @@ from django import template
 from django.conf import settings
 from django.db.models.functions import Lower
 from django.shortcuts import reverse
+from guardian.shortcuts import get_objects_for_user, get_perms
+from django.contrib.auth.models import User, Group
 
 from tom_targets.models import Target, TargetExtra
 from tom_targets.forms import TargetVisibilityForm
@@ -532,3 +534,21 @@ def dash_lightcurve(context, target):
                              'reducer-group-checklist': {'options': reducer_group_options},
                              'papers-dropdown': {'options': [{'label': k, 'value': k} for k in papers_used_in]}},
             'request': request}
+
+
+@register.inclusion_tag('custom_code/dataproduct_update.html')
+def dataproduct_update(dataproduct):
+    group_query = Group.objects.all()
+    groups = [i.name for i in group_query]
+    return{'dataproduct': dataproduct,
+           'groups': groups}
+
+@register.filter
+def get_dataproduct_groups(dataproduct):
+    # Query all the groups with permission for this dataproduct
+    group_query = Group.objects.all()
+    groups = ''
+    for i in group_query:
+        if 'view_dataproduct' in get_perms(i, dataproduct):
+            groups += str(i.name) + ','
+    return json.dumps(groups)

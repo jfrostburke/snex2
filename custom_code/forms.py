@@ -1,13 +1,14 @@
 from tom_targets.forms import SiderealTargetCreateForm, TargetForm
 from tom_targets.models import TargetExtra
 from tom_dataproducts.forms import DataProductUploadForm
+from tom_dataproducts.models import DataProduct
 from guardian.shortcuts import assign_perm, get_groups_with_perms, remove_perm
 from django import forms
 from custom_code.models import ScienceTags, TargetTags
 from django.conf import settings
 from django.db.models.functions import Lower
 from django.core.exceptions import ValidationError
-
+from django.contrib.auth.models import Group
 class CustomTargetCreateForm(SiderealTargetCreateForm):
 
     sciencetags = forms.ModelMultipleChoiceField(ScienceTags.objects.all().order_by(Lower('tag')), required=False, widget=forms.CheckboxSelectMultiple)
@@ -41,6 +42,15 @@ class CustomTargetCreateForm(SiderealTargetCreateForm):
                 )
 
         return instance
+
+
+#class DataProductUpdateForm(forms.ModelForm):
+#
+#    class Meta:
+#        model=DataProduct
+#        fields = '__all__'
+#
+#    groups = forms.ModelMultipleChoiceField(Group.objects.all(), required=False, widget=forms.CheckboxSelectMultiple)
 
 
 class ReducerGroupWidget(forms.widgets.MultiWidget):

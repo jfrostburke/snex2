@@ -2,6 +2,8 @@ from django_filters.views import FilterView
 from django.shortcuts import redirect, render
 from django.db.models import Q #
 from django.http import HttpResponse, JsonResponse
+from django.views.generic.edit import FormView, UpdateView
+from django.urls import reverse
 
 from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter #
@@ -9,7 +11,7 @@ from tom_targets.models import TargetList
 
 from tom_targets.models import Target, TargetExtra
 from guardian.mixins import PermissionListMixin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.conf import settings
 
@@ -30,7 +32,7 @@ from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
 from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse
 
-from .forms import CustomTargetCreateForm, CustomDataProductUploadForm
+from .forms import CustomTargetCreateForm, CustomDataProductUploadForm#, DataProductUpdateForm
 from tom_targets.views import TargetCreateView
 from tom_common.hooks import run_hook
 from tom_dataproducts.views import DataProductUploadView, DataProductDeleteView
@@ -234,6 +236,31 @@ class CustomTargetCreateView(TargetCreateView):
         return redirect(self.get_success_url())
 
 
+#class DataProductUpdateView(FormView):
+#    model = DataProduct
+#    template_name = 'tom_dataproducts/dataproduct_update_form.html'
+#    form_class = DataProductUpdateForm
+#    success_url = '/'
+#
+#    #def get_form_class(self):
+#    #    return DataProductUpdateForm
+#
+#    def form_valid(self, form, *args, **kwargs):
+#        form.instance.pk = self.kwargs['pk']
+#        groups = form.cleaned_data['groups']
+#        if not settings.TARGET_PERMISSIONS_ONLY:
+#            reduced_data = ReducedDatum.objects.filter(data_product=self.object)
+#            for group in groups:
+#                assign_perm('tom_dataproducts.view_dataproduct', group, self.object)
+#                assign_perm('tom_dataproducts.view_reduceddatum', group, reduced_data)
+#
+#        return super(DataProductUpdateView, self).form_valid(form)
+#        #return redirect(reverse(
+#        #    'tom_targets:detail',
+#        #    kwargs={'pk': self.object.target_id})
+#        #)
+
+
 class CustomDataProductUploadView(DataProductUploadView):
 
     form_class = CustomDataProductUploadForm
@@ -340,3 +367,18 @@ class CustomDataProductDeleteView(DataProductDeleteView):
         self.get_object().data.delete()
         return super().delete(request, *args, **kwargs)
 
+
+def save_dataproduct_groups_view(request):
+    group_names = json.loads(request.GET.get('groups', None))
+    dataproduct_id = request.GET.get('dataproductid', None)
+    dp = DataProduct.objects.get(id=dataproduct_id)
+    data = ReducedDatum.objects.filter(data_product=dp)
+    successful_groups = ''
+    for i in group_names:
+        group = Group.objects.get(name=i)
+        assign_perm('tom_dataproducts.view_dataproduct', group, dp)
+        for datum in data:
+            assign_perm('tom_dataproducts.view_reduceddatum', group, datum)
+        successful_groups += i
+    response_data = {'success': successful_groups}
+    return HttpResponse(json.dumps(response_data), content_type='application/json')
