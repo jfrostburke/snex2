@@ -44,19 +44,10 @@ class CustomTargetCreateForm(SiderealTargetCreateForm):
         return instance
 
 
-#class DataProductUpdateForm(forms.ModelForm):
-#
-#    class Meta:
-#        model=DataProduct
-#        fields = '__all__'
-#
-#    groups = forms.ModelMultipleChoiceField(Group.objects.all(), required=False, widget=forms.CheckboxSelectMultiple)
-
-
 class ReducerGroupWidget(forms.widgets.MultiWidget):
     def __init__(self, attrs=None):
-        choices = [('LCO', 'LCO'), ('UC Davis', 'UC Davis'), ('UofA', 'UofA')]
-        help_text="Or add your own group"
+        choices = [('LCO', 'LCO'), ('UC Davis', 'UC Davis'), ('Arizona', 'Arizona')]
+        help_text="Or add another group"
         widget = (forms.widgets.RadioSelect(choices=choices),
                   forms.widgets.TextInput(attrs={'placeholder': help_text})
                 )
@@ -72,18 +63,50 @@ class ReducerGroupWidget(forms.widgets.MultiWidget):
             return ["", ""]
 
 
-class ReducerGroupField(forms.MultiValueField):
-    widget = ReducerGroupWidget
+class InstrumentWidget(forms.widgets.MultiWidget):
+    def __init__(self, attrs=None):
+        choices = [('LCO', 'LCO'), ('Swift', 'Swift'), ('Gaia', 'Gaia'), ('TESS', 'TESS')]
+        help_text="Or add another instrument"
+        widget = (forms.widgets.RadioSelect(choices=choices),
+                  forms.widgets.TextInput(attrs={'placeholder': help_text})
+                )
+        super(InstrumentWidget, self).__init__(widget, attrs=attrs)
+
+    def decompress(self, value):
+        if value:
+            if value in [x[0] for x in self.choices]:
+                return [value, ""]
+            else:
+                return ["", value]
+        else:
+            return ["", ""]
+
+
+class TemplateSourceWidget(forms.widgets.MultiWidget):
+    def __init__(self, attrs=None):
+        choices = [('LCO', 'LCO'), ('SDSS', 'SDSS')]
+        help_text="Other"
+        widget = (forms.widgets.RadioSelect(choices=choices),
+                  forms.widgets.TextInput(attrs={'placeholder': help_text})
+                )
+        super(TemplateSourceWidget, self).__init__(widget, attrs=attrs)
+
+    def decompress(self, value):
+        if value:
+            if value in [x[0] for x in self.choices]:
+                return [value, ""]
+            else:
+                return ["", value]
+        else:
+            return ["", ""]
+
+
+class MultiField(forms.MultiValueField):
 
     def __init__(self, required=False, widget=None, label=None, initial=None, help_text=None, choices=None):
-        #choices = kwargs.pop("choices",[])
         field = (forms.ChoiceField(choices=choices, required=False), forms.CharField(required=False))
-        super(ReducerGroupField, self).__init__(required=False, fields=field, widget=widget, label=label, initial=initial, help_text=help_text)
+        super(MultiField, self).__init__(required=False, fields=field, widget=widget, label=label, initial=initial, help_text=help_text)
 
-    #def __init__(self, choices, *args, **kwargs):
-    #    fields = (forms.ChoiceField(choices=choices, required=False), forms.CharField(required=False))
-    #    self.widget = ReducerGroupWidget(widgets=[f.widget for f in fields])
-    #    super(ReducerGroupField, self).__init__(required=False, fields=fields, *args, **kwargs)
 
     def compress(self, data_list):
         if not data_list:
@@ -100,14 +123,14 @@ class CustomDataProductUploadForm(DataProductUploadForm):
         required=False
     )
 
-    instrument = forms.ChoiceField(
+    instrument = MultiField(
         choices=[('LCO', 'LCO'), 
                  ('Swift', 'Swift'), 
                  ('Gaia', 'Gaia'),
                  ('Tess', 'Tess')
         ],
-        widget=forms.RadioSelect(),
-        required=False
+        widget=InstrumentWidget,
+        help_text="Or add another instrument"
     )
 
     background_subtracted = forms.BooleanField(
@@ -122,23 +145,21 @@ class CustomDataProductUploadForm(DataProductUploadForm):
         required=False
     )
 
-    template_source = forms.ChoiceField(
+    template_source = MultiField(
         choices=[('LCO', 'LCO'),
                  ('SDSS', 'SDSS'),
-                 ('other', 'other')
         ],
-        widget=forms.RadioSelect(),
+        widget=TemplateSourceWidget,
         required=False
     )
 
-    reducer_group = ReducerGroupField(
-    #reducer_group = forms.ChoiceField(
+    reducer_group = MultiField(
         choices=[('LCO', 'LCO'),
                  ('UC Davis', 'UC Davis'),
                  ('U of A', 'U of A')
         ],
-        help_text="Or add your own group",
-        #required=False
+        help_text="Or add another group",
+        widget=ReducerGroupWidget
     )
 
     used_in = forms.ChoiceField(

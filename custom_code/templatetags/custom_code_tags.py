@@ -507,6 +507,7 @@ def dash_lightcurve(context, target):
     telescopes = ['LCO']
     reducer_groups = []
     papers_used_in = []
+    final_reduction = False
 
     dp_ids = []
     datumquery = ReducedDatum.objects.filter(target=target, data_type='photometry').order_by().values('data_product_id').distinct()
@@ -525,16 +526,27 @@ def dash_lightcurve(context, target):
                 papers_used_in.append(used_in)
             if group and group not in reducer_groups:
                 reducer_groups.append(group)
+   
+            if de_value.get('final_reduction', '')==True:
+                final_reduction = True
     
     reducer_group_options = [{'label': 'LCO', 'value': ''}]
     reducer_group_options.extend([{'label': k, 'value': k} for k in reducer_groups])
-
-    return {'dash_context': {'target_id': {'value': target.id},
-                             'telescopes-checklist': {'options': [{'label': k, 'value': k} for k in telescopes]},
-                             'reducer-group-checklist': {'options': reducer_group_options},
-                             'papers-dropdown': {'options': [{'label': k, 'value': k} for k in papers_used_in]}},
-            'request': request}
-
+ 
+    if final_reduction:
+        return {'dash_context': {'target_id': {'value': target.id},
+                                 'telescopes-checklist': {'options': [{'label': k, 'value': k} for k in telescopes]},
+                                 'reducer-group-checklist': {'options': reducer_group_options},
+                                 'papers-dropdown': {'options': [{'label': k, 'value': k} for k in papers_used_in]},
+                                 'final-reduction-checklist': {'value': 'Final'},
+                                 'reduction-type-radio': {'value': 'manual'}},
+                'request': request}
+    else:
+        return {'dash_context': {'target_id': {'value': target.id},
+                                 'telescopes-checklist': {'options': [{'label': k, 'value': k} for k in telescopes]},
+                                 'reducer-group-checklist': {'options': reducer_group_options},
+                                 'papers-dropdown': {'options': [{'label': k, 'value': k} for k in papers_used_in]}},
+                'request': request}
 
 @register.inclusion_tag('custom_code/dataproduct_update.html')
 def dataproduct_update(dataproduct):

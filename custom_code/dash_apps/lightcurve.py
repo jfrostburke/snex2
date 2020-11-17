@@ -28,8 +28,8 @@ app.layout = html.Div([
     ),
     html.Hr(),
     html.H3('Difference Imaging'),
-    dcc.Dropdown(
-        id='subtracted-dropdown',
+    dcc.RadioItems(
+        id='subtracted-radio',
         options=[{'label': 'Unsubtracted', 'value': 'Unsubtracted'},
                  {'label': 'Subtracted', 'value': 'Subtracted'}
         ],
@@ -101,7 +101,7 @@ app.layout = html.Div([
 ])
 
 @app.callback(
-        Output('subtracted-dropdown', 'style'),
+        Output('subtracted-radio', 'style'),
         [Input('telescopes-checklist', 'value')])
 def update_subtracted_style(selected_telescope):
     if 'LCO' in selected_telescope:
@@ -111,7 +111,7 @@ def update_subtracted_style(selected_telescope):
 
 @app.callback(
         Output('subtracted-extras', 'style'),
-        [Input('subtracted-dropdown', 'value')])
+        [Input('subtracted-radio', 'value')])
 def update_algorith_style(selected_subtraction):
     if selected_subtraction == 'Subtracted':
         return {}
@@ -119,27 +119,27 @@ def update_algorith_style(selected_subtraction):
         return {'display': 'none'}
 
 @app.callback(
-        Output('subtracted-dropdown', 'value'),
+        Output('subtracted-radio', 'value'),
         [Input('telescopes-checklist', 'value')])
 def update_subtracted_value(selected_telescope):
     return 'Unsubtracted'
 
 @app.callback(
         Output('algorithm-checklist', 'value'),
-        [Input('subtracted-dropdown', 'value')])
+        [Input('subtracted-radio', 'value')])
 def update_algorithm_value(selected_subtraction):
     return ['Hotpants', 'PyZOGY']
 
 @app.callback(
         Output('template-checklist', 'value'),
-        [Input('subtracted-dropdown', 'value')])
+        [Input('subtracted-radio', 'value')])
 def update_template_value(selected_subtraction):
     return ['LCO', 'SDSS']
 
 @app.callback(
         Output('display-selected-values', 'children'),
         [Input('telescopes-checklist', 'value'),
-         Input('subtracted-dropdown', 'value'),
+         Input('subtracted-radio', 'value'),
          Input('algorithm-checklist', 'value'),
          Input('template-checklist', 'value'),
          Input('photometry-type-radio', 'value'),
@@ -154,7 +154,7 @@ def set_display_children(selected_telescope, selected_subtr, selected_algorithm,
 @app.callback(
         Output('lightcurve-plot', 'figure'),
         [Input('telescopes-checklist', 'value'),
-         Input('subtracted-dropdown', 'value'),
+         Input('subtracted-radio', 'value'),
          Input('algorithm-checklist', 'value'),
          Input('template-checklist', 'value'),
          Input('photometry-type-radio', 'value'),

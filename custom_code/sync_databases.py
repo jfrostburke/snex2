@@ -228,7 +228,7 @@ def update_phot(action, db_address=_SNEX2_DB):
                             subtraction_algorithm = 'Hotpants'
                         elif int(phot_row.difftype) == 1:
                             subtraction_algorithm = 'PyZOGY'
-                        phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': True, 'subtraction_algorithm': subtraction_algorithm})
+                        phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': True, 'subtraction_algorithm': subtraction_algorithm, 'reduction_type': 'manual'})
                     
                     else:
                         phot = json.dumps({})
