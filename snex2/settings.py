@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     'tom_catalogs',
     'tom_observations',
     'tom_dataproducts',
-    'tom_publications',
     'custom_code',
     'rest_framework',
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
@@ -314,10 +313,10 @@ DATA_PROCESSORS = {
     'spectroscopy': 'custom_code.processors.spectroscopy_processor.SpecProcessor',
 }
 
-TOM_LATEX_PROCESSORS = {
-    'ObservationGroup': 'tom_publications.processors.observation_group_latex_processor.ObservationGroupLatexProcessor',
-    'TargetList': 'tom_publications.processors.target_list_latex_processor.TargetListLatexProcessor'
-}
+#TOM_LATEX_PROCESSORS = {
+#    'ObservationGroup': 'tom_publications.processors.observation_group_latex_processor.ObservationGroupLatexProcessor',
+#    'TargetList': 'tom_publications.processors.target_list_latex_processor.TargetListLatexProcessor'
+#}
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
