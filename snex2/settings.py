@@ -52,9 +52,10 @@ INSTALLED_APPS = [
     'tom_catalogs',
     'tom_observations',
     'tom_dataproducts',
-    'tom_publications',
     'custom_code',
-    'rest_framework'
+    'rest_framework',
+    'django_plotly_dash.apps.DjangoPlotlyDashConfig',
+
 ]
 
 SITE_ID = 2
@@ -258,12 +259,13 @@ EXTRA_FIELDS = [
 # Authentication strategy can either be LOCKED (required login for all views)
 # or READ_ONLY (read only access to views)
 AUTH_STRATEGY = 'LOCKED'
+#AUTH_STRATEGY = 'READ_ONLY'
 
-TARGET_PERMISSIONS_ONLY = True
+TARGET_PERMISSIONS_ONLY = False
 
 # URLs that should be allowed access even with AUTH_STRATEGY = LOCKED
 # for example: OPEN_URLS = ['/', '/about']
-OPEN_URLS = ['/snex2/tnstargets/']
+OPEN_URLS = ['/snex2/tnstargets/', '/pipeline-upload/photometry-upload/']
 
 HOOKS = {
     'target_post_save': 'custom_code.hooks.target_post_save',
@@ -308,13 +310,13 @@ DATA_PRODUCT_TYPES = {
 
 DATA_PROCESSORS = {
     'photometry': 'custom_code.processors.photometry_processor.PhotometryProcessor',
-    'spectroscopy': 'tom_dataproducts.processors.spectroscopy_processor.SpectroscopyProcessor',
+    'spectroscopy': 'custom_code.processors.spectroscopy_processor.SpecProcessor',
 }
 
-TOM_LATEX_PROCESSORS = {
-    'ObservationGroup': 'tom_publications.processors.observation_group_latex_processor.ObservationGroupLatexProcessor',
-    'TargetList': 'tom_publications.processors.target_list_latex_processor.TargetListLatexProcessor'
-}
+#TOM_LATEX_PROCESSORS = {
+#    'ObservationGroup': 'tom_publications.processors.observation_group_latex_processor.ObservationGroupLatexProcessor',
+#    'TargetList': 'tom_publications.processors.target_list_latex_processor.TargetListLatexProcessor'
+#}
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -327,6 +329,12 @@ REST_FRAMEWORK = {
 TARGET_CLASSIFICATIONS = [
     'Afterglow', 'Afterglow?', 'AGN', 'AGN?', 'Ca-rich', 'Ca-rich?', 'CV', 'CV?', 'Galaxy', 'ILRN', 'ILRN?', 'Junk', 'Kilonova', 'Kilonova?', 'LBV', 'LBV?', 'Nova', 'Nova?', 'SLSN-I', 'SLSN-I?', 'SLSN-II', 'SLSN-II?', 'SLSN-R', 'SLSN-R?', 'SN', 'SN I-faint', 'SN I-faint?', 'SN Ia', 'SN Ia 02cx-like', 'SN Ia 02cx-like?', 'SN Ia 02es-like', 'SN Ia 02es-like?', 'SN Ia 02ic-like', 'SN Ia 02ic-like?', 'SN Ia 91bg-like', 'SN Ia 91bg-like?', 'SN Ia 91T-like', 'SN Ia 91T-like?', 'SN Ia pec', 'SN Ia pec?', 'SN Ia?', 'SN Ib', 'SN Ib/c', 'SN Ib/c?', 'SN Ib?', 'SN Ibn', 'SN Ibn?', 'SN Ic', 'SN Ic-BL', 'SN Ic-BL?', 'SN Ic?', 'SN II', 'SN II?', 'SN IIb', 'SN IIb?', 'SN IIL', 'SN IIL?', 'SN IIn', 'SN IIn?', 'SN IIP', 'SN IIP?', 'SN?', 'Standard', 'TDE', 'TDE?', 'Unknown', 'Varstar', 'Varstar?'
 ]
+
+DEFAULT_GROUPS = [
+    'ANU', 'ARIES', 'CSP', 'CU Boulder', 'e/PESSTO', 'ex-LCOGT', 'KMTNet', 'LBNL', 'LCOGT', 'LSQ', 'NAOC', 'Padova', 'QUB', 'SAAO', 'SIRAH', 'Skymapper', 'Tel Aviv U', 'U Penn', 'UC Berkeley', 'US GSP', 'UT Austin'
+]
+
+X_FRAME_OPTIONS = 'ALLOWALL'
 
 HINTS_ENABLED = False
 HINT_LEVEL = 20

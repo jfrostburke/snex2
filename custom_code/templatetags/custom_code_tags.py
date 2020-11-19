@@ -4,6 +4,8 @@ from django import template
 from django.conf import settings
 from django.db.models.functions import Lower
 from django.shortcuts import reverse
+from guardian.shortcuts import get_objects_for_user, get_perms
+from django.contrib.auth.models import User, Group
 
 from tom_targets.models import Target, TargetExtra
 from tom_targets.forms import TargetVisibilityForm
@@ -19,7 +21,7 @@ from astropy.coordinates import get_moon, get_sun, SkyCoord, AltAz
 import numpy as np
 import time
 
-from custom_code.models import ScienceTags, TargetTags
+from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra
 from custom_code.forms import CustomDataProductUploadForm
 from urllib.parse import urlencode
 
@@ -183,6 +185,7 @@ def get_color(filter_name):
 def lightcurve(context, target):
          
     photometry_data = {}
+
     if settings.TARGET_PERMISSIONS_ONLY:
         datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
     else:
@@ -191,15 +194,18 @@ def lightcurve(context, target):
                                       klass=ReducedDatum.objects.filter(
                                         target=target,
                                         data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
+
     for rd in datums:
     #for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
         value = json.loads(rd.value)
         if not value:  # empty
             continue
+   
         photometry_data.setdefault(value.get('filter', ''), {})
         photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
         photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-        photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
+        photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))        
+
     plot_data = [
         go.Scatter(
             x=filter_values['time'],
@@ -212,11 +218,13 @@ def lightcurve(context, target):
                 visible=True,
                 color=get_color(filter_name)
             )
-        ) for filter_name, filter_values in photometry_data.items()]
+        ) for filter_name, filter_values in photometry_data.items()] 
+     
+
     layout = go.Layout(
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
-        margin=dict(l=30, r=10, b=30, t=40),
+        margin=dict(l=30, r=10, b=100, t=40),
         hovermode='closest',
         plot_bgcolor='white'
         #height=500,
@@ -490,18 +498,69 @@ def custom_upload_dataproduct(context, obj):
             form.fields['groups'].queryset = user.groups.all()
     return {'data_product_form': form}
 
-@register.inclusion_tag('tom_observations/partials/observation_type_tabs.html', takes_context=True)
-def custom_observation_type_tabs(context):
-    """
-    Displays tabs in observation creation form representing each available observation type.
-    """
+
+@register.inclusion_tag('custom_code/dash_lightcurve.html', takes_context=True)
+def dash_lightcurve(context, target):
     request = context['request']
-    query_params = request.GET.copy()
-    observation_type = query_params.pop('observation_type', None)
-    return {
-        'params': urlencode(query_params),
-        'type_choices': context['observation_type_choices'],
-        'observation_type': observation_type,
-        'facility': context['form']['facility'].value,
-        'target_id': request.GET.get('target_id')
-    }
+    
+    # Get initial choices and values for some dash elements
+    telescopes = ['LCO']
+    reducer_groups = []
+    papers_used_in = []
+    final_reduction = False
+
+    dp_ids = []
+    datumquery = ReducedDatum.objects.filter(target=target, data_type='photometry').order_by().values('data_product_id').distinct()
+    for i in datumquery:
+        dp_ids.append(i['data_product_id'])
+    for de in ReducedDatumExtra.objects.filter(target=target, key='upload_extras', data_type='photometry'):
+        de_value = json.loads(de.value)
+        if de_value.get('data_product_id', '') in dp_ids:
+            inst = de_value.get('instrument', '')
+            used_in = de_value.get('used_in', '')
+            group = de_value.get('reducer_group', '')
+
+            if inst and inst not in telescopes:
+                telescopes.append(inst)
+            if used_in and used_in not in papers_used_in:
+                papers_used_in.append(used_in)
+            if group and group not in reducer_groups:
+                reducer_groups.append(group)
+   
+            if de_value.get('final_reduction', '')==True:
+                final_reduction = True
+    
+    reducer_group_options = [{'label': 'LCO', 'value': ''}]
+    reducer_group_options.extend([{'label': k, 'value': k} for k in reducer_groups])
+ 
+    if final_reduction:
+        return {'dash_context': {'target_id': {'value': target.id},
+                                 'telescopes-checklist': {'options': [{'label': k, 'value': k} for k in telescopes]},
+                                 'reducer-group-checklist': {'options': reducer_group_options},
+                                 'papers-dropdown': {'options': [{'label': k, 'value': k} for k in papers_used_in]},
+                                 'final-reduction-checklist': {'value': 'Final'},
+                                 'reduction-type-radio': {'value': 'manual'}},
+                'request': request}
+    else:
+        return {'dash_context': {'target_id': {'value': target.id},
+                                 'telescopes-checklist': {'options': [{'label': k, 'value': k} for k in telescopes]},
+                                 'reducer-group-checklist': {'options': reducer_group_options},
+                                 'papers-dropdown': {'options': [{'label': k, 'value': k} for k in papers_used_in]}},
+                'request': request}
+
+@register.inclusion_tag('custom_code/dataproduct_update.html')
+def dataproduct_update(dataproduct):
+    group_query = Group.objects.all()
+    groups = [i.name for i in group_query]
+    return{'dataproduct': dataproduct,
+           'groups': groups}
+
+@register.filter
+def get_dataproduct_groups(dataproduct):
+    # Query all the groups with permission for this dataproduct
+    group_query = Group.objects.all()
+    groups = ''
+    for i in group_query:
+        if 'view_dataproduct' in get_perms(i, dataproduct):
+            groups += str(i.name) + ','
+    return json.dumps(groups)

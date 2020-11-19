@@ -75,11 +75,8 @@ class TNSTarget(models.Model):
 
 class ReducedDatumExtra(models.Model):
     
-    snex_id = models.IntegerField(
-        verbose_name='SNEx1 ID', help_text='ID of the reduceddatum row in the SNEx1 DB'
-    )
-    reduced_datum = models.ForeignKey(
-        ReducedDatum, on_delete=models.CASCADE
+    target = models.ForeignKey(
+        Target, on_delete=models.CASCADE
     )
     data_type = models.CharField(
         max_length=100, default='', verbose_name='Data Type', 
@@ -104,7 +101,7 @@ class ReducedDatumExtra(models.Model):
 
     class Meta:
         get_latest_by = ('id,')
-        unique_together = ['reduced_datum', 'key']
+        #unique_together = ['reduced_datum', 'key']
 
     def __str__(self):
         return f'{self.key}: {self.value}'

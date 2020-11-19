@@ -1,0 +1,60 @@
+{% load custom_code_tags %}
+<div id="group-list" class="dropdown-check-list">
+    <button onclick="display_groups({{ dataproduct.id }})" class="dropbtn btn" style="background-color: #164560; border: #164560; font-size: 16px;">Update</button>
+    <div id="group-dropdown-{{ dataproduct.id }}" class="dropdown-content" style="background-color: white; color: black; font-size: 14px; height: 200px; overflow-y: scroll; width: 200px;">
+      {% for group in groups %}
+      {% with cutgroup=group|cut:" " %}
+      <span><input type="checkbox" class="group-check-{{ dataproduct.id }}" id="select-{{ cutgroup }}-{{ dataproduct.id }}" value="{{ group }}"/>{{ group }}</span><br>
+      {% endwith %}
+      {% endfor %}
+      <button onclick="submit_groups({{ dataproduct.id }})" class="btn" style="background-color: #174460; color: white; border: none;">Apply</button>
+    </div>
+
+  <script>
+    window.onload = onPageLoad();
+    function onPageLoad() {
+      {% with dataproduct|get_dataproduct_groups as dp_groups %}
+        console.log("{{ dp_groups }}");
+        {% for group in groups %}
+  	{% with cutgroup=group|cut:" " %}
+  	  {% if group in dp_groups %}
+  	    document.getElementById("select-{{ cutgroup}}-{{ dataproduct.id }}").checked = true;
+  	  {% endif %}
+  	{% endwith %}
+        {% endfor %}
+      {% endwith %}
+    }
+  
+    function display_groups(dpId) {
+      document.getElementById("group-dropdown-"+dpId).classList.toggle("show");
+    }
+  
+    function submit_groups(dpId) {
+      var checkboxes = document.getElementsByClassName("group-check-"+dpId);
+      var checkboxesChecked = [];
+      for (var i=0; i<checkboxes.length; i++) {
+        if (checkboxes[i].checked) {
+  	checkboxesChecked.push(checkboxes[i].value);
+        }
+      }
+  
+      console.log(checkboxesChecked, dpId);
+  
+      $.ajax({
+        url: '{% url "save_dataproduct_groups" %}',
+        data: {
+  	'groups': JSON.stringify(checkboxesChecked),
+  	'dataproductid': dpId
+        },
+        dataType: 'json'
+      })
+    }
+  /* When the user clicks on the button,
+  toggle between hiding and showing the dropdown content */
+  $('.dropdown-content').click(function(e) {
+    e.stopPropagation();
+  });
+
+  </script>
+
+</div>

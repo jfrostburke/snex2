@@ -97,10 +97,6 @@ class SOARObservationForm(SOARBaseObservationForm, LCOSpectroscopyObservationFor
                 ),
                 css_class='form-row',
             ),
-            Div(
-                HTML("Note: currently untested due to lack of SOAR nights making validation impossible. Good luck."),
-                HTML("<p></p>"),
-            ),
             self.button_layout()
         )
 

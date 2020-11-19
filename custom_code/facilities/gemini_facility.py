@@ -407,6 +407,10 @@ class GeminiFacility(BaseRoboticObservationFacility):
         ('IMAGING_OPTICAL', 'Optical Imaging'),
         ('SPECTRA_OPTICAL', 'Optical Spectra')
     ]
+    observation_forms = {
+        'IMAGING_OPTICAL': OpticalImagingForm,
+        'SPECTRA_OPTICAL': OpticalSpectraForm
+    }
 
     def get_form(self, observation_type='IMAGING_OPTICAL'):
         if observation_type == 'IMAGING_OPTICAL':

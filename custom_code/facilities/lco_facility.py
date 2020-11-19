@@ -378,6 +378,9 @@ class LCOFacility(BaseRoboticObservationFacility):
     name = 'LCO'
     form = LCOObservationForm
     observation_types = [('IMAGING', 'Imaging')]
+    observation_forms = {
+        'IMAGING': LCOObservationForm
+    }
 
     def get_form(self, observation_type):
         return LCOObservationForm
