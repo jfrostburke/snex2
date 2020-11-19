@@ -228,7 +228,12 @@ def update_phot(action, db_address=_SNEX2_DB):
                             subtraction_algorithm = 'Hotpants'
                         elif int(phot_row.difftype) == 1:
                             subtraction_algorithm = 'PyZOGY'
-                        phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': True, 'subtraction_algorithm': subtraction_algorithm, 'reduction_type': 'manual'})
+                        filename = phot_row.filename
+                        if 'SDSS' in filename:
+                            template_source = 'SDSS'
+                        else:
+                            template_source = 'LCO'
+                        phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': True, 'subtraction_algorithm': subtraction_algorithm, 'template_source': template_source, 'reduction_type': 'manual'})
                     
                     else:
                         phot = json.dumps({})
@@ -252,8 +257,9 @@ def update_phot(action, db_address=_SNEX2_DB):
                             for snex2_row in snex2_id_query:
                                 value = json.loads(snex2_row.value)
                                 if id_ == value.get('snex_id', ''):
-                                    db_session.query(Datum).filter(Datum.id==snex2_row.id).update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
+                                    snex2_id = snex2_row.id
                                     break
+                            db_session.query(Datum).filter(Datum.id==snex2_id).update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
 
                         elif action=='insert':
                             newphot = Datum(target_id=targetid, timestamp=time, value=phot, data_type='photometry', source_name='', source_location='')
@@ -328,7 +334,6 @@ def update_spec(action, db_address=_SNEX2_DB):
                 targetid = spec_row.targetid
                 time = '{} {}'.format(spec_row.dateobs, spec_row.ut) 
                 spec = read_spec(spec_row.filepath + spec_row.filename.replace('.fits', '.ascii'))
-                spec.update({'snex_id': int(id_)})
                 spec_groupid = spec_row.groupidcode
     
                 with get_session(db_address=_SNEX1_DB) as db_session:
@@ -351,6 +356,7 @@ def update_spec(action, db_address=_SNEX2_DB):
                                 if id_ == value.get('snex_id', ''):
                                     snex2_id = value.get('snex2_id', '')
                                     db_session.query(Datum).filter(Datum.id==snex2_id).update({'target_id': targetid, 'timestamp': time, 'value': spec, 'data_type': 'spectroscopy', 'source_name': '', 'source_location': ''})
+                                    break
 
                         elif action=='insert':
                             newspec = Datum(target_id=targetid, timestamp=time, value=spec, data_type='spectroscopy', source_name='', source_location='')

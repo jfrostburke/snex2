@@ -236,31 +236,6 @@ class CustomTargetCreateView(TargetCreateView):
         return redirect(self.get_success_url())
 
 
-#class DataProductUpdateView(FormView):
-#    model = DataProduct
-#    template_name = 'tom_dataproducts/dataproduct_update_form.html'
-#    form_class = DataProductUpdateForm
-#    success_url = '/'
-#
-#    #def get_form_class(self):
-#    #    return DataProductUpdateForm
-#
-#    def form_valid(self, form, *args, **kwargs):
-#        form.instance.pk = self.kwargs['pk']
-#        groups = form.cleaned_data['groups']
-#        if not settings.TARGET_PERMISSIONS_ONLY:
-#            reduced_data = ReducedDatum.objects.filter(data_product=self.object)
-#            for group in groups:
-#                assign_perm('tom_dataproducts.view_dataproduct', group, self.object)
-#                assign_perm('tom_dataproducts.view_reduceddatum', group, reduced_data)
-#
-#        return super(DataProductUpdateView, self).form_valid(form)
-#        #return redirect(reverse(
-#        #    'tom_targets:detail',
-#        #    kwargs={'pk': self.object.target_id})
-#        #)
-
-
 class CustomDataProductUploadView(DataProductUploadView):
 
     form_class = CustomDataProductUploadForm
