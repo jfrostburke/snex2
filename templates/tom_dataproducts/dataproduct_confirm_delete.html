@@ -10,7 +10,7 @@
     <h3>Delete a Data Product</h3>
   </div>
 </nav>
-<form method="post" action="{% url "custom-upload-delete" pk=object_pk %}?next={{ next }}">
+<form method="post" action="{% url "custom-upload-delete" pk=object.id %}?next={{ next }}">
     {% csrf_token %}
     <p>Are you sure you want to delete "{{ object }}"?</p>
     {% buttons %}

@@ -513,7 +513,7 @@ def dash_lightcurve(context, target):
     datumquery = ReducedDatum.objects.filter(target=target, data_type='photometry').order_by().values('data_product_id').distinct()
     for i in datumquery:
         dp_ids.append(i['data_product_id'])
-    for de in ReducedDatumExtra.objects.filter(key='upload_extras', data_type='photometry'):
+    for de in ReducedDatumExtra.objects.filter(target=target, key='upload_extras', data_type='photometry'):
         de_value = json.loads(de.value)
         if de_value.get('data_product_id', '') in dp_ids:
             inst = de_value.get('instrument', '')

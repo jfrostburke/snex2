@@ -252,7 +252,7 @@ def update_phot(action, db_address=_SNEX2_DB):
                             for snex2_row in snex2_id_query:
                                 value = json.loads(snex2_row.value)
                                 if id_ == value.get('snex_id', ''):
-                                    snex2_row.update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
+                                    db_session.query(Datum).filter(Datum.id==snex2_row.id).update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
                                     break
 
                         elif action=='insert':
@@ -345,7 +345,7 @@ def update_spec(action, db_address=_SNEX2_DB):
                             #        snex2_row.update({'target_id': targetid, 'timestamp': time, 'value': spec, 'data_type': 'spectroscopy', 'source_name': '', 'source_location': ''})
                             #        break
                             
-                            snex2_id_query = db_session.query(Datum_Extra).filter(and_(Datum_Extra.key=='snex_id', Datum_Extra.data_type=='spectroscopy')).all()
+                            snex2_id_query = db_session.query(Datum_Extra).filter(and_(Datum_Extra.target_id==targetid, Datum_Extra.key=='snex_id', Datum_Extra.data_type=='spectroscopy')).all()
                             for snex2_row in snex2_id_query:
                                 value = json.loads(snex2_row.value)
                                 if id_ == value.get('snex_id', ''):
@@ -364,7 +364,7 @@ def update_spec(action, db_address=_SNEX2_DB):
                             #db_session.add(newspec_extra)
 
                             newspec_extra_value = json.dumps({'snex_id': int(id_), 'snex2_id': int(newspec.id)})
-                            newspec_extra = Datum_Extra(data_type='spectroscopy', 'key'='snex_id', 'value': newspec_extra_value)
+                            newspec_extra = Datum_Extra(target_id=targetid, data_type='spectroscopy', 'key'='snex_id', 'value'=newspec_extra_value)
                             db_session.add(newspec_extra)
 
                         db_session.commit()

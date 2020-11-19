@@ -44,22 +44,13 @@ class CustomDataProductViewSet(DataProductViewSet):
         
         # Add the SNEx2 targetid of the target to request
         targetname = request.data['targetname']
-        targetquery = Target.objects.filter(name=targetname)
+        targetquery = Target.objects.get(name=targetname)
         if not targetquery:
             targetquery = TargetName.objects.filter(name=targetname)
             targetid = targetquery.first().target_id
         else:
-            targetid = targetquery.first().id
+            targetid = targetquery.id
         request.data['target'] = targetid
-
-        # Add default list of groups to request
-        default_group_names = ['ANU', 'ARIES', 'CSP', 'CU Boulder', 'e/PESSTO', 'ex-LCOGT', 
-                'KMTNet', 'LBNL', 'LCOGT', 'LSQ', 'NAOC', 'Padova', 'QUB', 'SAAO', 'SIRAH', 
-                'Skymapper', 'Tel Aviv U', 'U Penn', 'UC Berkeley', 'US GSP', 'UT Austin']
-        default_group_ids = []
-        for g in default_group_names:
-            default_group_ids.append(Group.objects.get(name=g).id)
-        request.data['group'] = default_group_ids
 
         # Sort the extras keywords into the appropriate dictionaries
         extras = {}
@@ -76,13 +67,15 @@ class CustomDataProductViewSet(DataProductViewSet):
                 #run_hook('data_product_post_upload', dp)
                 reduced_data = run_custom_data_processor(dp, extras)
                 if not settings.TARGET_PERMISSIONS_ONLY:
-                    for group in response.data['group']:
+                    for group_name in settings.DEFAULT_GROUPS:#response.data['group']:
+                        group = Group.objects.get(name=group_name)
                         assign_perm('tom_dataproducts.view_dataproduct', group, dp)
                         assign_perm('tom_dataproducts.delete_dataproduct', group, dp)
                         assign_perm('tom_dataproducts.view_reduceddatum', group, reduced_data)
                 # Make the ReducedDatumExtra row corresponding to this dp
                 upload_extras['data_product_id'] = dp.id
                 reduced_datum_extra = ReducedDatumExtra(
+                    target_id = targetid,
                     data_type = dp_type,
                     key = 'upload_extras',
                     value = json.dumps(upload_extras)

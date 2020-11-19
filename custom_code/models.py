@@ -75,12 +75,9 @@ class TNSTarget(models.Model):
 
 class ReducedDatumExtra(models.Model):
     
-    #snex_id = models.IntegerField(
-    #    verbose_name='SNEx1 ID', help_text='ID of the reduceddatum row in the SNEx1 DB'
-    #)
-    #reduced_datum = models.ForeignKey(
-    #    ReducedDatum, on_delete=models.CASCADE
-    #)
+    target = models.ForeignKey(
+        Target, on_delete=models.CASCADE
+    )
     data_type = models.CharField(
         max_length=100, default='', verbose_name='Data Type', 
         help_text='Type of data (either photometry or spectroscopy)'
