@@ -184,13 +184,14 @@ def update_phot(action, db_address=_SNEX2_DB):
         try:
             id_ = result.rowid # The ID of the row in the photlco table
             phot_row = get_current_row(Photlco, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the photlco table    
-            targetid = phot_row.targetid
+            #targetid = phot_row.targetid
             
             if action=='delete':
                 #Look up the dataproductid from the datum_extra table
                 with get_session(db_address=db_address) as db_session:
                     
-                    snex2_id_query = db_session.query(Datum).filter(and_(Datum.target_id==targetid, Datum.data_type=='photometry')).all()
+                    #snex2_id_query = db_session.query(Datum).filter(and_(Datum.target_id==targetid, Datum.data_type=='photometry')).all()
+                    snex2_id_query = db_session.query(Datum).filter(Datum.data_type=='photometry').order_by(Datum.id.desc()).all()
                     for snex2_row in snex2_id_query:
                         value = json.loads(snex2_row.value)
                         if id_ == value.get('snex_id', ''):
@@ -214,6 +215,7 @@ def update_phot(action, db_address=_SNEX2_DB):
                     
             else:
 
+                targetid = phot_row.targetid
                 dobs = phot_row.dateobs
                 tobs = phot_row.ut
                 if tobs is None:
@@ -236,9 +238,9 @@ def update_phot(action, db_address=_SNEX2_DB):
                         phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': True, 'subtraction_algorithm': subtraction_algorithm, 'template_source': template_source, 'reduction_type': 'manual'})
                     
                     else:
-                        phot = json.dumps({})
+                        phot = json.dumps({'snex_id': int(id_)})
                 else:
-                    phot = json.dumps({})
+                    phot = json.dumps({'snex_id': int(id_)})
     
                 phot_groupid = phot_row.groupidcode
     
@@ -256,10 +258,10 @@ def update_phot(action, db_address=_SNEX2_DB):
                             snex2_id_query = db_session.query(Datum).filter(and_(Datum.target_id==targetid, Datum.data_type=='photometry')).all()
                             for snex2_row in snex2_id_query:
                                 value = json.loads(snex2_row.value)
-                                if id_ == value.get('snex_id', ''):
+                                if int(id_) == value.get('snex_id', ''):
                                     snex2_id = snex2_row.id
+                                    db_session.query(Datum).filter(Datum.id==snex2_id).update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
                                     break
-                            db_session.query(Datum).filter(Datum.id==snex2_id).update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
 
                         elif action=='insert':
                             newphot = Datum(target_id=targetid, timestamp=time, value=phot, data_type='photometry', source_name='', source_location='')
@@ -370,7 +372,7 @@ def update_spec(action, db_address=_SNEX2_DB):
                             #db_session.add(newspec_extra)
 
                             newspec_extra_value = json.dumps({'snex_id': int(id_), 'snex2_id': int(newspec.id)})
-                            newspec_extra = Datum_Extra(target_id=targetid, data_type='spectroscopy', 'key'='snex_id', 'value'=newspec_extra_value)
+                            newspec_extra = Datum_Extra(target_id=targetid, data_type='spectroscopy', key='snex_id', value=newspec_extra_value)
                             db_session.add(newspec_extra)
 
                         db_session.commit()
