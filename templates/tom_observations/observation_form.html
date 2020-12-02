@@ -1,5 +1,5 @@
 {% extends 'tom_common/base.html' %}
-{% load bootstrap4 crispy_forms_tags observation_extras targets_extras custom_code_tags static %}
+{% load bootstrap4 crispy_forms_tags observation_extras targets_extras custom_code_tags static cache %}
 {% block title %}Submit Observation{% endblock %}
 {% block additional_css %}
 <link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
@@ -16,20 +16,24 @@
   </div>
 </nav>
 <h3>Submit an observation to {{ form.facility.value }}</h3>
-{% if target.type == 'SIDEREAL' %}
 <div class="row">
-    <div class="col">
-    {% observation_plan target form.facility.value %}
+    <div class="col-md-2">
+      {% target_data target %}
     </div>
-</div>
-{% endif %}
-<div class="row">
-    <div class="col-md-4">
-        {% target_data target %}
-    </div>
-    <div class="col-md-8">
-        {#% custom_observation_type_tabs %#}
-        {% crispy form %}
+    <div class="col-md-10">
+    {% if target.type == 'SIDEREAL' %}
+      <div class="row">
+	<div class="col-md-6">
+          {% custom_observation_plan target form.facility.value %}
+	</div>
+	<div class="col-md-6">
+          {% moon_vis target %}
+	</div>
+      </div>
+    {% endif %}
+      <div class="row">
+	{% crispy form %}
+      </div>
     </div>
 </div>
 {% endblock %}

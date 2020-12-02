@@ -2,7 +2,7 @@ import requests
 from django.conf import settings
 from django import forms
 from dateutil.parser import parse
-from crispy_forms.layout import Layout, Div, HTML
+from crispy_forms.layout import Layout, Div, HTML, Column, Row
 from crispy_forms.bootstrap import PrependedAppendedText, PrependedText
 from django.core.cache import cache
 from astropy import units as u
@@ -12,6 +12,9 @@ from tom_observations.facility import BaseObservationForm
 from tom_common.exceptions import ImproperCredentialsException
 from tom_observations.facility import BaseRoboticObservationFacility, get_service_class
 from tom_targets.models import Target
+
+from tom_observations.facilities.lco import LCOBaseObservationForm, LCOPhotometricSequenceForm, LCOSpectroscopicSequenceForm
+from tom_observations.widgets import FilterField
 
 # Determine settings for this module.
 try:
@@ -374,16 +377,94 @@ class LCOObservationForm(BaseObservationForm):
         }
 
 
+
+class InitialValue:
+    exposure_count = 2
+    block_num = 1
+
+    def __init__(self, filt):
+        self.exposure_time = self.get_values_from_filt(filt)
+
+    def get_values_from_filt(self, filt):
+        initial_exp_times = {'U': 300, 'B': 200, 'V': 120, 'g': 200, 'r': 120, 'i': 120}
+        return initial_exp_times.get(filt, 0)
+
+
+class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
+    name = forms.CharField(required=False)
+    ipp_value = forms.FloatField(label='Intra Proposal Priority (IPP factor)',
+                                 min_value=0.5,
+                                 max_value=2,
+                                 initial=1.0) 
+    max_airmass = forms.FloatField(initial=1.6, min_value=0)
+    min_lunar_distance = forms.IntegerField(min_value=0, label='Minimum Lunar Distance', initial=20, required=False)
+    cadence_frequency = forms.FloatField(required=True, min_value=0.0, initial=3.0, help_text='Days')
+
+    def __init__(self, *args, **kwargs):
+        super(LCOPhotometricSequenceForm, self).__init__(*args, **kwargs)
+
+        # Add fields for each available filter as specified in the filters property
+        for filter_name in self.filters:
+            self.fields[filter_name] = FilterField(label=filter_name, initial=InitialValue(filter_name), required=False)
+        
+        # Massage cadence form to be SNEx-styled
+        self.fields['cadence_strategy'] = forms.ChoiceField(
+            choices=[('', 'Once in the next'), ('ResumeCadenceAfterFailureStrategy', 'Repeating every')],
+            required=False,
+        )
+        for field_name in ['exposure_time', 'exposure_count', 'start', 'end', 'filter']:
+            self.fields.pop(field_name)
+        if self.fields.get('groups'):
+            self.fields['groups'].label = 'Data granted to'
+        self.fields['instrument_type'] = forms.ChoiceField(choices=self.instrument_choices(), initial=('1M0-SCICAM-SINISTRO', '1.0 meter Sinistro'))
+        self.fields['name'].widget = forms.HiddenInput()
+        
+        self.helper.layout = Layout(
+            Div(
+                Column('name'),
+                Column('cadence_strategy'),
+                Column('cadence_frequency'),
+                css_class='form-row'
+            ),
+            Layout('facility', 'target_id', 'observation_type'),
+            self.layout(),
+            self.button_layout()
+        )
+
+    def clean(self):
+        """
+        This clean method does the following:
+            - Adds a start time of "right now", as the photometric sequence form does not allow for specification
+              of a start time.
+            - Adds an end time that corresponds with the cadence frequency
+            - Adds the cadence strategy to the form if "repeat" was the selected "cadence_type". If "once" was
+              selected, the observation is submitted as a single observation.
+        """
+        #TODO: Make sure that my conversion from days to hours works,
+        #      and look into implementing a "delay start by" option like in SNEx
+        cleaned_data = super().clean()
+        now = datetime.now()
+        cleaned_data['start'] = datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
+        cleaned_data['end'] = datetime.strftime(now + timedelta(hours=cleaned_data['cadence_frequency']*24),
+                                                '%Y-%m-%dT%H:%M:%S')
+
+        return cleaned_data
+        
+
 class LCOFacility(BaseRoboticObservationFacility):
     name = 'LCO'
-    form = LCOObservationForm
-    observation_types = [('IMAGING', 'Imaging')]
+    #form = LCOObservationForm
+    form = SnexPhotometricSequenceForm
+    observation_types = [('IMAGING', 'Imaging'),
+                         ('SPECTRA', 'Spectra')]
     observation_forms = {
-        'IMAGING': LCOObservationForm
+        'IMAGING': SnexPhotometricSequenceForm,
+        'SPECTRA': LCOSpectroscopicSequenceForm
     }
 
     def get_form(self, observation_type):
-        return LCOObservationForm
+        print(observation_type)
+        return self.observation_forms.get(observation_type, LCOBaseObservationForm) #SnexPhotometricSequenceForm
 
     def submit_observation(self, observation_payload):
         response = make_request(
@@ -397,7 +478,7 @@ class LCOFacility(BaseRoboticObservationFacility):
         #Since we're not actually submitting just generate random id
         import random; id_number = random.randint(1,1000001)
         return [id_number]
-
+    
     def validate_observation(self, observation_payload):
         response = make_request(
             'POST',

@@ -24,6 +24,7 @@ import time
 from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra
 from custom_code.forms import CustomDataProductUploadForm
 from urllib.parse import urlencode
+from tom_observations.utils import get_sidereal_visibility
 
 register = template.Library()
 
@@ -322,17 +323,15 @@ def moon_vis(target):
             line=dict(color=phase_color))
     ]
     layout = go.Layout(
-        xaxis=dict(title='Days from now'),
+        xaxis=dict(gridcolor='#D3D3D3', showline=True, linecolor='#D3D3D3', mirror=True, title='Days from now'),
         yaxis=dict(range=[0.,180.],tick0=0.,dtick=45.,
-            tickfont=dict(color=distance_color)
+            tickfont=dict(color=distance_color),
+            gridcolor='#D3D3D3', showline=True, linecolor='#D3D3D3', mirror=True
         ),
         yaxis2=dict(range=[0., 1.], tick0=0., dtick=0.25, overlaying='y', side='right',
-            tickfont=dict(color=phase_color)),
-        margin=dict(l=20,r=10,b=30,t=40),
-        #hovermode='compare',
-        width=600,
-        height=300,
-        autosize=True
+            tickfont=dict(color=phase_color),
+            gridcolor='#D3D3D3', showline=True, linecolor='#D3D3D3', mirror=True),
+        plot_bgcolor='white'
     )
     figure = offline.plot(
         go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False
@@ -564,3 +563,36 @@ def get_dataproduct_groups(dataproduct):
         if 'view_dataproduct' in get_perms(i, dataproduct):
             groups += str(i.name) + ','
     return json.dumps(groups)
+
+
+@register.inclusion_tag('tom_observations/partials/observation_plan.html')
+def custom_observation_plan(target, facility, length=1, interval=30, airmass_limit=3.0):
+    """
+    Displays form and renders plot for visibility calculation. Using this templatetag to render a plot requires that
+    the context of the parent view have values for start_time, end_time, and airmass.
+    """
+
+    visibility_graph = ''
+    start_time = datetime.datetime.now()
+    end_time = start_time + datetime.timedelta(days=length)
+
+    visibility_data = get_sidereal_visibility(target, start_time, end_time, interval, airmass_limit)
+    i = 0
+    plot_data = []
+    for site, data in visibility_data.items():
+        plot_data.append(go.Scatter(x=data[0], y=data[1], mode='markers+lines', marker={'symbol': i}, name=site))
+        i += 1
+    layout = go.Layout(
+        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True,title='Date'),
+        yaxis=dict(range=[airmass_limit,1.0],gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True,title='Airmass'),
+        #xaxis={'title': 'Date'},
+        #yaxis={'autorange': 'reversed', 'title': 'Airmass'},
+        plot_bgcolor='white'
+    )
+    visibility_graph = offline.plot(
+        go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False
+    )
+
+    return {
+        'visibility_graph': visibility_graph
+    }
