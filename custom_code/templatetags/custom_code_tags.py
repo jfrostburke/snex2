@@ -25,7 +25,8 @@ from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra
 from custom_code.forms import CustomDataProductUploadForm
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
-
+from custom_code.facilities.lco_facility import SnexPhotometricSequenceForm
+from tom_observations.facilities.lco import LCOSpectroscopicSequenceForm
 register = template.Library()
 
 @register.inclusion_tag('custom_code/airmass_collapse.html')
@@ -331,6 +332,9 @@ def moon_vis(target):
         yaxis2=dict(range=[0., 1.], tick0=0., dtick=0.25, overlaying='y', side='right',
             tickfont=dict(color=phase_color),
             gridcolor='#D3D3D3', showline=True, linecolor='#D3D3D3', mirror=True),
+        margin=dict(l=20,r=10,b=30,t=40),
+        width=600,
+        height=300,
         plot_bgcolor='white'
     )
     figure = offline.plot(
@@ -497,6 +501,19 @@ def custom_upload_dataproduct(context, obj):
             form.fields['groups'].queryset = user.groups.all()
     return {'data_product_form': form}
 
+
+@register.inclusion_tag('custom_code/submit_lco_observations.html')
+def submit_lco_observations(target):
+    initial = {}
+    initial['target_id'] = target.id
+    phot_form = SnexPhotometricSequenceForm(initial=initial)
+    spec_form = LCOSpectroscopicSequenceForm(initial=initial)
+    if not settings.TARGET_PERMISSIONS_ONLY:
+        phot_form.fields['groups'].queryset = Group.objects.all()
+        spec_form.fields['groups'].queryset = Group.objects.all()
+    return {'object': target,
+            'phot_form': phot_form,
+            'spec_form': spec_form}
 
 @register.inclusion_tag('custom_code/dash_lightcurve.html', takes_context=True)
 def dash_lightcurve(context, target):

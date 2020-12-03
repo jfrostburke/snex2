@@ -395,10 +395,11 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
     ipp_value = forms.FloatField(label='Intra Proposal Priority (IPP factor)',
                                  min_value=0.5,
                                  max_value=2,
-                                 initial=1.0) 
-    max_airmass = forms.FloatField(initial=1.6, min_value=0)
-    min_lunar_distance = forms.IntegerField(min_value=0, label='Minimum Lunar Distance', initial=20, required=False)
-    cadence_frequency = forms.FloatField(required=True, min_value=0.0, initial=3.0, help_text='Days')
+                                 initial=1.0)
+    #TODO: Rewrite layout to include these custom field names
+    phot_max_airmass = forms.FloatField(initial=1.6, min_value=0, label='Max Airmass')
+    phot_min_lunar_distance = forms.IntegerField(min_value=0, label='Minimum Lunar Distance', initial=20, required=False)
+    phot_cadence_frequency = forms.FloatField(required=True, min_value=0.0, initial=3.0, help_text='Days', label='')
 
     def __init__(self, *args, **kwargs):
         super(LCOPhotometricSequenceForm, self).__init__(*args, **kwargs)
@@ -408,9 +409,10 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
             self.fields[filter_name] = FilterField(label=filter_name, initial=InitialValue(filter_name), required=False)
         
         # Massage cadence form to be SNEx-styled
-        self.fields['cadence_strategy'] = forms.ChoiceField(
+        self.fields['phot_cadence_strategy'] = forms.ChoiceField(
             choices=[('', 'Once in the next'), ('ResumeCadenceAfterFailureStrategy', 'Repeating every')],
             required=False,
+            label=''
         )
         for field_name in ['exposure_time', 'exposure_count', 'start', 'end', 'filter']:
             self.fields.pop(field_name)
@@ -422,8 +424,8 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
         self.helper.layout = Layout(
             Div(
                 Column('name'),
-                Column('cadence_strategy'),
-                Column('cadence_frequency'),
+                Column('phot_cadence_strategy'),
+                Column('phot_cadence_frequency'),
                 css_class='form-row'
             ),
             Layout('facility', 'target_id', 'observation_type'),
@@ -445,7 +447,7 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
         cleaned_data = super().clean()
         now = datetime.now()
         cleaned_data['start'] = datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
-        cleaned_data['end'] = datetime.strftime(now + timedelta(hours=cleaned_data['cadence_frequency']*24),
+        cleaned_data['end'] = datetime.strftime(now + timedelta(hours=cleaned_data['phot_cadence_frequency']*24),
                                                 '%Y-%m-%dT%H:%M:%S')
 
         return cleaned_data
@@ -463,7 +465,6 @@ class LCOFacility(BaseRoboticObservationFacility):
     }
 
     def get_form(self, observation_type):
-        print(observation_type)
         return self.observation_forms.get(observation_type, LCOBaseObservationForm) #SnexPhotometricSequenceForm
 
     def submit_observation(self, observation_payload):

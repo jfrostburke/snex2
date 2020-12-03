@@ -1,0 +1,24 @@
+{% load bootstrap4 crispy_forms_tags observation_extras targets_extras custom_code_tags static cache %}
+<style>
+.border-right {
+    border-right: 1px solid black;
+}
+</style>
+<div class="row">
+  <div class="col-md-6">
+    {% airmass_plot %}
+  </div>
+  <div class="col-md-6">
+    {% moon_vis object %}
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-6 border-right">
+    <h4>Submit a Photometry Sequence</h4>
+    {% crispy phot_form %}
+  </div>
+  <div class="col-md-6">
+    <h4>Submit a Spectroscopy Sequence</h4>
+    {% crispy spec_form %}
+  </div>
+</div>
