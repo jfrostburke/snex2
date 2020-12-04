@@ -133,10 +133,12 @@
         <h4>Schedule Observations</h4>
         {% observing_buttons object %}
         <hr/>
+	<button onclick="display_obs()" class="btn" style="background-color: white; color: black; font-size: 16px; border: none; outline: none; box-shadow: none;">Show Previous Observations</button>
+        <!--a href="{% url 'targets:detail' pk=target.id %}?update_status=True" title="Update status of observations for target" class="btn btn-primary">Update Observations Status</a--!>
+	<div class="row" id="previous-obs" style="display: none;">
+          {% observation_list object %}
+	</div>
 	{% submit_lco_observations object %}
-        <h4>Previous Observations</h4>
-        <a href="{% url 'targets:detail' pk=target.id %}?update_status=True" title="Update status of observations for target" class="btn btn-primary">Update Observations Status</a>
-        {% observation_list object %}
       </div>
       <div class="tab-pane" id="manage-data">
 	{% if user.is_authenticated %}
@@ -157,4 +159,14 @@
     </div>
   </div>
 </div>
+<script>
+function display_obs() {
+  var x = document.getElementById("previous-obs");
+  if (x.style.display === "none") {
+    x.style.display = "block";
+  } else {
+    x.style.display = "none";
+  }
+}
+</script>
 {% endblock %}

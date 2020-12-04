@@ -25,8 +25,7 @@ from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra
 from custom_code.forms import CustomDataProductUploadForm
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
-from custom_code.facilities.lco_facility import SnexPhotometricSequenceForm
-from tom_observations.facilities.lco import LCOSpectroscopicSequenceForm
+from custom_code.facilities.lco_facility import SnexPhotometricSequenceForm, SnexSpectroscopicSequenceForm
 register = template.Library()
 
 @register.inclusion_tag('custom_code/airmass_collapse.html')
@@ -506,10 +505,10 @@ def custom_upload_dataproduct(context, obj):
 def submit_lco_observations(target):
     initial = {}
     initial['target_id'] = target.id
-    phot_form = SnexPhotometricSequenceForm(initial=initial)
-    spec_form = LCOSpectroscopicSequenceForm(initial=initial)
+    phot_form = SnexPhotometricSequenceForm(initial=initial, auto_id='phot_%s')
+    spec_form = SnexSpectroscopicSequenceForm(initial=initial, auto_id='spec_%s')
     if not settings.TARGET_PERMISSIONS_ONLY:
-        phot_form.fields['groups'].queryset = Group.objects.all()
+        phot_form.fields['phot_groups'].queryset = Group.objects.all()
         spec_form.fields['groups'].queryset = Group.objects.all()
     return {'object': target,
             'phot_form': phot_form,
