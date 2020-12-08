@@ -503,10 +503,16 @@ def custom_upload_dataproduct(context, obj):
 
 @register.inclusion_tag('custom_code/submit_lco_observations.html')
 def submit_lco_observations(target):
-    initial = {}
-    initial['target_id'] = target.id
-    phot_form = SnexPhotometricSequenceForm(initial=initial, auto_id='phot_%s')
-    spec_form = SnexSpectroscopicSequenceForm(initial=initial, auto_id='spec_%s')
+    phot_initial = {'target_id': target.id,
+                    'facility': 'LCO',
+                    'observation_type': 'IMAGING'}
+    spec_initial = {'target_id': target.id,
+                    'facility': 'LCO',
+                    'observation_type': 'SPECTRA'}
+    phot_form = SnexPhotometricSequenceForm(initial=phot_initial, auto_id='phot_%s')
+    spec_form = SnexSpectroscopicSequenceForm(initial=spec_initial, auto_id='spec_%s')
+    phot_form.helper.form_action = reverse('tom_observations:create', kwargs={'facility': 'LCO'})
+    spec_form.helper.form_action = reverse('tom_observations:create', kwargs={'facility': 'LCO'})
     if not settings.TARGET_PERMISSIONS_ONLY:
         phot_form.fields['phot_groups'].queryset = Group.objects.all()
         spec_form.fields['groups'].queryset = Group.objects.all()

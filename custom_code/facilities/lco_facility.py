@@ -13,7 +13,7 @@ from tom_common.exceptions import ImproperCredentialsException
 from tom_observations.facility import BaseRoboticObservationFacility, get_service_class
 from tom_targets.models import Target
 
-from tom_observations.facilities.lco import LCOBaseObservationForm, LCOPhotometricSequenceForm, LCOSpectroscopicSequenceForm
+from tom_observations.facilities.lco import LCOBaseObservationForm, LCOPhotometricSequenceForm, LCOSpectroscopicSequenceForm, LCOFacility
 from tom_observations.widgets import FilterField
 from django.contrib.auth.models import Group
 
@@ -387,18 +387,19 @@ class InitialValue:
         self.exposure_time = self.get_values_from_filt(filt)
 
     def get_values_from_filt(self, filt):
-        initial_exp_times = {'U': 300, 'B': 200, 'V': 120, 'g': 200, 'r': 120, 'i': 120}
+        initial_exp_times = {'U': 300, 'B': 200, 'V': 120, 'gp': 200, 'rp': 120, 'ip': 120}
         return initial_exp_times.get(filt, 0)
 
 
 class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
-    name = forms.CharField(required=False)
+    name = forms.CharField()
     ipp_value = forms.FloatField(label='Intra Proposal Priority (IPP factor)',
                                  min_value=0.5,
                                  max_value=2,
                                  initial=1.0)
     
     # Rewrite a lot of the form fields to have unique IDs between photometry and spectroscopy
+    filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
     max_airmass = forms.FloatField(initial=1.6, min_value=0, label='Max Airmass')
     min_lunar_distance = forms.IntegerField(min_value=0, label='Minimum Lunar Distance', initial=20, required=False)
     cadence_frequency = forms.FloatField(required=True, min_value=0.0, initial=3.0, label='')
@@ -425,7 +426,7 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
             self.fields['phot_groups'] = forms.ModelMultipleChoiceField(Group.objects.none(), required=False, widget=forms.CheckboxSelectMultiple, label='Data granted to')
         
         self.fields['instrument_type'] = forms.ChoiceField(choices=self.instrument_choices(), initial=('1M0-SCICAM-SINISTRO', '1.0 meter Sinistro'))
-        self.fields['name'].widget = forms.HiddenInput()
+        #self.fields['name'].widget = forms.HiddenInput()
         self.fields['proposal'] = forms.ChoiceField(choices=self.proposal_choices(), label='Proposal')
         
         self.helper.layout = Layout(
@@ -452,9 +453,9 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
         #TODO: Make sure that my conversion from days to hours works,
         #      and look into implementing a "delay start by" option like in SNEx
         cleaned_data = super().clean()
-        now = datetime.now()
-        cleaned_data['start'] = datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
-        cleaned_data['end'] = datetime.strftime(now + timedelta(hours=cleaned_data['phot_cadence_frequency']*24),
+        now = datetime.datetime.now()
+        cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
+        cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24),
                                                 '%Y-%m-%dT%H:%M:%S')
 
         return cleaned_data
@@ -502,7 +503,13 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
                 Submit('submit', 'Submit', css_id='phot-submit')
                 #HTML(f'''<a class="btn btn-outline-primary" href={{% url 'tom_targets:detail' {target_id} %}}>
                 #         Back</a>''')
-            ) 
+            )
+
+    def is_valid(self):
+        super().is_valid()
+        self.validate_at_facility()
+        print(self._errors.as_json(), not self._errors)
+        return not self._errors
 
 
 class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
@@ -511,7 +518,7 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
     max_airmass = forms.FloatField(initial=1.6, min_value=0, label='Max Airmass')
     acquisition_radius = forms.FloatField(min_value=0, required=False, initial=5.0)
     guider_exposure_time = forms.FloatField(min_value=0, initial=10.0)
-    name = forms.CharField(required=False, widget=forms.HiddenInput())
+    name = forms.CharField()
     ipp_value = forms.FloatField(label='Intra Proposal Priority (IPP factor)',
                                  min_value=0.5,
                                  max_value=2,
@@ -543,7 +550,7 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
                 self.fields.pop(field_name)
         if self.fields.get('groups'):
             self.fields['groups'].label = 'Data granted to'
-
+        
         self.helper.layout = Layout(
             Div(
                 Column('name'),
@@ -568,27 +575,162 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
         """
         cleaned_data = super().clean()
         self.cleaned_data['instrument_type'] = '2M0-FLOYDS-SCICAM'  # SNEx only submits spectra to FLOYDS
-        now = datetime.now()
-        cleaned_data['start'] = datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S')
-        cleaned_data['end'] = datetime.strftime(now + timedelta(hours=cleaned_data['cadence_frequency']*24),
+        now = datetime.datetime.now()
+        cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
+        cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24),
                                                 '%Y-%m-%dT%H:%M:%S')
 
         return cleaned_data
 
 
-class LCOFacility(BaseRoboticObservationFacility):
+#class LCOFacility(BaseRoboticObservationFacility):
+#    name = 'LCO'
+#    #form = LCOObservationForm
+#    form = SnexPhotometricSequenceForm
+#    observation_types = [('IMAGING', 'Imaging'),
+#                         ('SPECTRA', 'Spectra')]
+#    observation_forms = {
+#        'IMAGING': SnexPhotometricSequenceForm,
+#        'SPECTRA': SnexSpectroscopicSequenceForm
+#    }
+#
+#    def get_form(self, observation_type):
+#        return self.observation_forms.get(observation_type, LCOBaseObservationForm) #SnexPhotometricSequenceForm
+#
+#    def submit_observation(self, observation_payload):
+#        response = make_request(
+#            'POST',
+#            #PORTAL_URL + '/api/requestgroups/validate/',
+#            PORTAL_URL + '/api/requestgroups/',
+#            json=observation_payload,
+#            headers=self._portal_headers()
+#        )
+#        return [r['id'] for r in response.json()['requests']]
+#        ##Since we're not actually submitting just generate random id
+#        #import random; id_number = random.randint(1,1000001)
+#        #return [id_number]
+#    
+#    def validate_observation(self, observation_payload):
+#        response = make_request(
+#            'POST',
+#            PORTAL_URL + '/api/requestgroups/validate/',
+#            json=observation_payload,
+#            headers=self._portal_headers()
+#        )
+#        return response.json()['errors']
+#
+#    def get_observation_url(self, observation_id):
+#        return PORTAL_URL + '/requests/' + observation_id
+#
+#    def get_flux_constant(self):
+#        return FLUX_CONSTANT
+#
+#    def get_wavelength_units(self):
+#        return WAVELENGTH_UNITS
+#
+#    def get_terminal_observing_states(self):
+#        return TERMINAL_OBSERVING_STATES
+#
+#    def get_observing_sites(self):
+#        return SITES
+#
+#    def get_observation_status(self, observation_id):
+#        response = make_request(
+#            'GET',
+#            PORTAL_URL + '/api/requests/{0}'.format(observation_id),
+#            headers=self._portal_headers()
+#        )
+#        state = response.json()['state']
+#
+#        response = make_request(
+#            'GET',
+#            PORTAL_URL + '/api/requests/{0}/observations/'.format(observation_id),
+#            headers=self._portal_headers()
+#        )
+#        blocks = response.json()
+#        current_block = None
+#        for block in blocks:
+#            if block['state'] == 'COMPLETED':
+#                current_block = block
+#                break
+#            elif block['state'] == 'PENDING':
+#                current_block = block
+#        if current_block:
+#            scheduled_start = current_block['start']
+#            scheduled_end = current_block['end']
+#        else:
+#            scheduled_start, scheduled_end = None, None
+#
+#        return {'state': state, 'scheduled_start': scheduled_start, 'scheduled_end': scheduled_end}
+#
+#    def data_products(self, observation_id, product_id=None):
+#        products = []
+#        for frame in self._archive_frames(observation_id, product_id):
+#            products.append({
+#                'id': frame['id'],
+#                'filename': frame['filename'],
+#                'created': parse(frame['DATE_OBS']),
+#                'url': frame['url']
+#            })
+#        return products
+#
+#    # The following methods are used internally by this module
+#    # and should not be called directly from outside code.
+#
+#    def _portal_headers(self):
+#        if LCO_SETTINGS.get('api_key'):
+#            return {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
+#        else:
+#            return {}
+#
+#    def _archive_headers(self):
+#        if LCO_SETTINGS.get('api_key'):
+#            archive_token = cache.get('LCO_ARCHIVE_TOKEN')
+#            if not archive_token:
+#                response = make_request(
+#                    'GET',
+#                    PORTAL_URL + '/api/profile/',
+#                    headers={'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
+#                )
+#                archive_token = response.json().get('tokens', {}).get('archive')
+#                if archive_token:
+#                    cache.set('LCO_ARCHIVE_TOKEN', archive_token, 3600)
+#                    return {'Authorization': 'Bearer {0}'.format(archive_token)}
+#
+#            else:
+#                return {'Authorization': 'Bearer {0}'.format(archive_token)}
+#        else:
+#            return {}
+#
+#    def _archive_frames(self, observation_id, product_id=None):
+#        # todo save this key somewhere
+#        frames = []
+#        if product_id:
+#            response = make_request(
+#                'GET',
+#                'https://archive-api.lco.global/frames/{0}/'.format(product_id),
+#                headers=self._archive_headers()
+#            )
+#            frames = [response.json()]
+#        else:
+#            response = make_request(
+#                'GET',
+#                'https://archive-api.lco.global/frames/?REQNUM={0}'.format(observation_id),
+#                headers=self._archive_headers()
+#            )
+#            frames = response.json()['results']
+#
+#        return frames
+
+
+class SnexLCOFacility(LCOFacility):
     name = 'LCO'
-    #form = LCOObservationForm
-    form = SnexPhotometricSequenceForm
     observation_types = [('IMAGING', 'Imaging'),
                          ('SPECTRA', 'Spectra')]
     observation_forms = {
         'IMAGING': SnexPhotometricSequenceForm,
         'SPECTRA': SnexSpectroscopicSequenceForm
     }
-
-    def get_form(self, observation_type):
-        return self.observation_forms.get(observation_type, LCOBaseObservationForm) #SnexPhotometricSequenceForm
 
     def submit_observation(self, observation_payload):
         response = make_request(
@@ -598,11 +740,11 @@ class LCOFacility(BaseRoboticObservationFacility):
             json=observation_payload,
             headers=self._portal_headers()
         )
+        print('Made request')
+        import pdb
+        pdb.set_trace()
         return [r['id'] for r in response.json()['requests']]
-        ##Since we're not actually submitting just generate random id
-        #import random; id_number = random.randint(1,1000001)
-        #return [id_number]
-    
+
     def validate_observation(self, observation_payload):
         response = make_request(
             'POST',
@@ -610,107 +752,8 @@ class LCOFacility(BaseRoboticObservationFacility):
             json=observation_payload,
             headers=self._portal_headers()
         )
+        print('Validating observation')
+        import pdb
+        pdb.set_trace()
         return response.json()['errors']
 
-    def get_observation_url(self, observation_id):
-        return PORTAL_URL + '/requests/' + observation_id
-
-    def get_flux_constant(self):
-        return FLUX_CONSTANT
-
-    def get_wavelength_units(self):
-        return WAVELENGTH_UNITS
-
-    def get_terminal_observing_states(self):
-        return TERMINAL_OBSERVING_STATES
-
-    def get_observing_sites(self):
-        return SITES
-
-    def get_observation_status(self, observation_id):
-        response = make_request(
-            'GET',
-            PORTAL_URL + '/api/requests/{0}'.format(observation_id),
-            headers=self._portal_headers()
-        )
-        state = response.json()['state']
-
-        response = make_request(
-            'GET',
-            PORTAL_URL + '/api/requests/{0}/observations/'.format(observation_id),
-            headers=self._portal_headers()
-        )
-        blocks = response.json()
-        current_block = None
-        for block in blocks:
-            if block['state'] == 'COMPLETED':
-                current_block = block
-                break
-            elif block['state'] == 'PENDING':
-                current_block = block
-        if current_block:
-            scheduled_start = current_block['start']
-            scheduled_end = current_block['end']
-        else:
-            scheduled_start, scheduled_end = None, None
-
-        return {'state': state, 'scheduled_start': scheduled_start, 'scheduled_end': scheduled_end}
-
-    def data_products(self, observation_id, product_id=None):
-        products = []
-        for frame in self._archive_frames(observation_id, product_id):
-            products.append({
-                'id': frame['id'],
-                'filename': frame['filename'],
-                'created': parse(frame['DATE_OBS']),
-                'url': frame['url']
-            })
-        return products
-
-    # The following methods are used internally by this module
-    # and should not be called directly from outside code.
-
-    def _portal_headers(self):
-        if LCO_SETTINGS.get('api_key'):
-            return {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
-        else:
-            return {}
-
-    def _archive_headers(self):
-        if LCO_SETTINGS.get('api_key'):
-            archive_token = cache.get('LCO_ARCHIVE_TOKEN')
-            if not archive_token:
-                response = make_request(
-                    'GET',
-                    PORTAL_URL + '/api/profile/',
-                    headers={'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
-                )
-                archive_token = response.json().get('tokens', {}).get('archive')
-                if archive_token:
-                    cache.set('LCO_ARCHIVE_TOKEN', archive_token, 3600)
-                    return {'Authorization': 'Bearer {0}'.format(archive_token)}
-
-            else:
-                return {'Authorization': 'Bearer {0}'.format(archive_token)}
-        else:
-            return {}
-
-    def _archive_frames(self, observation_id, product_id=None):
-        # todo save this key somewhere
-        frames = []
-        if product_id:
-            response = make_request(
-                'GET',
-                'https://archive-api.lco.global/frames/{0}/'.format(product_id),
-                headers=self._archive_headers()
-            )
-            frames = [response.json()]
-        else:
-            response = make_request(
-                'GET',
-                'https://archive-api.lco.global/frames/?REQNUM={0}'.format(observation_id),
-                headers=self._archive_headers()
-            )
-            frames = response.json()['results']
-
-        return frames
