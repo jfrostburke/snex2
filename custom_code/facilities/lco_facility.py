@@ -414,6 +414,8 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
             self.fields[filter_name] = FilterField(label=filter_name, initial=InitialValue(filter_name), required=False)
         
         # Massage cadence form to be SNEx-styled
+        self.fields['name'].label = ''
+        self.fields['name'].widget.attrs['placeholder'] = 'Name'
         self.fields['cadence_strategy'] = forms.ChoiceField(
             choices=[('', 'Once in the next'), ('ResumeCadenceAfterFailureStrategy', 'Repeating every')],
             required=False,
@@ -423,7 +425,7 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
             self.fields.pop(field_name)
         
         if not settings.TARGET_PERMISSIONS_ONLY:
-            self.fields['phot_groups'] = forms.ModelMultipleChoiceField(Group.objects.none(), required=False, widget=forms.CheckboxSelectMultiple, label='Data granted to')
+            self.fields['groups'] = forms.ModelMultipleChoiceField(Group.objects.none(), required=False, widget=forms.CheckboxSelectMultiple, label='Data granted to')
         
         self.fields['instrument_type'] = forms.ChoiceField(choices=self.instrument_choices(), initial=('1M0-SCICAM-SINISTRO', '1.0 meter Sinistro'))
         #self.fields['name'].widget = forms.HiddenInput()
@@ -464,7 +466,7 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
         if settings.TARGET_PERMISSIONS_ONLY:
             groups = Div()
         else:
-            groups = Row('phot_groups')
+            groups = Row('groups')
 
         # Add filters to layout
         filter_layout = Layout(
@@ -504,12 +506,6 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
                 #HTML(f'''<a class="btn btn-outline-primary" href={{% url 'tom_targets:detail' {target_id} %}}>
                 #         Back</a>''')
             )
-
-    def is_valid(self):
-        super().is_valid()
-        self.validate_at_facility()
-        print(self._errors.as_json(), not self._errors)
-        return not self._errors
 
 
 class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):

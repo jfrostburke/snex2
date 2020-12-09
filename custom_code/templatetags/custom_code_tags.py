@@ -514,7 +514,7 @@ def submit_lco_observations(target):
     phot_form.helper.form_action = reverse('tom_observations:create', kwargs={'facility': 'LCO'})
     spec_form.helper.form_action = reverse('tom_observations:create', kwargs={'facility': 'LCO'})
     if not settings.TARGET_PERMISSIONS_ONLY:
-        phot_form.fields['phot_groups'].queryset = Group.objects.all()
+        phot_form.fields['groups'].queryset = Group.objects.all()
         spec_form.fields['groups'].queryset = Group.objects.all()
     return {'object': target,
             'phot_form': phot_form,
@@ -617,4 +617,48 @@ def custom_observation_plan(target, facility, length=1, interval=30, airmass_lim
 
     return {
         'visibility_graph': visibility_graph
+    }
+
+
+@register.inclusion_tag('custom_code/observation_summary.html', takes_context=True)
+def observation_summary(context, target=None):
+    """
+    A modification of the observation_list templatetag 
+    to display a summary of the observation records
+    for this object.
+    """
+    if target:
+        if settings.TARGET_PERMISSIONS_ONLY:
+            observations = target.observationrecord_set.all()
+        else:
+            observations = get_objects_for_user(
+                                context['request'].user,
+                                'tom_observations.view_observationrecord',
+                                ).filter(target=target)
+    else:
+        observations = ObservationRecord.objects.all().order_by('-created')
+
+    parameters = []
+    for observation in observations:
+        #parameters.append(json.loads(observation.parameters))
+
+        parameter = json.loads(observation.parameters)
+        if parameter.get('cadence_strategy', ''):
+            parameter_string = 'Observations every ' + str(parameter.get('cadence_frequency')) + ' days with '
+        else:
+            parameter_string = 'Single observation of '
+
+        filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+        for f in filters:
+            filter_parameters = parameter.get(f, '')
+            if filter_parameters[0] != 0.0:
+                filter_string = f + ' (' + str(filter_parameters[0]) + 'x' + str(filter_parameters[1]) + '), '
+                parameter_string += filter_string 
+
+        parameter_string += 'with IPP ' + str(parameter.get('ipp_value', ''))
+        parameter_string += ' and airmass < ' + str(parameter.get('max_airmass', ''))
+        parameters.append(parameter_string)
+    return {
+        'observations': observations,
+        'parameters': parameters
     }
