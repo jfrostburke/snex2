@@ -26,7 +26,8 @@
       </div>
     </div>
     {#% observation_distribution filter.qs %#}
-    <table class="table">
+    {% scheduling_list filter.qs %}
+    <!--table class="table">
       <thead>
         <tr>
           <th>View</th>
@@ -80,7 +81,8 @@
           $(document).ready(function() {
             $.ajax({
               url: '{% url "targetlist_collapse" %}',
-              data: {'target_id': {{ observation.target.id }} },
+              data: {'target_id': {{ observation.target.id }},
+	             'user_id': {{ user.id }}},
               dataType: 'json',
               success: function(response) {
                 var lightcurve_plot = response.lightcurve_plot;
@@ -102,7 +104,7 @@
         </tr>
         {% endfor %}
       </tbody>
-    </table>
+    </table--!>
     {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
   </div>
   <div class="col-md-2">

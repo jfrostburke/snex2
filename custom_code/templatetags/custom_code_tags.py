@@ -643,22 +643,112 @@ def observation_summary(context, target=None):
         #parameters.append(json.loads(observation.parameters))
 
         parameter = json.loads(observation.parameters)
-        if parameter.get('cadence_strategy', ''):
-            parameter_string = 'Observations every ' + str(parameter.get('cadence_frequency')) + ' days with '
-        else:
-            parameter_string = 'Single observation of '
 
-        filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
-        for f in filters:
-            filter_parameters = parameter.get(f, '')
-            if filter_parameters[0] != 0.0:
-                filter_string = f + ' (' + str(filter_parameters[0]) + 'x' + str(filter_parameters[1]) + '), '
-                parameter_string += filter_string 
+        # First do LCO observations
+        if parameter.get('facility', '') == 'LCO':
 
-        parameter_string += 'with IPP ' + str(parameter.get('ipp_value', ''))
-        parameter_string += ' and airmass < ' + str(parameter.get('max_airmass', ''))
-        parameters.append(parameter_string)
+            if parameter.get('cadence_strategy', ''):
+                parameter_string = 'LCO Observations every ' + str(parameter.get('cadence_frequency')) + ' days with '
+            else:
+                parameter_string = 'LCO Single observation of '
+
+            filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+            for f in filters:
+                filter_parameters = parameter.get(f, '')
+                if filter_parameters:
+                    if filter_parameters[0] != 0.0:
+                        filter_string = f + ' (' + str(filter_parameters[0]) + 'x' + str(filter_parameters[1]) + '), '
+                        parameter_string += filter_string 
+
+            parameter_string += 'with IPP ' + str(parameter.get('ipp_value', ''))
+            parameter_string += ' and airmass < ' + str(parameter.get('max_airmass', ''))
+            parameter_string += ' starting on ' + str(observation.created).split(' ')[0]
+            if parameter.get('end', ''):
+                parameter_string += ' and ending on ' + str(observation.modified).split(' ')[0]
+
+            parameters.append({'title': 'LCO Sequence', 'summary': parameter_string})
+
+        # Now do Gemini observations
+        elif parameter.get('facility', '') == 'Gemini':
+            
+            if 'SPECTRA' in parameter.get('observation_type', ''):
+                parameter_string = 'Gemini spectrum of B exposure time ' + parameter.get('b_exptime', '') + 's and R exposure time ' + parameter.get('r_exptime', '') + 's with airmass <' + str(parameter.get('max_airmass', '')) + ', scheduled on ' + str(observation.created).split(' ')[0]
+
+            else: # Gemini photometry
+                parameter_string = 'Gemini photometry of g (' + parameter.get('g_exptime', '') + 's), r (' + parameter.get('r_exptime', '') + 's), i (' + parameter.get('i_exptime', '') + 's), and z (' + parameter.get('z_exptime', '') + 's), with airmass < ' + str(parameter.get('max_airmass', '')) + ', scheduled on ' + str(observation.created).split(' ')[0]
+
+            parameters.append({'title': 'Gemini Sequence', 'summary': parameter_string})
+
     return {
         'observations': observations,
         'parameters': parameters
+    }
+
+
+@register.inclusion_tag('custom_code/scheduling_list.html', takes_context=True)
+def scheduling_list(context, observations):
+    parameters = []
+    for observation in observations:
+        observation_id = observation.id
+        target = observation.target
+        target_names = observation.target.names
+        facility = observation.facility
+
+        parameter = json.loads(observation.parameters)
+        if parameter.get('observation_type', '') == 'IMAGING':
+            observation_type = 'Phot'
+        elif 'SPEC' in parameter.get('observation_type', ''):
+            observation_type = 'Spec'
+        else:
+            observation_type = ''
+        cadence = parameter.get('cadence_frequency', '')
+        ipp = parameter.get('ipp_value', '')
+        airmass = parameter.get('max_airmass', '')
+
+        exposures = []
+        if facility == 'LCO' and observation_type == 'Phot':
+            if '1M' in parameter.get('instrument_type', ''):
+                instrument = 'Sinistro'
+            elif 'SBIG' in parameter.get('instrument_type', ''):
+                instrument = 'SBIG'
+            else:
+                instrument = 'MuSCAT'
+
+            filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+            for f in filters:
+                filter_parameters = parameter.get(f, '')
+                if filter_parameters and filter_parameters[0] != 0.0:
+                    exposures.append({'filter': f, 'number': filter_parameters[1], 'exp_time': filter_parameters[0]})
+
+        elif facility == 'LCO' and observation_type == 'Spec':
+            instrument = 'Floyds'
+
+            exp_time = parameter.get('exptime', '')
+            exposures.append({'filter': '', 'number': 1, 'exp_time': exp_time})
+
+        #TODO: Finish this for non-LCO facilities
+        else: 
+            instrument = 'Gemini'
+
+            exposures.append({'filter': '', 'number': '', 'exp_time': ''})
+
+        start = str(observation.created).split('.')[0]
+        if parameter.get('end', ''):
+            end = str(observation.modified).split('.')[0]
+
+        parameters.append({'observation_id': observation_id,
+                           'target': target,
+                           'facility': facility,
+                           'observation_type': observation_type,
+                           'cadence': cadence,
+                           'ipp': ipp,
+                           'airmass': airmass,
+                           'instrument': instrument,
+                           'exposures': exposures,
+                           'start': start,
+                           'end': end,
+                           'user_id': context['request'].user.id
+                        })
+    return {'observations': observations,
+            'parameters': parameters
     }

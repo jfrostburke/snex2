@@ -1,5 +1,5 @@
 {% for parameter in parameters %}
-<div class="row">{{ parameter }}</div>
+<div class="row"><b>{{ parameter.title }}:</b><br> {{ parameter.summary }}</div>
 {% empty %}
   <div class="row">No observations yet for this target.</div>
 {% endfor %}
