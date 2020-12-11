@@ -1,5 +1,7 @@
 {% for parameter in parameters %}
-<div class="row"><b>{{ parameter.title }}:</b><br> {{ parameter.summary }}</div>
+<div class="row"><b>{{ parameter.title }}:</b></div>
+<div class="row">{{ parameter.summary }}</div>
+<a class="button" style="background-color: white; color: black; font-size: 12px; border: none; outline: none; box-shadow: none;" href="{% url 'tom_observations:detail' parameter.observation %}">Track This Sequence</a><br>
 {% empty %}
   <div class="row">No observations yet for this target.</div>
 {% endfor %}

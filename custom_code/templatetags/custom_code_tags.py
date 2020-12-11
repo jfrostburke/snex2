@@ -666,7 +666,9 @@ def observation_summary(context, target=None):
             if parameter.get('end', ''):
                 parameter_string += ' and ending on ' + str(observation.modified).split(' ')[0]
 
-            parameters.append({'title': 'LCO Sequence', 'summary': parameter_string})
+            parameters.append({'title': 'LCO Sequence',
+                               'summary': parameter_string,
+                               'observation': observation.id})
 
         # Now do Gemini observations
         elif parameter.get('facility', '') == 'Gemini':
@@ -677,7 +679,9 @@ def observation_summary(context, target=None):
             else: # Gemini photometry
                 parameter_string = 'Gemini photometry of g (' + parameter.get('g_exptime', '') + 's), r (' + parameter.get('r_exptime', '') + 's), i (' + parameter.get('i_exptime', '') + 's), and z (' + parameter.get('z_exptime', '') + 's), with airmass < ' + str(parameter.get('max_airmass', '')) + ', scheduled on ' + str(observation.created).split(' ')[0]
 
-            parameters.append({'title': 'Gemini Sequence', 'summary': parameter_string})
+            parameters.append({'title': 'Gemini Sequence',
+                               'summary': parameter_string,
+                               'observation': observation.id})
 
     return {
         'observations': observations,
@@ -689,10 +693,15 @@ def observation_summary(context, target=None):
 def scheduling_list(context, observations):
     parameters = []
     for observation in observations:
+        facility = observation.facility
+        
+        # For now, we'll only worry about scheduling for LCO observations
+        if facility != 'LCO':
+            continue
+
         observation_id = observation.id
         target = observation.target
         target_names = observation.target.names
-        facility = observation.facility
 
         parameter = json.loads(observation.parameters)
         if parameter.get('observation_type', '') == 'IMAGING':
@@ -706,7 +715,7 @@ def scheduling_list(context, observations):
         airmass = parameter.get('max_airmass', '')
 
         exposures = []
-        if facility == 'LCO' and observation_type == 'Phot':
+        if observation_type == 'Phot':
             if '1M' in parameter.get('instrument_type', ''):
                 instrument = 'Sinistro'
             elif 'SBIG' in parameter.get('instrument_type', ''):
@@ -718,9 +727,9 @@ def scheduling_list(context, observations):
             for f in filters:
                 filter_parameters = parameter.get(f, '')
                 if filter_parameters and filter_parameters[0] != 0.0:
-                    exposures.append({'filter': f, 'number': filter_parameters[1], 'exp_time': filter_parameters[0]})
+                    exposures.append({'filter': f, 'number': filter_parameters[1], 'exp_time': int(filter_parameters[0])})
 
-        elif facility == 'LCO' and observation_type == 'Spec':
+        elif observation_type == 'Spec':
             instrument = 'Floyds'
 
             exp_time = parameter.get('exptime', '')

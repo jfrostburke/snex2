@@ -14,6 +14,7 @@
       <th>Start</th>
       <th>End</th>
       <th>Classification</th>
+      <th>Redshift</th>
     </tr>
   </thead>
   <tbody>
@@ -29,7 +30,7 @@
       <td>{{ parameter.instrument }}</td>
       <td>
 	{% for exposure in parameter.exposures %}
-	  {{ exposure.filter }}: {{ exposure.number }} x {{ exposure.exp_time }}s<br>
+	  {{ exposure.filter }}: {{ exposure.number }}x{{ exposure.exp_time }}s<br>
 	{% endfor %}
       </td>
       <td>{{ parameter.start }}</td>
@@ -41,6 +42,13 @@
         {% else %}
           None
         {% endif %}
+      </td>
+      <td>
+	{% if target|target_extra_field:"redshift" %}
+	  {{ target|target_extra_field:"redshift" }}
+	{% else %}
+	  None
+	{% endif %}
       {% endwith %}
       </td>
     </tr>

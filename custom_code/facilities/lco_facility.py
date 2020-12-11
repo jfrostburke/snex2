@@ -578,6 +578,12 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
 
         return cleaned_data
 
+    def is_valid(self):
+        self.validate_at_facility()
+        print(self._errors)
+        return not self._errors
+
+
 
 #class LCOFacility(BaseRoboticObservationFacility):
 #    name = 'LCO'
