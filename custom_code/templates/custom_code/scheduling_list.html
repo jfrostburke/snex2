@@ -24,13 +24,17 @@
       <td><a href="{% url 'tom_targets:detail' parameter.target.id %}" title="{{ parameter.target.id }}">{{ parameter.target.names|join:", " }}</a></td>
       <td>{{ parameter.facility }}</td>
       <td>{{ parameter.observation_type }}</td>
-      <td>{{ parameter.cadence }} days</td>
+      <td>{{ parameter.cadence }}</td>
       <td>{{ parameter.ipp }}</td>
       <td>{{ parameter.airmass }}</td>
       <td>{{ parameter.instrument }}</td>
       <td>
 	{% for exposure in parameter.exposures %}
+	  {% if exposure.filter %}
 	  {{ exposure.filter }}: {{ exposure.number }}x{{ exposure.exp_time }}s<br>
+	  {% else %}
+	  {{ exposure.number }}x{{ exposure.exp_time }}s<br>
+	  {% endif %}
 	{% endfor %}
       </td>
       <td>{{ parameter.start }}</td>

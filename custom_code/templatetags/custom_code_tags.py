@@ -505,10 +505,12 @@ def custom_upload_dataproduct(context, obj):
 def submit_lco_observations(target):
     phot_initial = {'target_id': target.id,
                     'facility': 'LCO',
-                    'observation_type': 'IMAGING'}
+                    'observation_type': 'IMAGING',
+                    'name': target.name}
     spec_initial = {'target_id': target.id,
                     'facility': 'LCO',
-                    'observation_type': 'SPECTRA'}
+                    'observation_type': 'SPECTRA',
+                    'name': target.name}
     phot_form = SnexPhotometricSequenceForm(initial=phot_initial, auto_id='phot_%s')
     spec_form = SnexSpectroscopicSequenceForm(initial=spec_initial, auto_id='spec_%s')
     phot_form.helper.form_action = reverse('tom_observations:create', kwargs={'facility': 'LCO'})
@@ -648,17 +650,23 @@ def observation_summary(context, target=None):
         if parameter.get('facility', '') == 'LCO':
 
             if parameter.get('cadence_strategy', ''):
-                parameter_string = 'LCO Observations every ' + str(parameter.get('cadence_frequency')) + ' days with '
+                parameter_string = str(parameter.get('cadence_frequency', '')) + '-day ' + str(parameter.get('observation_type', '')).lower() + ' cadence of '
             else:
-                parameter_string = 'LCO Single observation of '
+                parameter_string = 'Single ' + str(parameter.get('observation_type', '')).lower() + ' observation of '
 
-            filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
-            for f in filters:
-                filter_parameters = parameter.get(f, '')
-                if filter_parameters:
-                    if filter_parameters[0] != 0.0:
-                        filter_string = f + ' (' + str(filter_parameters[0]) + 'x' + str(filter_parameters[1]) + '), '
-                        parameter_string += filter_string 
+            if parameter.get('observation_type', '') == 'IMAGING':
+                filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+                for f in filters:
+                    filter_parameters = parameter.get(f, '')
+                    if filter_parameters:
+                        if filter_parameters[0] != 0.0:
+                            filter_string = f + ' (' + str(filter_parameters[0]) + 'x' + str(filter_parameters[1]) + '), '
+                            parameter_string += filter_string 
+            
+            elif parameter.get('observation_type', '') == 'SPECTRA':
+                parameter_string += str(parameter.get('exposure_time', ''))
+                parameter_string += 's '
+
 
             parameter_string += 'with IPP ' + str(parameter.get('ipp_value', ''))
             parameter_string += ' and airmass < ' + str(parameter.get('max_airmass', ''))
@@ -710,7 +718,11 @@ def scheduling_list(context, observations):
             observation_type = 'Spec'
         else:
             observation_type = ''
-        cadence = parameter.get('cadence_frequency', '')
+
+        if parameter.get('cadence_strategy', ''):
+            cadence = str(parameter.get('cadence_frequency', '')) + ' days'
+        else:
+            cadence = 'Onetime'
         ipp = parameter.get('ipp_value', '')
         airmass = parameter.get('max_airmass', '')
 
@@ -732,8 +744,9 @@ def scheduling_list(context, observations):
         elif observation_type == 'Spec':
             instrument = 'Floyds'
 
-            exp_time = parameter.get('exptime', '')
-            exposures.append({'filter': '', 'number': 1, 'exp_time': exp_time})
+            exposures.append({'filter': '',
+                               'number': parameter.get('exposure_count', ''), 
+                               'exp_time': parameter.get('exposure_time', '')})
 
         #TODO: Finish this for non-LCO facilities
         else: 
