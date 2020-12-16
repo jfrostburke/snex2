@@ -44,12 +44,12 @@ class CustomDataProductViewSet(DataProductViewSet):
         
         # Add the SNEx2 targetid of the target to request
         targetname = request.data['targetname']
-        targetquery = Target.objects.get(name=targetname)
+        targetquery = Target.objects.filter(name=targetname)
         if not targetquery:
             targetquery = TargetName.objects.filter(name=targetname)
             targetid = targetquery.first().target_id
         else:
-            targetid = targetquery.id
+            targetid = targetquery.first().id
         request.data['target'] = targetid
 
         # Sort the extras keywords into the appropriate dictionaries
