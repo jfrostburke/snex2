@@ -531,45 +531,66 @@ def dash_lightcurve(context, target):
     reducer_groups = []
     papers_used_in = []
     final_reduction = False
+    background_subtracted = False
 
-    dp_ids = []
-    datumquery = ReducedDatum.objects.filter(target=target, data_type='photometry').order_by().values('data_product_id').distinct()
+    datumquery = ReducedDatum.objects.filter(target=target, data_type='photometry')
     for i in datumquery:
-        dp_ids.append(i['data_product_id'])
+        datum_value = json.loads(i.value)
+        if datum_value.get('background_subtracted', '') == True:
+            background_subtracted = True
+            break
+
+    final_background_subtracted = False
     for de in ReducedDatumExtra.objects.filter(target=target, key='upload_extras', data_type='photometry'):
         de_value = json.loads(de.value)
-        if de_value.get('data_product_id', '') in dp_ids:
-            inst = de_value.get('instrument', '')
-            used_in = de_value.get('used_in', '')
-            group = de_value.get('reducer_group', '')
+        inst = de_value.get('instrument', '')
+        used_in = de_value.get('used_in', '')
+        group = de_value.get('reducer_group', '')
 
-            if inst and inst not in telescopes:
-                telescopes.append(inst)
-            if used_in and used_in not in papers_used_in:
-                papers_used_in.append(used_in)
-            if group and group not in reducer_groups:
-                reducer_groups.append(group)
+        if inst and inst not in telescopes:
+            telescopes.append(inst)
+        if used_in and used_in not in papers_used_in:
+            papers_used_in.append(used_in)
+        if group and group not in reducer_groups:
+            reducer_groups.append(group)
    
-            if de_value.get('final_reduction', '')==True:
-                final_reduction = True
+        if de_value.get('final_reduction', '')==True:
+            final_reduction = True
+            final_reduction_datumid = de_value.get('data_product_id', '')
+
+            datum = ReducedDatum.objects.filter(target=target, data_type='photometry', data_product_id=final_reduction_datumid)
+            datum_value = json.loads(datum.first().value)
+            if datum_value.get('background_subtracted', '') == True:
+                final_background_subtracted = True
     
     reducer_group_options = [{'label': 'LCO', 'value': ''}]
     reducer_group_options.extend([{'label': k, 'value': k} for k in reducer_groups])
- 
+    reducer_groups.append('')
+
+    dash_context = {'target_id': {'value': target.id},
+                    'telescopes-checklist': {'options': [{'label': k, 'value': k} for k in telescopes]},
+                    'reducer-group-checklist': {'options': reducer_group_options,
+                                                'value': reducer_groups},
+                    'papers-dropdown': {'options': [{'label': k, 'value': k} for k in papers_used_in]}}
+
     if final_reduction:
-        return {'dash_context': {'target_id': {'value': target.id},
-                                 'telescopes-checklist': {'options': [{'label': k, 'value': k} for k in telescopes]},
-                                 'reducer-group-checklist': {'options': reducer_group_options},
-                                 'papers-dropdown': {'options': [{'label': k, 'value': k} for k in papers_used_in]},
-                                 'final-reduction-checklist': {'value': 'Final'},
-                                 'reduction-type-radio': {'value': 'manual'}},
-                'request': request}
+        dash_context['final-reduction-checklist'] = {'value': 'Final'}
+        dash_context['reduction-type-radio'] = {'value': 'manual'}
+
+        if final_background_subtracted:
+            dash_context['subtracted-radio'] = {'value': 'Subtracted'}
+        else:
+            dash_context['subtracted-radio'] = {'value': 'Unsubtracted'}
+
+    if background_subtracted:
+        dash_context['subtracted-radio'] = {'value': 'Subtracted'}
+
     else:
-        return {'dash_context': {'target_id': {'value': target.id},
-                                 'telescopes-checklist': {'options': [{'label': k, 'value': k} for k in telescopes]},
-                                 'reducer-group-checklist': {'options': reducer_group_options},
-                                 'papers-dropdown': {'options': [{'label': k, 'value': k} for k in papers_used_in]}},
-                'request': request}
+        dash_context['subtracted-radio'] = {'value': 'Unsubtracted'}
+
+
+    return {'dash_context': dash_context,
+            'request': request}
 
 @register.inclusion_tag('custom_code/dataproduct_update.html')
 def dataproduct_update(dataproduct):

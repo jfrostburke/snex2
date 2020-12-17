@@ -1,7 +1,7 @@
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 import json
 from django_plotly_dash import DjangoDash
 from tom_dataproducts.models import ReducedDatum
@@ -100,6 +100,37 @@ app.layout = html.Div([
         id='display-selected-values')
 ])
 
+#Only show manually reduced data if subtracted is selected
+@app.callback(
+        Output('reduction-type-radio', 'value'),
+        [Input('subtracted-radio', 'value'),
+         State('reduction-type-radio', 'value')])
+def update_reduction_type(selected_subtraction, old_reduction_type):
+    if selected_subtraction == 'Subtracted':
+        return 'manual'
+    return old_reduction_type
+
+#Unselect final reduction if automatically reduced data is selected
+@app.callback(
+        Output('final-reduction-checklist', 'value'),
+        [Input('reduction-type-radio', 'value'),
+         State('final-reduction-checklist', 'value')])
+def update_final_reduction(selected_reduction, old_final_value):
+    if not selected_reduction:
+        return ''
+    return old_final_value
+
+#Select unsubtracted data if automatic subtraction is selected
+@app.callback(
+        Output('subtracted-radio', 'value'),
+        [Input('reduction-type-radio', 'value'),
+         State('subtracted-radio', 'value')])
+def update_subtracted_type(selected_reduction, old_subtracted_type):
+    if not selected_reduction:
+        return 'Unsubtracted'
+    return old_subtracted_type
+
+#Hide subtracted choices if LCO telescope is not selected
 @app.callback(
         Output('subtracted-radio', 'style'),
         [Input('telescopes-checklist', 'value')])
@@ -109,6 +140,7 @@ def update_subtracted_style(selected_telescope):
     else:
         return {'display': 'none'}
 
+#Only show algorithm choices if subtracted data is selected
 @app.callback(
         Output('subtracted-extras', 'style'),
         [Input('subtracted-radio', 'value')])
@@ -118,18 +150,14 @@ def update_algorith_style(selected_subtraction):
     else:
         return {'display': 'none'}
 
-@app.callback(
-        Output('subtracted-radio', 'value'),
-        [Input('telescopes-checklist', 'value')])
-def update_subtracted_value(selected_telescope):
-    return 'Unsubtracted'
-
+#Automatically select both subtraction algorithms when subtracted data is selected
 @app.callback(
         Output('algorithm-checklist', 'value'),
         [Input('subtracted-radio', 'value')])
 def update_algorithm_value(selected_subtraction):
     return ['Hotpants', 'PyZOGY']
 
+#Automatically select both template choices when subtracted data is selected
 @app.callback(
         Output('template-checklist', 'value'),
         [Input('subtracted-radio', 'value')])
