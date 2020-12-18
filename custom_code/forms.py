@@ -11,7 +11,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
 class CustomTargetCreateForm(SiderealTargetCreateForm):
 
-    sciencetags = forms.ModelMultipleChoiceField(ScienceTags.objects.all().order_by(Lower('tag')), required=False, widget=forms.CheckboxSelectMultiple)
+    sciencetags = forms.ModelMultipleChoiceField(ScienceTags.objects.all().order_by(Lower('tag')), widget=forms.CheckboxSelectMultiple, label='Science Tags')
 
     def save(self, commit=True):
         instance = super().save(commit=commit)
