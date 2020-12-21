@@ -4,11 +4,12 @@ from tom_dataproducts.forms import DataProductUploadForm
 from tom_dataproducts.models import DataProduct
 from guardian.shortcuts import assign_perm, get_groups_with_perms, remove_perm
 from django import forms
-from custom_code.models import ScienceTags, TargetTags
+from custom_code.models import ScienceTags, TargetTags, Papers
 from django.conf import settings
 from django.db.models.functions import Lower
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import Group
+
 class CustomTargetCreateForm(SiderealTargetCreateForm):
 
     sciencetags = forms.ModelMultipleChoiceField(ScienceTags.objects.all().order_by(Lower('tag')), widget=forms.CheckboxSelectMultiple, label='Science Tags')
@@ -170,3 +171,46 @@ class CustomDataProductUploadForm(DataProductUploadForm):
     final_reduction = forms.BooleanField(
         required=False
     )
+
+
+class PapersForm(forms.ModelForm):
+
+    class Meta:
+        model = Papers
+        fields = ['target', 'author_first_name', 'author_last_name', 'status', 'description']
+        labels = {
+            'author_first_name': '',
+            'author_last_name': '',
+            'status': '',
+            'description': ''
+        }
+        help_texts = {
+            'author_first_name': '',
+            'author_last_name': '',
+            'status': '',
+            'description': ''
+        }
+        widgets = {
+            'target': forms.HiddenInput(),
+            'author_first_name': forms.Textarea(
+                attrs={
+                    'placeholder': 'First name of first author',
+                    'rows': 1,
+                    'cols': 20
+                }
+            ),
+            'author_last_name': forms.Textarea(
+                attrs={
+                    'placeholder': 'Last name of first author',
+                    'rows': 1,
+                    'cols': 20
+                }
+            ),
+            'description': forms.Textarea(
+                attrs={
+                    'placeholder': 'Brief description of contents of this paper, i.e. "All photometry and spectra"',
+                    'rows': 5,
+                    'cols': 20
+                }
+            )
+        }

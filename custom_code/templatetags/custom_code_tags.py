@@ -21,8 +21,8 @@ from astropy.coordinates import get_moon, get_sun, SkyCoord, AltAz
 import numpy as np
 import time
 
-from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra
-from custom_code.forms import CustomDataProductUploadForm
+from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra, Papers
+from custom_code.forms import CustomDataProductUploadForm, PapersForm
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
 from custom_code.facilities.lco_facility import SnexPhotometricSequenceForm, SnexSpectroscopicSequenceForm
@@ -795,3 +795,18 @@ def scheduling_list(context, observations):
     return {'observations': observations,
             'parameters': parameters
     }
+
+
+@register.inclusion_tag('custom_code/papers_list.html')
+def papers_list(target):
+
+    paper_query = Papers.objects.filter(target=target)
+    papers = []
+    for i in range(len(paper_query)):
+        papers.append(paper_query[i])
+
+    paper_form = PapersForm(initial={'target': target})
+    
+    return {'object': target,
+            'papers': papers,
+            'form': paper_form}

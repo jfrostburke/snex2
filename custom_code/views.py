@@ -1,11 +1,11 @@
 from django_filters.views import FilterView
 from django.shortcuts import redirect, render
 from django.db.models import Q #
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.views.generic.edit import FormView, UpdateView
 from django.urls import reverse
 
-from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra
+from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter #
 from tom_targets.models import TargetList
 
@@ -32,7 +32,7 @@ from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
 from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse
 
-from .forms import CustomTargetCreateForm, CustomDataProductUploadForm#, DataProductUpdateForm
+from .forms import CustomTargetCreateForm, CustomDataProductUploadForm, PapersForm
 from tom_targets.views import TargetCreateView
 from tom_common.hooks import run_hook
 from tom_dataproducts.views import DataProductUploadView, DataProductDeleteView
@@ -358,3 +358,26 @@ def save_dataproduct_groups_view(request):
         successful_groups += i
     response_data = {'success': successful_groups}
     return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+
+class PaperCreateView(FormView):
+    
+    form_class = PapersForm
+    template_name = 'custom_code/papers_list.html'
+
+    def form_valid(self, form):
+        target = form.cleaned_data['target']
+        first_name = form.cleaned_data['author_first_name']
+        last_name = form.cleaned_data['author_last_name']
+        status = form.cleaned_data['status']
+        description = form.cleaned_data['description']
+        paper = Papers(
+                target=target,
+                author_first_name=first_name,
+                author_last_name=last_name,
+                status=status,
+                description=description
+            )
+        paper.save()
+        
+        return HttpResponseRedirect('/targets/{}/'.format(target.id))

@@ -1,0 +1,18 @@
+{% load bootstrap4 custom_code_tags %}
+<dl class="row" style="display: block;">
+  <h5>Data Used In: </h5>
+  {% for paper in papers %}
+  {{ paper }}<br>
+  {{ paper.description }}<br>
+  {{ paper.created }}<br>
+  {% endfor %}
+</dl>
+<dl class="row" style="display: block;">
+  <form class="form" action="{% url 'custom_code:create-paper' %}" method="post">
+    {% bootstrap_form form %}
+    {% csrf_token %}
+    {% buttons %}
+    <button type="submit" class="btn btn-primary" formaction="{% url 'custom_code:create-paper' %}">Submit</button>
+    {% endbuttons %}
+  </form>
+</dl>

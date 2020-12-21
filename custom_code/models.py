@@ -4,6 +4,12 @@ from tom_targets.models import Target
 
 # Create your models here.
 
+STATUS_CHOICES = (
+    ('in prep', 'In Prep'),
+    ('submitted', 'Submitted'),
+    ('published', 'Published')
+)
+
 class TNSTarget(models.Model):
     
     name = models.CharField(
@@ -146,3 +152,37 @@ class TargetTags(models.Model):
     tag = models.ForeignKey(
         ScienceTags, on_delete=models.CASCADE
     )
+
+
+class Papers(models.Model):
+
+    target = models.ForeignKey(
+        Target, on_delete=models.CASCADE
+    )
+
+    author_first_name = models.CharField(
+        max_length=20, default='', 
+        verbose_name='First Author First Name', help_text='First name of the first author'
+    )
+
+    author_last_name = models.CharField(
+        max_length=20, default='',
+        verbose_name='First Author Last Name', help_text='Last name of the first author'
+    )
+
+    description = models.TextField(
+        verbose_name='Description', help_text='Brief description of the contents of the paper', 
+        default='', null=True
+    )
+
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES
+    )
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.author_last_name} et al. ({self.status})'
+
+    class Meta:
+        get_latest_by = ('id',)
