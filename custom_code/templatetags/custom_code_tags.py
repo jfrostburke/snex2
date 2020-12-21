@@ -582,7 +582,7 @@ def dash_lightcurve(context, target):
         else:
             dash_context['subtracted-radio'] = {'value': 'Unsubtracted'}
 
-    if background_subtracted:
+    elif background_subtracted:
         dash_context['subtracted-radio'] = {'value': 'Subtracted'}
 
     else:

@@ -210,7 +210,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
     if 'Final' in final_reduction_value:
         final_reduction = True
     else:
-        final_reduction = ''#False
+        final_reduction = False
 
     ### Get the data for the selected telescope
     if not selected_telescope:
