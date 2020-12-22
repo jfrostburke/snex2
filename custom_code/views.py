@@ -284,8 +284,8 @@ class CustomDataProductUploadView(DataProductUploadView):
                     rdextra_value['reducer_group'] = reducer_group
 
                 used_in = form.cleaned_data['used_in']
-                if used_in is not None:
-                    rdextra_value['used_in'] = used_in
+                if used_in:
+                    rdextra_value['used_in'] = str(used_in)
                 rdextra_value['final_reduction'] = form.cleaned_data['final_reduction']
 
                 reduced_data = run_custom_data_processor(dp, extras)

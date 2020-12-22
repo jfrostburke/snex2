@@ -486,12 +486,16 @@ def get_target_tags(target):
 def custom_upload_dataproduct(context, obj):
     user = context['user']
     initial = {}
+    choices = {}
     if isinstance(obj, Target):
         initial['target'] = obj
         initial['referrer'] = reverse('tom_targets:detail', args=(obj.id,))
+        initial['used_in'] = ('', '')
+
     elif isinstance(obj, ObservationRecord):
         initial['observation_record'] = obj
         initial['referrer'] = reverse('tom_observations:detail', args=(obj.id,))
+        
     form = CustomDataProductUploadForm(initial=initial)
     if not settings.TARGET_PERMISSIONS_ONLY:
         if user.is_superuser:
@@ -566,12 +570,16 @@ def dash_lightcurve(context, target):
     reducer_group_options = [{'label': 'LCO', 'value': ''}]
     reducer_group_options.extend([{'label': k, 'value': k} for k in reducer_groups])
     reducer_groups.append('')
+    
+    paper_options = [{'label': '', 'value': ''}]
+    paper_options.extend([{'label': k, 'value': k} for k in papers_used_in])
 
     dash_context = {'target_id': {'value': target.id},
                     'telescopes-checklist': {'options': [{'label': k, 'value': k} for k in telescopes]},
                     'reducer-group-checklist': {'options': reducer_group_options,
                                                 'value': reducer_groups},
-                    'papers-dropdown': {'options': [{'label': k, 'value': k} for k in papers_used_in]}}
+                    'papers-dropdown': {'options': paper_options}
+    }
 
     if final_reduction:
         dash_context['final-reduction-checklist'] = {'value': 'Final'}
@@ -581,6 +589,7 @@ def dash_lightcurve(context, target):
             dash_context['subtracted-radio'] = {'value': 'Subtracted'}
         else:
             dash_context['subtracted-radio'] = {'value': 'Unsubtracted'}
+            dash_context['telescopes-checklist']['value'] = telescopes
 
     elif background_subtracted:
         dash_context['subtracted-radio'] = {'value': 'Subtracted'}

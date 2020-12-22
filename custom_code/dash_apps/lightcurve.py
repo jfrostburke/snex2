@@ -60,12 +60,12 @@ app.layout = html.Div([
     ),
     html.Hr(),
     html.H3('Photometry Type'),
-    dcc.RadioItems(
-        id='photometry-type-radio',
+    dcc.Checklist(
+        id='photometry-type-checklist',
         options=[{'label': 'PSF', 'value': 'PSF'},
                  {'label': 'Aperture', 'value': 'Aperture'}
         ],
-        value='PSF'
+        value=['PSF', 'Aperture']
     ),
     html.Hr(),
     html.H3('Reduction Type'),
@@ -170,7 +170,7 @@ def update_template_value(selected_subtraction):
          Input('subtracted-radio', 'value'),
          Input('algorithm-checklist', 'value'),
          Input('template-checklist', 'value'),
-         Input('photometry-type-radio', 'value'),
+         Input('photometry-type-checklist', 'value'),
          Input('reduction-type-radio', 'value'),
          Input('final-reduction-checklist', 'value'),
          Input('papers-dropdown', 'value'),
@@ -222,10 +222,10 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
 
             ### Test that this dataproduct meets the chosen criteria:
             if all([de_value.get('instrument', '') in selected_telescope,
-                    de_value.get('photometry_type', '')==selected_photometry_type,
-                    de_value.get('final_reduction', '')==final_reduction,
+                    de_value.get('photometry_type', '') in selected_photometry_type,
+                    (not final_reduction or de_value.get('final_reduction', '')==final_reduction),
                     de_value.get('reducer_group', '') in selected_groups,
-                    (selected_paper is None or de_value.get('used_in', '')==selected_paper)]):
+                    (not selected_paper or de_value.get('used_in', '')==selected_paper)]):
                 dp_id = de_value.get('data_product_id', '')
                 datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id=dp_id))
         

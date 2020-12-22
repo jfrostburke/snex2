@@ -60,6 +60,25 @@ class CustomDataProductViewSet(DataProductViewSet):
             extras['background_subtracted'] = background_subtracted
             extras['subtraction_algorithm'] = upload_extras.pop('subtraction_algorithm', '')
             extras['template_source'] = upload_extras.pop('template_source', '')
+        
+        used_in = upload_extras.pop('used_in', '')
+        if used_in:
+            if ',' in used_in:
+                last_name = used_in.split(',')[0]
+                first_name = used_in.split(', ')[1]
+                paper_query = Paper.objects.filter(
+                    target_id=targetid,
+                    author_last_name=last_name,
+                    author_first_name=first_name)
+                if len(paper_query) != 0:
+                    paper_string = str(paper_query.first())
+                    upload_extras['used_in'] = paper_string
+            else:
+                paper_query = Paper.objects.filter(target_id=targetid, author_last_name=used_in)
+                if len(paper_query) != 0:
+                    paper_string = str(paper_query.first())
+                    upload_extras['used_in'] = paper_string
+
         response = CreateModelMixin.create(self, request, *args, **kwargs)
         if response.status_code == status.HTTP_201_CREATED:
             dp = DataProduct.objects.get(pk=response.data['id'])

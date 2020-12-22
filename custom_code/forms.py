@@ -118,7 +118,8 @@ class MultiField(forms.MultiValueField):
 class CustomDataProductUploadForm(DataProductUploadForm):
     photometry_type = forms.ChoiceField(
         choices=[('Aperture', 'Aperture'), 
-                 ('PSF', 'PSF')
+                 ('PSF', 'PSF'),
+                 ('Mixed', 'Mixed')
         ],
         widget=forms.RadioSelect(),
         required=False
@@ -146,11 +147,13 @@ class CustomDataProductUploadForm(DataProductUploadForm):
         required=False
     )
 
-    template_source = MultiField(
+    #template_source = MultiField(
+    template_source = forms.ChoiceField(
         choices=[('LCO', 'LCO'),
                  ('SDSS', 'SDSS'),
         ],
-        widget=TemplateSourceWidget,
+        #widget=TemplateSourceWidget,
+        widget=forms.RadioSelect(),
         required=False
     )
 
@@ -163,14 +166,25 @@ class CustomDataProductUploadForm(DataProductUploadForm):
         widget=ReducerGroupWidget
     )
 
-    used_in = forms.ChoiceField(
-        choices=[('Papers go here', 'Papers go here')],
+    #used_in = forms.ChoiceField(
+    #    choices=[('', '')],
+    #    required=False
+    #)
+    used_in = forms.ModelChoiceField(
+        queryset=Papers.objects.all(),
         required=False
     )
 
     final_reduction = forms.BooleanField(
         required=False
     )
+
+    def __init__(self, *args, **kwargs):
+        super(CustomDataProductUploadForm, self).__init__(*args, **kwargs)
+        initial_args = kwargs.get('initial', '')
+        if initial_args:
+            target = initial_args.get('target', '')
+            self.fields['used_in'] = forms.ModelChoiceField(queryset=Papers.objects.filter(target=target))
 
 
 class PapersForm(forms.ModelForm):
