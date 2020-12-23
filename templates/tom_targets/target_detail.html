@@ -121,7 +121,7 @@
         <div class="col-md-6">
           <h4>Photometry</h4>
           {#% lightcurve object %#}
-	  {% dash_lightcurve object %}
+	  {% dash_lightcurve object 600 360 %}
         </div>
         <div class="col-md-6">
           <h4>Spectroscopy</h4>
@@ -151,7 +151,7 @@
       </div>
       <div class="tab-pane" id="photometry">
         {#% lightcurve object %#}
-	{% dash_lightcurve object %}
+	{% dash_lightcurve object 1000 600 %}
       </div>
       <div class="tab-pane" id="spectroscopy">
         {% spectra_plot object %}

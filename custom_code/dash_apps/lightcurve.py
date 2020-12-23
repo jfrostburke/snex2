@@ -20,6 +20,16 @@ app.layout = html.Div([
         type='hidden',
         value=0
     ),
+    dcc.Input(
+        id='plot-width',
+        type='hidden',
+        value=0
+    ),
+    dcc.Input(
+        id='plot-height',
+        type='hidden',
+        value=0
+    ),
     html.H3('Instrument'),
     dcc.Checklist(
         id='telescopes-checklist',
@@ -175,8 +185,10 @@ def update_template_value(selected_subtraction):
          Input('final-reduction-checklist', 'value'),
          Input('papers-dropdown', 'value'),
          Input('reducer-group-checklist', 'value'),
-         Input('target_id', 'value')])
-def update_graph(selected_telescope, subtracted_value, selected_algorithm, selected_template, selected_photometry_type, reduction_type, final_reduction_value, selected_paper, selected_groups, value):
+         Input('target_id', 'value'),
+         Input('plot-width', 'value'),
+         Input('plot-height', 'value')])
+def update_graph(selected_telescope, subtracted_value, selected_algorithm, selected_template, selected_photometry_type, reduction_type, final_reduction_value, selected_paper, selected_groups, value, width, height):
     def get_color(filter_name):
         filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
             'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
@@ -279,8 +291,8 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         margin=dict(l=30, r=40, b=30, t=40),
-        width=1000,
-        height=600,
+        width=width,
+        height=height,
         hovermode='closest',
         plot_bgcolor='white'
     )

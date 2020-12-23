@@ -527,7 +527,7 @@ def submit_lco_observations(target):
             'spec_form': spec_form}
 
 @register.inclusion_tag('custom_code/dash_lightcurve.html', takes_context=True)
-def dash_lightcurve(context, target):
+def dash_lightcurve(context, target, width, height):
     request = context['request']
     
     # Get initial choices and values for some dash elements
@@ -575,6 +575,8 @@ def dash_lightcurve(context, target):
     paper_options.extend([{'label': k, 'value': k} for k in papers_used_in])
 
     dash_context = {'target_id': {'value': target.id},
+                    'plot-width': {'value': width},
+                    'plot-height': {'value': height},
                     'telescopes-checklist': {'options': [{'label': k, 'value': k} for k in telescopes]},
                     'reducer-group-checklist': {'options': reducer_group_options,
                                                 'value': reducer_groups},
