@@ -1,6 +1,6 @@
 import copy
 
-from tom_observations.facilities.soar import SOARFacility, SOARBaseObservationForm
+from tom_observations.facilities.soar import SOARFacility, SOARBaseObservationForm, SOARSpectroscopyObservationForm
 from tom_observations.facilities.lco import LCOSpectroscopyObservationForm, make_request
 from django import forms
 import datetime
@@ -25,7 +25,7 @@ TERMINAL_OBSERVING_STATES = ['COMPLETED', 'CANCELED', 'WINDOW_EXPIRED']
 # There is currently only one available grating, which is required for spectroscopy.
 SPECTRAL_GRATING = 'SYZY_400'
 
-class SOARObservationForm(SOARBaseObservationForm, LCOSpectroscopyObservationForm):
+class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObservationForm):
 
     # Auto set name, need to check exp getting submitted correctly
     #   Use validate endpoint to check, print submission
@@ -61,7 +61,7 @@ class SOARObservationForm(SOARBaseObservationForm, LCOSpectroscopyObservationFor
 
     def _build_instrument_config(self):
         instrument_configs = super()._build_instrument_config()
-
+        
         instrument_configs[0]['optical_elements'] = {
             'slit': self.cleaned_data['filter'],
             'grating': SPECTRAL_GRATING
