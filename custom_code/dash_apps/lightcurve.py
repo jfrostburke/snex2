@@ -242,7 +242,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
                 datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id=dp_id))
         
         ### Finally, get the data that was automatically uploaded from snex1 db
-        if 'LCO' in selected_telescope and final_reduction=='':
+        if 'LCO' in selected_telescope and not final_reduction:
             datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id__isnull=True))
     
     ### Plot the data

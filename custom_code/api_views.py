@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.mixins import CreateModelMixin
 from tom_dataproducts.models import DataProduct, ReducedDatum
 from tom_targets.models import Target, TargetName
-from custom_code.models import ReducedDatumExtra
+from custom_code.models import ReducedDatumExtra, Papers
 from tom_common.hooks import run_hook
 from .processors.data_processor import run_custom_data_processor
 import json
@@ -66,7 +66,7 @@ class CustomDataProductViewSet(DataProductViewSet):
             if ',' in used_in:
                 last_name = used_in.split(',')[0]
                 first_name = used_in.split(', ')[1]
-                paper_query = Paper.objects.filter(
+                paper_query = Papers.objects.filter(
                     target_id=targetid,
                     author_last_name=last_name,
                     author_first_name=first_name)
@@ -74,7 +74,7 @@ class CustomDataProductViewSet(DataProductViewSet):
                     paper_string = str(paper_query.first())
                     upload_extras['used_in'] = paper_string
             else:
-                paper_query = Paper.objects.filter(target_id=targetid, author_last_name=used_in)
+                paper_query = Papers.objects.filter(target_id=targetid, author_last_name=used_in)
                 if len(paper_query) != 0:
                     paper_string = str(paper_query.first())
                     upload_extras['used_in'] = paper_string
