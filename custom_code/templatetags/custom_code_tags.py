@@ -345,7 +345,7 @@ def moon_vis(target):
 @register.inclusion_tag('custom_code/spectra.html')
 def spectra_plot(target, dataproduct=None):
     spectra = []
-    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy')
+    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy').order_by('-timestamp')
     if dataproduct:
         spectral_dataproducts = DataProduct.objects.get(dataproduct=dataproduct)
     for spectrum in spectral_dataproducts:
@@ -354,7 +354,7 @@ def spectra_plot(target, dataproduct=None):
         flux = []
         name = str(spectrum.timestamp).split(' ')[0]
         for key, value in datum.items():
-            wavelength.append(value['wavelength'])
+            wavelength.append(float(value['wavelength']))
             flux.append(float(value['flux']))
         spectra.append((wavelength, flux, name))
     plot_data = [
@@ -399,13 +399,13 @@ def spectra_plot(target, dataproduct=None):
 @register.inclusion_tag('custom_code/spectra_collapse.html')
 def spectra_collapse(target):
     spectra = []
-    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy')
+    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy').order_by('-timestamp')
     for spectrum in spectral_dataproducts:
         datum = json.loads(spectrum.value)
         wavelength = []
         flux = []
         for key, value in datum.items():
-            wavelength.append(value['wavelength'])
+            wavelength.append(float(value['wavelength']))
             flux.append(float(value['flux']))
         spectra.append((wavelength, flux))
     plot_data = [
