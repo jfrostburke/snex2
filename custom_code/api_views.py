@@ -71,13 +71,13 @@ class CustomDataProductViewSet(DataProductViewSet):
                     author_last_name=last_name,
                     author_first_name=first_name)
                 if len(paper_query) != 0:
-                    paper_string = str(paper_query.first())
-                    upload_extras['used_in'] = paper_string
+                    paper_id = int(paper_query.first().id)
+                    upload_extras['used_in'] = paper_id
             else:
                 paper_query = Papers.objects.filter(target_id=targetid, author_last_name=used_in)
                 if len(paper_query) != 0:
-                    paper_string = str(paper_query.first())
-                    upload_extras['used_in'] = paper_string
+                    paper_id = int(paper_query.first().id)
+                    upload_extras['used_in'] = paper_id
 
         response = CreateModelMixin.create(self, request, *args, **kwargs)
         if response.status_code == status.HTTP_201_CREATED:

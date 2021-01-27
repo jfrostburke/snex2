@@ -5,7 +5,7 @@ from dash.dependencies import Input, Output, State
 import json
 from django_plotly_dash import DjangoDash
 from tom_dataproducts.models import ReducedDatum
-from custom_code.models import ReducedDatumExtra
+from custom_code.models import ReducedDatumExtra, Papers
 
 app = DjangoDash(name='Lightcurve')
 telescopes = ['LCO']
@@ -224,6 +224,9 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
     else:
         final_reduction = False
 
+    ### Get papers for this target
+    papers_for_target = [p.id for p in Papers.objects.filter(target_id=target_id)]
+
     ### Get the data for the selected telescope
     if not selected_telescope:
         datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry'))
@@ -237,7 +240,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
                     de_value.get('photometry_type', '') in selected_photometry_type,
                     (not final_reduction or de_value.get('final_reduction', '')==final_reduction),
                     de_value.get('reducer_group', '') in selected_groups,
-                    (not selected_paper or de_value.get('used_in', '')==selected_paper)]):
+                    (not selected_paper or de_value.get('used_in', '')==selected_paper or de_value.get('used_in', '') in papers_for_target)]):
                 dp_id = de_value.get('data_product_id', '')
                 datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id=dp_id))
         

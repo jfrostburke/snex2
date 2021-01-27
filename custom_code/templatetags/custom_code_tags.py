@@ -554,7 +554,13 @@ def dash_lightcurve(context, target, width, height):
         if inst and inst not in telescopes:
             telescopes.append(inst)
         if used_in and used_in not in papers_used_in:
-            papers_used_in.append(used_in)
+            try:
+                paper_query = Papers.objects.get(id=used_in)
+                paper_string = str(paper_query)
+                papers_used_in.append(paper_string)
+            except:
+                paper_string = str(used_in)
+                papers_used_in.append(paper_string)
         if group and group not in reducer_groups:
             reducer_groups.append(group)
    
