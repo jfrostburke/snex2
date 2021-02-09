@@ -60,7 +60,10 @@ def make_lnd(mag, filt, jd, jd_now):
 
 def make_magrecent(all_phot, jd_now):
     all_phot = json.loads(all_phot)
-    recent_jd = max([all_phot[obs]['jd'] for obs in all_phot])
+    jds = [all_phot[obs]['jd'] for obs in all_phot]
+    if not jds:
+        return 'None'
+    recent_jd = max(jds)
     recent_phot = [all_phot[obs] for obs in all_phot if
         all_phot[obs]['jd'] == recent_jd][0]
     mag = float(recent_phot['flux'])
