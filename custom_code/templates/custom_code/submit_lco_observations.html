@@ -13,6 +13,9 @@
     width: 250px;
     height: 250px;
 }
+#muscat-div {
+    display: none;
+}
 </style>
 <div class="row">
   <div class="col-md-6">
@@ -32,3 +35,16 @@
     {% crispy spec_form %}
   </div>
 </div>
+<script>
+$(function () {
+  $("#phot_instrument_type").change(function() {
+    console.log(document.getElementById("phot_instrument_type").value);
+    if(document.getElementById("phot_instrument_type").value === '2M0-SCICAM-MUSCAT') {
+      document.getElementById("muscat-div").style.display = "block";
+    }
+    else {
+      document.getElementById("muscat-div").style.display = "none";
+   }
+  });
+});
+</script>
