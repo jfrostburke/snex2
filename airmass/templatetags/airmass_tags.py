@@ -130,7 +130,7 @@ def lightcurve(target):
          
     photometry_data = {}
     for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
-        value = json.loads(rd.value)
+        value = rd.value
         photometry_data.setdefault(value.get('filter', ''), {})
         photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
         photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
@@ -173,7 +173,7 @@ def spectra_plot(target, dataproduct=None):
     if dataproduct:
         spectral_dataproducts = DataProduct.objects.get(dataproduct=dataproduct)
     for spectrum in spectral_dataproducts:
-        datum = json.loads(spectrum.value)
+        datum = spectrum.value
         wavelength = []
         flux = []
         name = str(spectrum.timestamp).split(' ')[0]
