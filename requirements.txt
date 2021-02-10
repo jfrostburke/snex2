@@ -1,6 +1,6 @@
 dataclasses
 tomtoolkit
-gunicorn
+gunicorn[gevent]
 django-heroku
 django-storages
 boto3
