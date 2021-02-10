@@ -26,12 +26,12 @@ app.layout = html.Div([
     dcc.Input(
         id='plot-width',
         type='hidden',
-        value=0
+        value=600
     ),
     dcc.Input(
         id='plot-height',
         type='hidden',
-        value=0
+        value=300
     ),
     html.H3('Instrument'),
     dcc.Checklist(
