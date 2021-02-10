@@ -6,6 +6,9 @@ import json
 from django_plotly_dash import DjangoDash
 from tom_dataproducts.models import ReducedDatum
 from custom_code.models import ReducedDatumExtra, Papers
+import logging
+
+logger = logging.getLogger(__name__)
 
 app = DjangoDash(name='Lightcurve')
 telescopes = ['LCO']
@@ -210,7 +213,8 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
         try: color = colors[filter_translate[filter_name]]
         except: color = colors['other']
         return color
-    
+
+    logger.info('Plotting dash lightcurve for target %s', value)
     target_id = value
     photometry_data = {}
     subtracted_photometry_data = {}

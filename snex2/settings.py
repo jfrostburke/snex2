@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import logging.config
+import tempfile
+
+from lcogt_logging import LCOGTFormatter
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -185,9 +189,15 @@ AWS_DEFAULT_ACL = None
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'default': {
+            '()': LCOGTFormatter
+        }
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'default'
         }
     },
     'loggers': {

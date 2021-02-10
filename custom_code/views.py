@@ -41,6 +41,10 @@ from tom_dataproducts.exceptions import InvalidFileFormatException
 from custom_code.processors.data_processor import run_custom_data_processor
 from guardian.shortcuts import assign_perm
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 # Create your views here.
 
 def make_coords(ra, dec):
@@ -91,6 +95,7 @@ class TNSTargets(FilterView):
         jd_now = Time(datetime.utcnow()).jd
         TNS_URL = "https://wis-tns.weizmann.ac.il/object/"
         for target in context['object_list']:
+            logger.info('Getting context data for TNS Target %s', target)
             target.coords = make_coords(target.ra, target.dec)
             target.mag_lnd = make_lnd(target.lnd_maglim,
                 target.lnd_filter, target.lnd_jd, jd_now)
@@ -128,8 +133,9 @@ class TargetListView(PermissionListMixin, FilterView):
         return context
 
 def target_redirect_view(request):
-    
-    search_entry = request.GET['name']
+ 
+    search_entry = request.GET['name'] 
+    logger.info('Redirecting search for %s', search_entry)
     
     target_search_coords = None
     for i in [',', ' ']:
@@ -206,6 +212,7 @@ def save_target_tag_view(request):
 def targetlist_collapse_view(request):
 
     target_id = request.GET.get('target_id', None)
+    logger.info('Getting plots for target %s', target_id)
     target = Target.objects.get(id=target_id)
     user_id = request.GET.get('user_id', None)
     user = User.objects.get(id=user_id)
