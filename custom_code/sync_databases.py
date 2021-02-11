@@ -226,7 +226,7 @@ def update_phot(action, db_address=_SNEX2_DB):
                 
                 if int(phot_row.mag) != 9999:
                     if int(phot_row.filetype) == 1:
-                        phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': False})
+                        phot = {'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': False}
                     elif int(phot_row.filetype) == 3:
                         if int(phot_row.difftype) == 0:
                             subtraction_algorithm = 'Hotpants'
@@ -237,12 +237,12 @@ def update_phot(action, db_address=_SNEX2_DB):
                             template_source = 'SDSS'
                         else:
                             template_source = 'LCO'
-                        phot = json.dumps({'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': True, 'subtraction_algorithm': subtraction_algorithm, 'template_source': template_source, 'reduction_type': 'manual'})
+                        phot = {'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': True, 'subtraction_algorithm': subtraction_algorithm, 'template_source': template_source, 'reduction_type': 'manual'}
                     
                     else:
-                        phot = json.dumps({'snex_id': int(id_)})
+                        phot = {'snex_id': int(id_)}
                 else:
-                    phot = json.dumps({'snex_id': int(id_)})
+                    phot = {'snex_id': int(id_)}
     
                 phot_groupid = phot_row.groupidcode
     
@@ -296,7 +296,7 @@ def read_spec(filename):
     spec_file = open(filename, 'r')
     lines = [x.split() for x in spec_file.readlines()]
     data = {"{}".format(i): {"wavelength": float(lines[i][0]), "flux": float(lines[i][1])} for i in range(len(lines))}
-    return(json.dumps(data))
+    return(data)
 
 
 def update_spec(action, db_address=_SNEX2_DB):
