@@ -194,6 +194,8 @@ def update_phot(action, db_address=_SNEX2_DB):
                     snex2_id_query = db_session.query(Datum).filter(Datum.data_type=='photometry').order_by(Datum.id.desc()).all()
                     for snex2_row in snex2_id_query:
                         value = snex2_row.value
+                        if type(value) == str:
+                            value = json.loads(snex2_row.value)
                         if id_ == value.get('snex_id', ''):
                             db_session.delete(snex2_row)
                             break
@@ -258,6 +260,8 @@ def update_phot(action, db_address=_SNEX2_DB):
                             snex2_id_query = db_session.query(Datum).filter(and_(Datum.target_id==targetid, Datum.data_type=='photometry')).all()
                             for snex2_row in snex2_id_query:
                                 value = snex2_row.value
+                                if type(value) == str: #Some rows are still strings for some reason
+                                    value = json.loads(snex2_row.value)
                                 if int(id_) == value.get('snex_id', ''):
                                     snex2_id = snex2_row.id
                                     db_session.query(Datum).filter(Datum.id==snex2_id).update({'target_id': targetid, 'timestamp': time, 'value': phot, 'data_type': 'photometry', 'source_name': '', 'source_location': ''})
