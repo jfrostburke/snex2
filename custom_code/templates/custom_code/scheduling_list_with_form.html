@@ -1,0 +1,121 @@
+{% load bootstrap4 targets_extras custom_code_tags %}
+<style>
+#id_cadence_frequency {
+    width: 50px;
+}
+#id_ipp_value {
+    width: 50px;
+}
+#id_max_airmass {
+    width: 50px;
+}
+.exposure-row {
+    width: 350px;
+}
+</style>
+<table class="table">
+  <thead>
+    <tr>
+      <th>View</th>
+      <th>Target</th>
+      <th>Facility</th>
+      <th>Observation Type</th>
+      <th>Instrument</th>
+      <th>Cadence</th>
+      <th>IPP</th>
+      <th>Max Airmass</th>
+      <th>Exposures</th>
+      <th>Start</th>
+      <th>End</th>
+      <th>Classification</th>
+      <th>Redshift</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for parameter in parameters %}
+    <tr>
+      <td><a class="btn btn-success" href="{% url 'tom_observations:detail' parameter.observation_id %}">Details</a></td>
+      <td><a href="{% url 'tom_targets:detail' parameter.target.id %}" title="{{ parameter.target.id }}">{{ parameter.target.names|join:", " }}</a></td>
+      <td>{{ parameter.facility }}</td>
+      <td>{{ parameter.observation_type }}</td>
+      <td>{{ parameter.instrument }}</td>
+      <form action="{% url 'api:observations-list' %}" method="post" class="form">
+	{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,U,B,V,R,I,u,gp,rp,ip,zs,w' %}
+	<td>{{ form.cadence_frequency }}</td>
+	<td>{{ form.ipp_value }}</td>
+	<td>{{ form.max_airmass }}</td>
+	<td>
+	  <div class="exposure-row">Exposure Time Exposures Block No.</div>
+	  <div class="exposure-row">{{ form.U.label }}{{ form.U }}</div>
+	  <div class="exposure-row">{{ form.B.label }}{{ form.B }}</div>
+	  <div class="exposure-row">{{ form.V.label }}{{ form.V }}</div>
+	  <div class="exposure-row">{{ form.R.label }}{{ form.R }}</div>
+	  <div class="exposure-row">{{ form.I.label }}{{ form.I }}</div>
+	  <div class="exposure-row">{{ form.u.label }}{{ form.u }}</div>
+	  <div class="exposure-row">{{ form.gp.label }}{{ form.gp }}</div>
+	  <div class="exposure-row">{{ form.rp.label }}{{ form.rp }}</div>
+	  <div class="exposure-row">{{ form.ip.label }}{{ form.ip }}</div>
+	  <div class="exposure-row">{{ form.zs.label }}{{ form.zs }}</div>
+	  <div class="exposure-row">{{ form.w.label }}{{ form.w }}</div>
+	  <div class="row">
+	  {% buttons %}
+	  <input type="submit" class="btn btn-primary" value="Modify" name="modify_observation">
+          {% endbuttons %}
+	  </div>
+	</td>
+      </form>
+      <td>{{ parameter.start }}</td>
+      <td>{{ parameter.end }}</td>
+      <td>
+      {% with parameter.target as target %}
+        {% if target|target_extra_field:"classification" %}
+          {{ target|target_extra_field:"classification" }}
+        {% else %}
+          None
+        {% endif %}
+      </td>
+      <td>
+	{% if target|target_extra_field:"redshift" %}
+	  {{ target|target_extra_field:"redshift" }}
+	{% else %}
+	  None
+	{% endif %}
+      {% endwith %}
+      </td>
+    </tr>
+      <td colspan=10 style="border-top:none;">
+        <div class="collapse show" id="show-both-{{parameter.target.name|cut:" "}}">
+          <div id="lightcurve-{{parameter.observation_id}}" class="lightcurve-{{parameter.target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+          <div id="spectra-{{parameter.observation_id}}" class="spectra-{{parameter.target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+          <div id="airmass-{{parameter.observation_id}}" class="airmass-{{parameter.target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+        </div>
+      </td>
+    </tr>
+    <script>
+      $(document).ready(function() {
+        $.ajax({
+          url: '{% url "targetlist_collapse" %}',
+          data: {'target_id': {{ parameter.target.id }},
+                 'user_id': {{ parameter.user_id }}},
+          dataType: 'json',
+          success: function(response) {
+            var lightcurve_plot = response.lightcurve_plot;
+            $('#lightcurve-{{parameter.observation_id}}').html(lightcurve_plot);
+            var spectra_plot = response.spectra_plot;
+            $('#spectra-{{parameter.observation_id}}').html(spectra_plot);
+            var airmass_plot = response.airmass_plot;
+            $('#airmass-{{parameter.observation_id}}').html(airmass_plot);
+          }
+        });
+      });
+    </script>
+    {% empty %}
+    <tr>
+      <td colspan="7">
+        No observations yet. You might want to create an observation from one of
+        <a href="{% url 'tom_targets:list' %}">your saved targets</a>.
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

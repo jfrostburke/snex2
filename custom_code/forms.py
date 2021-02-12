@@ -1,6 +1,7 @@
 from tom_targets.forms import SiderealTargetCreateForm, TargetForm
 from tom_targets.models import TargetExtra
 from tom_dataproducts.forms import DataProductUploadForm
+from tom_observations.widgets import FilterField
 from tom_dataproducts.models import DataProduct
 from guardian.shortcuts import assign_perm, get_groups_with_perms, remove_perm
 from django import forms
@@ -228,3 +229,26 @@ class PapersForm(forms.ModelForm):
                 }
             )
         }
+
+
+class PhotSchedulingForm(forms.Form):
+
+    name = forms.CharField(widget=forms.HiddenInput())
+    target_id = forms.FloatField(widget=forms.HiddenInput())
+    facility = forms.CharField(widget=forms.HiddenInput())
+    observation_type = forms.CharField(widget=forms.HiddenInput())
+    cadence_strategy = forms.CharField(widget=forms.HiddenInput(), required=False)
+    instrument_type = forms.CharField(widget=forms.HiddenInput())
+    min_lunar_distance = forms.FloatField(widget=forms.HiddenInput())
+    proposal = forms.CharField(widget=forms.HiddenInput())
+    observation_mode = forms.CharField(widget=forms.HiddenInput())
+    
+    cadence_frequency = forms.FloatField(min_value=0.0, label='')
+    ipp_value = forms.FloatField(min_value=0.5, max_value=2.0, label='')
+    max_airmass = forms.FloatField(min_value=0.0, label='')
+    filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+    
+    def __init__(self, *args, **kwargs):
+        super(PhotSchedulingForm, self).__init__(*args, **kwargs)
+        for f in self.filters:
+            self.fields[f] = FilterField(label=f[0], required=False)

@@ -22,7 +22,7 @@ import numpy as np
 import time
 
 from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra, Papers
-from custom_code.forms import CustomDataProductUploadForm, PapersForm
+from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSchedulingForm
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
 from custom_code.facilities.lco_facility import SnexPhotometricSequenceForm, SnexSpectroscopicSequenceForm
@@ -826,3 +826,85 @@ def papers_list(target):
     return {'object': target,
             'papers': papers,
             'form': paper_form}
+
+    
+@register.inclusion_tag('custom_code/scheduling_list_with_form.html', takes_context=True)
+def scheduling_list_with_form(context, observation):
+    parameters = []
+    facility = observation.facility
+    
+    # For now, we'll only worry about scheduling for LCO observations
+    if facility != 'LCO':
+        return {'observations': observation,
+                'parameters': ''}
+        
+    observation_id = observation.id
+    target = observation.target
+    target_names = observation.target.names
+
+    # We'll also only do 1m photometry for right now
+    parameter = observation.parameters
+    if parameter.get('instrument_type', '') != '1M0-SCICAM-SINISTRO':
+        return {'observations': observation,
+                'parameters': ''}
+
+    observation_type = 'Phot'
+
+    if parameter.get('cadence_strategy', ''):
+        cadence = str(parameter.get('cadence_frequency', '')) + ' days'
+    else:
+        cadence = 'Onetime'
+    ipp = parameter.get('ipp_value', '')
+    airmass = parameter.get('max_airmass', '')
+
+    exposures = []
+    instrument = 'Sinistro'
+
+    filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+    for f in filters:
+        filter_parameters = parameter.get(f, '')
+        if filter_parameters and filter_parameters[0] != 0.0:
+            exposures.append({'filter': f, 'number': filter_parameters[1], 'exp_time': int(filter_parameters[0])})
+
+
+    start = str(observation.created).split('.')[0]
+    if parameter.get('end', ''):
+        end = str(observation.modified).split('.')[0]
+
+
+    initial = {'name': target.name,
+               'target_id': target.id,
+               'facility': facility,
+               'observation_type': observation_type,
+               'cadence_strategy': parameter.get('cadence_strategy', ''),
+               'instrument_type': parameter.get('instrument_type', ''),
+               'min_lunar_distance': parameter.get('min_lunar_distance', ''),
+               'proposal': parameter.get('proposal', ''),
+               'observation_mode': parameter.get('observation_mode', ''),
+               'cadence_frequency': parameter.get('cadence_frequency', ''),
+               'ipp_value': ipp,
+               'max_airmass': airmass
+        }
+    for f in filters:
+        if parameter.get(f, '') and parameter.get(f, '')[0] != 0.0:
+            initial[f] = parameter.get(f, '')
+
+    phot_form = PhotSchedulingForm(initial=initial)
+
+    parameters.append({'observation_id': observation_id,
+                       'target': target,
+                       'facility': facility,
+                       'observation_type': observation_type,
+                       'cadence': cadence,
+                       'ipp': ipp,
+                       'airmass': airmass,
+                       'instrument': instrument,
+                       'exposures': exposures,
+                       'start': start,
+                       'end': end,
+                       'user_id': context['request'].user.id
+                    })
+    return {'observations': observation,
+            'parameters': parameters,
+            'form': phot_form
+    }

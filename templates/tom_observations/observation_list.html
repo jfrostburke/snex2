@@ -26,7 +26,10 @@
       </div>
     </div>
     {#% observation_distribution filter.qs %#}
-    {% scheduling_list filter.qs %}
+    {#% scheduling_list filter.qs %#}
+    {% for q in filter.qs %}
+    {% scheduling_list_with_form q %}
+    {% endfor %}
     {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
   </div>
   <div class="col-md-2">
