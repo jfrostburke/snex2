@@ -849,42 +849,32 @@ def scheduling_list_with_form(context, observation):
                 'parameters': ''}
 
     observation_type = 'Phot'
-
-    if parameter.get('cadence_strategy', ''):
-        cadence = str(parameter.get('cadence_frequency', '')) + ' days'
-    else:
-        cadence = 'Onetime'
-    ipp = parameter.get('ipp_value', '')
-    airmass = parameter.get('max_airmass', '')
-
-    exposures = []
     instrument = 'Sinistro'
-
-    filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
-    for f in filters:
-        filter_parameters = parameter.get(f, '')
-        if filter_parameters and filter_parameters[0] != 0.0:
-            exposures.append({'filter': f, 'number': filter_parameters[1], 'exp_time': int(filter_parameters[0])})
-
-
+    cadence_frequency = parameter.get('cadence_frequency', '')
     start = str(observation.created).split('.')[0]
     if parameter.get('end', ''):
         end = str(observation.modified).split('.')[0]
 
-
-    initial = {'name': target.name,
-               'target_id': target.id,
-               'facility': facility,
-               'observation_type': observation_type,
-               'cadence_strategy': parameter.get('cadence_strategy', ''),
+    observing_parameters = {
                'instrument_type': parameter.get('instrument_type', ''),
                'min_lunar_distance': parameter.get('min_lunar_distance', ''),
                'proposal': parameter.get('proposal', ''),
-               'observation_mode': parameter.get('observation_mode', ''),
-               'cadence_frequency': parameter.get('cadence_frequency', ''),
-               'ipp_value': ipp,
-               'max_airmass': airmass
+               'observation_mode': parameter.get('observation_mode', '')
         }
+    initial = {'name': target.name,
+               'observation_id': observation_id,
+               'target_id': target.id,
+               'facility': facility,
+               'observation_type': parameter.get('observation_type', ''),
+               'cadence_strategy': parameter.get('cadence_strategy', ''),
+               'observing_parameters': json.dumps(observing_parameters),
+               'cadence_frequency': cadence_frequency,
+               'ipp_value': parameter.get('ipp_value', ''),
+               'max_airmass': parameter.get('max_airmass', ''),
+               'reminder': 2*cadence_frequency
+        }
+    
+    filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
     for f in filters:
         if parameter.get(f, '') and parameter.get(f, '')[0] != 0.0:
             initial[f] = parameter.get(f, '')
@@ -895,11 +885,7 @@ def scheduling_list_with_form(context, observation):
                        'target': target,
                        'facility': facility,
                        'observation_type': observation_type,
-                       'cadence': cadence,
-                       'ipp': ipp,
-                       'airmass': airmass,
                        'instrument': instrument,
-                       'exposures': exposures,
                        'start': start,
                        'end': end,
                        'user_id': context['request'].user.id

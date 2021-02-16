@@ -32,7 +32,7 @@
     {% endfor %}
     {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
   </div>
-  <div class="col-md-2">
+  <!--div class="col-md-2">
     <form action="" method="get" class="form">
       {% bootstrap_form filter.form %}
       {% buttons %}
@@ -42,6 +42,6 @@
         <a href="{% url 'tom_observations:list' %}" class="btn btn-secondary" title="Reset">Reset</a>
       {% endbuttons %}
     </form>
-  </div>
+  </div-->
 </div>
 {% endblock %}

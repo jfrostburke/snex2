@@ -234,18 +234,17 @@ class PapersForm(forms.ModelForm):
 class PhotSchedulingForm(forms.Form):
 
     name = forms.CharField(widget=forms.HiddenInput())
-    target_id = forms.FloatField(widget=forms.HiddenInput())
+    observation_id = forms.IntegerField(widget=forms.HiddenInput())
+    target_id = forms.IntegerField(widget=forms.HiddenInput())
     facility = forms.CharField(widget=forms.HiddenInput())
     observation_type = forms.CharField(widget=forms.HiddenInput())
     cadence_strategy = forms.CharField(widget=forms.HiddenInput(), required=False)
-    instrument_type = forms.CharField(widget=forms.HiddenInput())
-    min_lunar_distance = forms.FloatField(widget=forms.HiddenInput())
-    proposal = forms.CharField(widget=forms.HiddenInput())
-    observation_mode = forms.CharField(widget=forms.HiddenInput())
+    observing_parameters = forms.CharField(max_length=1024, widget=forms.HiddenInput()) 
     
     cadence_frequency = forms.FloatField(min_value=0.0, label='')
     ipp_value = forms.FloatField(min_value=0.5, max_value=2.0, label='')
     max_airmass = forms.FloatField(min_value=0.0, label='')
+    reminder = forms.FloatField(min_value=0.0, label='')
     filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
     
     def __init__(self, *args, **kwargs):
