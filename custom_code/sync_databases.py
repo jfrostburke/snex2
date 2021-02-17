@@ -227,7 +227,7 @@ def update_phot(action, db_address=_SNEX2_DB):
                 if int(phot_row.mag) != 9999:
                     if int(phot_row.filetype) == 1:
                         phot = {'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': False}
-                    elif int(phot_row.filetype) == 3:
+                    elif int(phot_row.filetype) == 3 and phot_row.difftype is not None:
                         if int(phot_row.difftype) == 0:
                             subtraction_algorithm = 'Hotpants'
                         elif int(phot_row.difftype) == 1:
