@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'tom_dataproducts',
     'custom_code',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
 
 ]
@@ -293,8 +294,8 @@ TOM_FACILITY_CLASSES = [
     'custom_code.facilities.gemini_facility.GeminiFacility',
     #'tom_observations.facilities.lco.LCOFacility',
     'custom_code.facilities.lco_facility.SnexLCOFacility',
-    'custom_code.facilities.soar_facility.SOARFacility',
-    #'tom_observations.facilities.soar.SOARFacility',
+    #'custom_code.facilities.soar_facility.SOARFacility',
+    'tom_observations.facilities.soar.SOARFacility',
     ]
 
 TOM_HARVESTER_CLASSES = [
@@ -330,6 +331,10 @@ DATA_PROCESSORS = {
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication'
     ],
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',

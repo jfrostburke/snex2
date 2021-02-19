@@ -44,6 +44,7 @@ from guardian.shortcuts import assign_perm
 from tom_observations.models import ObservationRecord
 from tom_observations.facility import get_service_class
 import requests
+from rest_framework.authtoken.models import Token
 
 import logging
 
@@ -396,89 +397,8 @@ class PaperCreateView(FormView):
         
         return HttpResponseRedirect('/targets/{}/'.format(target.id))
 
-class PhotSchedulingView(FormView):
 
-    form_class = PhotSchedulingForm
-    template_name = 'custom_code/scheduling_list_with_form.html'
-
-    def form_valid(self, form):
-        if 'modify' in self.request.POST:
-            # Delete old sequence and submit new one with new parameters
-            observation_id = form.cleaned_data['observation_id']
-            obs = ObservationRecord.objects.get(id=observation_id)
-            facility = get_service_class(obs.facility)()
-            #errors = facility.cancel_observation(observation_id)
-            #if errors:
-            #    messages.error(
-            #        self.request,
-            #        f'Unable to cancel observation: {errors}'
-            #    )
-
-            form_data = {'name': form.cleaned_data['name'],
-                         'target_id': form.cleaned_data['target_id'],
-                         'facility': form.cleaned_data['facility'],
-                         'observation_type': form.cleaned_data['observation_type']
-                }
-
-            observing_parameters = json.loads(form.cleaned_data['observing_parameters'])
-            # Append the additional info that users can change to parameters
-            observing_parameters['ipp_value'] = form.cleaned_data['ipp_value']
-            observing_parameters['max_airmass'] = form.cleaned_data['max_airmass']
-            now = datetime.now()
-            observing_parameters['reminder'] = datetime.strftime(now + timedelta(days=form.cleaned_data['reminder']), '%Y-%m-%dT%H:%M:%S')
-            filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
-            for f in filters:
-                if form.cleaned_data[f] and form.cleaned_data[f][0] > 0.0:
-                    observing_parameters[f] = form.cleaned_data[f]
-            form_data['observing_parameters'] = observing_parameters
-
-            if form.cleaned_data['cadence_strategy']: 
-                cadence = {'cadence_strategy': form.cleaned_data['cadence_strategy'],
-                           'cadence_frequency': form.cleaned_data['cadence_frequency']
-                    }
-                form_data['cadence'] = cadence
-                
-            #response = requests.post(reverse('api:observations-list'), data=form_data)
-            #return HttpResponse(str(response.status_code))
-            #return HttpResponse(json.dumps(form_data), content_type='application/json')
-            print(form_data)
-            return redirect('/observations/list/')
-
-        elif 'continue' in self.request.POST:
-            # Only update the reminder parameter in ObservationRecord
-            observation_id = form.cleaned_data['observation_id']
-            obs = ObservationRecord.objects.get(id=observation_id)
-            next_reminder = form.cleaned_data['reminder']
-            obs_parameters = obs.parameters
-            now = datetime.now()
-            obs_parameters['reminder'] = datetime.strftime(now + timedelta(days=next_reminder), '%Y-%m-%dT%H:%M:%S')
-            obs.update(parameters=obs_parameters)
-            obs.save()
-            return HttpResponse(json.dumps({'observation': observation_id}), content_type='application/json')
-        
-        elif 'stop' in self.request.POST:
-            # Delete old sequence
-            observation_id = form.cleaned_data['observation_id']
-            obs = ObservationRecord.objects.get(id=observation_id)
-            facility = get_service_class(obs.facility)()
-            errors = facility.cancel_observation(observation_id)
-            if errors:
-                messages.error(
-                    self.request,
-                    f'Unable to cancel observation: {errors}'
-                )
-            return HttpResponse(json.dumps({'observation': observation_id}), content_type='application/json')
-
-
-    def form_invalid(self, form):
-        messages.error(
-            self.request,
-            'The form is invalid'
-        )
-        return redirect('/observations/list/')
-
-
-def phot_scheduling_view(request):
+def scheduling_view(request):
 
     if 'modify' in request.GET['button']:
         obs_id = int(float(request.GET['observation_id']))
@@ -487,9 +407,9 @@ def phot_scheduling_view(request):
         portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
 
         obs = ObservationRecord.objects.get(id=obs_id)
-        print('Canceling Observation for'.format(obs.observation_id))
-        r = requests.post('{}/api/requestgroups/{}/cancel/'.format(PORTAL_URL, obs.observation_id), headers=portal_headers) #Note that this doesn't work currently because the id given is the wrong id
-        print('Observations Cancelled with status code {}'.format(r.status_code))
+        print('Canceling Observation for {}'.format(obs.observation_id))
+        #r = requests.post('{}/api/requestgroups/{}/cancel/'.format(PORTAL_URL, obs.observation_id), headers=portal_headers) #Note that this doesn't work currently because the id given is the wrong id
+        #print('Observations Cancelled with status code {}'.format(r.status_code))
 
         print('Getting form data')
         form_data = {'name': request.GET['name'],
@@ -504,11 +424,16 @@ def phot_scheduling_view(request):
         observing_parameters['max_airmass'] = float(request.GET['max_airmass'])
         now = datetime.now()
         observing_parameters['reminder'] = datetime.strftime(now + timedelta(days=float(request.GET['reminder'])), '%Y-%m-%dT%H:%M:%S')
-        
-        filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
-        for f in filters:
-            if request.GET[f+'_0'] and float(request.GET[f+'_0'][0]) > 0.0:
-                observing_parameters[f] = [float(request.GET[f+'_0']), int(float(request.GET[f+'_1'])), int(float(request.GET[f+'_2']))]
+       
+        if request.GET['observation_type'] == 'IMAGING':
+            filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+            for f in filters:
+                if f+'_0' in request.GET.keys() and float(request.GET[f+'_0'][0]) > 0.0:
+                    observing_parameters[f] = [float(request.GET[f+'_0']), int(float(request.GET[f+'_1'])), int(float(request.GET[f+'_2']))]
+
+        elif request.GET['observation_type'] == 'SPECTRA':
+            observing_parameters['exposure_time'] = int(float(request.GET['exposure_time']))
+
         form_data['observing_parameters'] = observing_parameters
 
         if request.GET['cadence_strategy']: 
@@ -516,8 +441,10 @@ def phot_scheduling_view(request):
                        'cadence_frequency': float(request.GET['cadence_frequency'])
                 }
             form_data['cadence'] = cadence
-            
-        r = requests.post('http://127.0.0.1:8000/api/observations/', data=form_data) #Should also test that this works
+        
+        user = User.objects.get(username=request.user)
+        token = Token.objects.get(user=user).key
+        r = requests.post('http://127.0.0.1:8000/api/observations/', data=form_data, headers={'Authorization': 'Token ' + token}) #Should also test that this works
         print('Observation submitted with status code {}'.format(r.status_code))
         print(form_data)
         response_data = {'success': 'Modified'}

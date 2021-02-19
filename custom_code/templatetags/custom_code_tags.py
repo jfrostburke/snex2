@@ -22,7 +22,7 @@ import numpy as np
 import time
 
 from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra, Papers
-from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSchedulingForm
+from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, SpecSchedulingForm
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
 from custom_code.facilities.lco_facility import SnexPhotometricSequenceForm, SnexSpectroscopicSequenceForm
@@ -842,55 +842,119 @@ def scheduling_list_with_form(context, observation):
     target = observation.target
     target_names = observation.target.names
 
-    # We'll also only do 1m photometry for right now
     parameter = observation.parameters
-    if parameter.get('instrument_type', '') != '1M0-SCICAM-SINISTRO':
-        return {'observations': observation,
-                'parameters': ''}
+    if parameter.get('observation_type', '') == 'IMAGING':
 
-    observation_type = 'Phot'
-    instrument = 'Sinistro'
-    cadence_frequency = parameter.get('cadence_frequency', '')
-    start = str(observation.created).split('.')[0]
-    if parameter.get('end', ''):
-        end = str(observation.modified).split('.')[0]
+        observation_type = 'Phot'
+        if '2M' in parameter.get('instrument_type', ''):
+            instrument = 'Muscat'
+        elif '1M' in parameter.get('instrument_type', ''):
+            instrument = 'Sinistro'
+        else:
+            instrument = 'SBIG'
 
-    observing_parameters = {
-               'instrument_type': parameter.get('instrument_type', ''),
-               'min_lunar_distance': parameter.get('min_lunar_distance', ''),
-               'proposal': parameter.get('proposal', ''),
-               'observation_mode': parameter.get('observation_mode', '')
-        }
-    initial = {'name': target.name,
-               'observation_id': observation_id,
-               'target_id': target.id,
-               'facility': facility,
-               'observation_type': parameter.get('observation_type', ''),
-               'cadence_strategy': parameter.get('cadence_strategy', ''),
-               'observing_parameters': json.dumps(observing_parameters),
-               'cadence_frequency': cadence_frequency,
-               'ipp_value': parameter.get('ipp_value', ''),
-               'max_airmass': parameter.get('max_airmass', ''),
-               'reminder': 2*cadence_frequency
-        }
+        cadence_frequency = parameter.get('cadence_frequency', '')
+        start = str(observation.created).split('.')[0]
+        if parameter.get('end', ''):
+            end = str(observation.modified).split('.')[0]
+
+        observing_parameters = {
+                   'instrument_type': parameter.get('instrument_type', ''),
+                   'min_lunar_distance': parameter.get('min_lunar_distance', ''),
+                   'proposal': parameter.get('proposal', ''),
+                   'observation_type': parameter.get('observation_type', ''),
+                   'observation_mode': parameter.get('observation_mode', ''),
+                   'cadence_strategy': parameter.get('cadence_strategy', ''),
+                   'cadence_frequency': cadence_frequency
+            }
+
+        if instrument == 'Muscat':
+            observing_parameters['guider_mode'] = parameter.get('guider_mode', '')
+            observing_parameters['exposure_mode'] = parameter.get('exposure_mode', '')
+            for pos in ['diffuser_g_position', 'diffuser_r_position', 'diffuser_i_position', 'diffuser_z_position']:
+                observing_parameters[pos] = parameter.get(pos, '')
+
+        initial = {'name': target.name,
+                   'observation_id': observation_id,
+                   'target_id': target.id,
+                   'facility': facility,
+                   'observation_type': parameter.get('observation_type', ''),
+                   'cadence_strategy': parameter.get('cadence_strategy', ''),
+                   'observing_parameters': json.dumps(observing_parameters),
+                   'cadence_frequency': cadence_frequency,
+                   'ipp_value': parameter.get('ipp_value', ''),
+                   'max_airmass': parameter.get('max_airmass', ''),
+                   'reminder': 2*cadence_frequency
+            }
+        
+        filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+        for f in filters:
+            if parameter.get(f, '') and parameter.get(f, '')[0] != 0.0:
+                initial[f] = parameter.get(f, '')
+
+        form = PhotSchedulingForm(initial=initial)
+
+        parameters.append({'observation_id': observation_id,
+                           'target': target,
+                           'facility': facility,
+                           'observation_type': observation_type,
+                           'instrument': instrument,
+                           'start': start,
+                           'end': end,
+                           'user_id': context['request'].user.id
+                        })
     
-    filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
-    for f in filters:
-        if parameter.get(f, '') and parameter.get(f, '')[0] != 0.0:
-            initial[f] = parameter.get(f, '')
+    else: # For spectra observations
+        observation_type = 'Spec'
+        instrument = 'Floyds'
+        cadence_frequency = parameter.get('cadence_frequency', '')
+        start = str(observation.created).split('.')[0]
+        if parameter.get('end', ''):
+            end = str(observation.modified).split('.')[0]
 
-    phot_form = PhotSchedulingForm(initial=initial)
+        observing_parameters = {
+                   'instrument_type': parameter.get('instrument_type', ''),
+                   'min_lunar_distance': parameter.get('min_lunar_distance', ''),
+                   'proposal': parameter.get('proposal', ''),
+                   'observation_type': parameter.get('observation_type', ''),
+                   'observation_mode': parameter.get('observation_mode', ''),
+                   'cadence_strategy': parameter.get('cadence_strategy', ''),
+                   'cadence_frequency': cadence_frequency,
+                   'site': parameter.get('site', ''),
+                   'exposure_count': parameter.get('exposure_count', ''),
+                   'acquisition_radius': parameter.get('acquisition_radius', ''),
+                   'guider_mode': parameter.get('guider_mode', ''),
+                   'guider_exposure_time': parameter.get('guider_exposure_time', ''),
+                   'filter': parameter.get('filter', '')
+            }
 
-    parameters.append({'observation_id': observation_id,
-                       'target': target,
-                       'facility': facility,
-                       'observation_type': observation_type,
-                       'instrument': instrument,
-                       'start': start,
-                       'end': end,
-                       'user_id': context['request'].user.id
-                    })
+        initial = {'name': target.name,
+                   'observation_id': observation_id,
+                   'target_id': target.id,
+                   'facility': facility,
+                   'observation_type': parameter.get('observation_type', ''),
+                   'cadence_strategy': parameter.get('cadence_strategy', ''),
+                   'observing_parameters': json.dumps(observing_parameters),
+                   'cadence_frequency': cadence_frequency,
+                   'ipp_value': parameter.get('ipp_value', ''),
+                   'max_airmass': parameter.get('max_airmass', ''),
+                   'reminder': 2*cadence_frequency,
+                   'exposure_time': parameter.get('exposure_time', '')
+            }
+        form = SpecSchedulingForm(initial=initial)
+
+        parameters.append({'observation_id': observation_id,
+                           'target': target,
+                           'facility': facility,
+                           'observation_type': observation_type,
+                           'instrument': instrument,
+                           'start': start,
+                           'end': end,
+                           'user_id': context['request'].user.id
+                        })
+
+
     return {'observations': observation,
             'parameters': parameters,
-            'form': phot_form
+            'form': form
     }

@@ -43,8 +43,8 @@
       <td>{{ parameter.facility }}</td>
       <td>{{ parameter.observation_type }}</td>
       <td>{{ parameter.instrument }}</td>
-      <!--form action="{% url 'custom_code:scheduling-phot' %}" method="post" class="form"-->
-      <form method="post" class="form" id="phot-scheduling-form-{{ parameter.observation_id }}">
+      {% if parameter.observation_type == "Phot" %}
+      <form method="post" class="form" id="scheduling-form-{{ parameter.observation_id }}">
 	{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,U,B,V,R,I,u,gp,rp,ip,zs,w,reminder' %}
 	<td>{{ form.cadence_frequency }}</td>
 	<td>{{ form.ipp_value }}</td>
@@ -68,9 +68,6 @@
 	  <div class="row">
 	  {% csrf_token %}
 	  {% buttons %}
-	  <!--input type="submit" class="btn btn-primary" value="Modify Sequence" name="modify">
-	  <input type="submit" class="btn" style="background-color: green;" value="Continue as is" name="continue">
-	  <input type="submit" class="btn" style="background-color: red;" value="Stop Sequence" name="stop"-->
 	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
 	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: green; color: white;" value="Continue As-is" id="continue-{{ parameter.observation_id }}" readonly>
 	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: red; color: white;" value="Stop Sequence" id="stop-{{ parameter.observation_id }}" readonly>
@@ -78,6 +75,29 @@
 	  </div>
 	</td>
       </form>
+      {% else %}
+      <form method="post" class="form" id="scheduling-form-{{ parameter.observation_id }}">
+	{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,exposure_time,reminder' %}
+	<td>{{ form.cadence_frequency }}</td>
+	<td>{{ form.ipp_value }}</td>
+	<td>{{ form.max_airmass }}</td>
+	<td>
+	  <div class="exposure-row">Exposure Time</div>
+	  <div class="exposure-row">{{ form.exposure_time }}</div>
+	</td>
+	<td>
+	  <div class="row">{{ form.reminder }} days</div>
+	  <div class="row">
+	  {% csrf_token %}
+	  {% buttons %}
+	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
+	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: green; color: white;" value="Continue As-is" id="continue-{{ parameter.observation_id }}" readonly>
+	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: red; color: white;" value="Stop Sequence" id="stop-{{ parameter.observation_id }}" readonly>
+          {% endbuttons %}
+	  </div>
+	</td>
+      </form>
+      {% endif %}
       <td>{{ parameter.start }}</td>
       <td>{{ parameter.end }}</td>
       <td>
@@ -136,9 +156,9 @@
 <script>
 function modify_sequence(clickedId) {
   var thenum = clickedId.replace( /^\D+/g, '');
-  var theformstr = '#phot-scheduling-form-' + thenum;
+  var theformstr = '#scheduling-form-' + thenum;
   $.ajax({
-    url: '{% url "custom_code:scheduling-phot" %}',
+    url: '{% url "custom_code:scheduling" %}',
     data: $(theformstr).serialize() + "&button=" + clickedId,
     dataType: 'json',
     success: function(response) {
