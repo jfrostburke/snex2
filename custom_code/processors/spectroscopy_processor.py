@@ -18,16 +18,13 @@ class SpecProcessor(SpectroscopyProcessor):
     DEFAULT_FLUX_CONSTANT = (1e-15 * units.erg) / units.cm ** 2 / units.second / units.angstrom
  
     def process_data(self, data_product, extras):
-        print('Using the custom Spec Processor to process data') 
         mimetype = mimetypes.guess_type(data_product.data.name)[0]
         if mimetype in self.FITS_MIMETYPES:
-            print('Identified file as fits and processing spectrum')
             spectrum, obs_date = self._process_spectrum_from_fits(data_product)
         elif mimetype in self.PLAINTEXT_MIMETYPES:
             spectrum, obs_date = self._process_spectrum_from_plaintext(data_product)
         else:
             raise InvalidFileFormatException('Unsupported file type')
-        print('Serializing spectrum...')
         serialized_spectrum = SpectrumSerializer().serialize(spectrum)
 
         return [(obs_date, serialized_spectrum)]
@@ -35,12 +32,9 @@ class SpecProcessor(SpectroscopyProcessor):
     def _process_spectrum_from_fits(self, data_product):
 
         data_aws = default_storage.open(data_product.data.name, 'rb')
-        print(data_aws)
-        print(type(data_aws))
                 
 
         flux, header = fits.getdata(data_aws.open(), header=True)
-        print('Got fits data')
         
         for facility_class in get_service_classes():
             facility = get_service_class(facility_class)()
@@ -53,7 +47,6 @@ class SpecProcessor(SpectroscopyProcessor):
         else:
             flux_constant = self.DEFAULT_FLUX_CONSTANT
             date_obs = datetime.now()
-        print('Got flux constant')
         dim = len(flux.shape)
         if dim == 3:
             flux = flux[0, 0, :]

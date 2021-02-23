@@ -264,7 +264,6 @@ class CustomDataProductUploadView(DataProductUploadView):
         else:
             observation_record = None
         dp_type = form.cleaned_data['data_product_type']
-        print('Dataproduct type is {}'.format(dp_type))
         data_product_files = self.request.FILES.getlist('files')
         successful_uploads = []
         for f in data_product_files:
@@ -302,10 +301,7 @@ class CustomDataProductUploadView(DataProductUploadView):
                 if used_in:
                     rdextra_value['used_in'] = int(used_in.id)
                 rdextra_value['final_reduction'] = form.cleaned_data['final_reduction']
-                print('The data product extras are {}'.format(rdextra_value)) 
-                print('Running the custom data processor')
                 reduced_data = run_custom_data_processor(dp, extras)
-                print('Saving reduced datum extras') 
                 reduced_datum_extra = ReducedDatumExtra(
                     target = target,
                     data_type = dp_type,
