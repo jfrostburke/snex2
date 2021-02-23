@@ -314,14 +314,15 @@ DATA_TYPES = (
 
 DATA_PRODUCT_TYPES = {
     'photometry': ('photometry', 'Photometry'),
-    'fits_file': ('fits_file', 'FITS File'),
+    #'fits_file': ('fits_file', 'FITS File'),
     'spectroscopy': ('spectroscopy', 'Spectroscopy'),
-    'image_file': ('image_file', 'Image File')
+    #'image_file': ('image_file', 'Image File')
 }
 
 DATA_PROCESSORS = {
     'photometry': 'custom_code.processors.photometry_processor.PhotometryProcessor',
     'spectroscopy': 'custom_code.processors.spectroscopy_processor.SpecProcessor',
+    'fits_file': 'custom_code.processors.spectroscopy_processor.SpecProcessor',
 }
 
 #TOM_LATEX_PROCESSORS = {

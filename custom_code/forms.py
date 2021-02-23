@@ -185,7 +185,7 @@ class CustomDataProductUploadForm(DataProductUploadForm):
         initial_args = kwargs.get('initial', '')
         if initial_args:
             target = initial_args.get('target', '')
-            self.fields['used_in'] = forms.ModelChoiceField(queryset=Papers.objects.filter(target=target))
+            self.fields['used_in'] = forms.ModelChoiceField(queryset=Papers.objects.filter(target=target), required=False)
 
 
 class PapersForm(forms.ModelForm):
