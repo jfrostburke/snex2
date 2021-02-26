@@ -442,12 +442,13 @@ def scheduling_view(request):
                 }
             form_data['cadence'] = cadence
         
-        user = User.objects.get(username=request.user)
-        token = Token.objects.get(user=user).key
-        r = requests.post('http://127.0.0.1:8000/api/observations/', data=form_data, headers={'Authorization': 'Token ' + token}) #Should also test that this works
-        print('Observation submitted with status code {}'.format(r.status_code))
+        #user = User.objects.get(username=request.user)
+        #token = Token.objects.get(user=user).key
+        #r = requests.post('http://127.0.0.1:8000/api/observations/', data=form_data, headers={'Authorization': 'Token ' + token}) #Should also test that this works
+        #print('Observation submitted with status code {}'.format(r.status_code))
         print(form_data)
-        response_data = {'success': 'Modified'}
+        response_data = {'success': 'Modified',
+                         'data': json.dumps(form_data)}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
 
     elif 'continue' in request.GET['button']:
