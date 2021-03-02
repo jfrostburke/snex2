@@ -157,10 +157,10 @@
 function modify_sequence(clickedId) {
   var thenum = clickedId.replace( /^\D+/g, '');
   var theformstr = '#scheduling-form-' + thenum;
-  var theformdata = $(theformstr).serializeArray().reduce(function(obj, item) {
-    obj[item.name] = item.value;
-    return obj;
-  });
+  //var theformdata = $(theformstr).serializeArray().reduce(function(obj, item) {
+  //  obj[item.name] = item.value;
+  //  return obj;
+  //});
   $.ajax({
     url: '{% url "custom_code:scheduling" %}',
     data: $(theformstr).serialize() + "&button=" + clickedId,
@@ -180,4 +180,10 @@ function modify_sequence(clickedId) {
       }
     });
   }
+
+$("#id_cadence_frequency").keyup(function() {
+  var cadence = document.getElementById("id_cadence_frequency").value;
+  var newreminder = 2*parseFloat(cadence);
+  document.getElementById("id_reminder").value = newreminder;
+});
 </script>

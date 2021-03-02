@@ -11,10 +11,12 @@ from tom_targets.models import TargetList
 
 from tom_targets.models import Target, TargetExtra
 from guardian.mixins import PermissionListMixin
+from guardian.models import GroupObjectPermission
 from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.conf import settings
 
+from urllib.parse import urlencode
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from astropy.time import Time
@@ -408,8 +410,19 @@ def scheduling_view(request):
 
         obs = ObservationRecord.objects.get(id=obs_id)
         print('Canceling Observation for {}'.format(obs.observation_id))
-        #r = requests.post('{}/api/requestgroups/{}/cancel/'.format(PORTAL_URL, obs.observation_id), headers=portal_headers) #Note that this doesn't work currently because the id given is the wrong id
-        #print('Observations Cancelled with status code {}'.format(r.status_code))
+        #query_params = urlencode({'request_id': obs.observation_id})
+
+        #r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
+        #requestgroups = r.json()
+        #if requestgroups['count'] == 1:
+        #    requestgroup_id = requestgroups['results'][0]['id']
+
+        #r = requests.post('{}/api/requestgroups/{}/cancel/'.format(PORTAL_URL, requestgroup_id), headers=portal_headers)
+        #success = r.json()['state'] == 'CANCELED'
+        #if not success:
+        #    print('Observation not cancelled due to error')
+        #    response_data = {'failure': 'Error'}
+        #    return HttpResponse(json.dumps(response_data), content_type='application/json')
 
         print('Getting form data')
         form_data = {'name': request.GET['name'],
@@ -429,11 +442,20 @@ def scheduling_view(request):
             filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
             for f in filters:
                 if f+'_0' in request.GET.keys() and float(request.GET[f+'_0'][0]) > 0.0:
-                    observing_parameters[f] = [float(request.GET[f+'_0']), int(float(request.GET[f+'_1'])), int(float(request.GET[f+'_2']))]
+                    observing_parameters[f+'_0'] = float(request.GET[f+'_0'])
+                    observing_parameters[f+'_1'] = int(float(request.GET[f+'_1']))
+                    observing_parameters[f+'_2'] = int(float(request.GET[f+'_2']))
 
         elif request.GET['observation_type'] == 'SPECTRA':
             observing_parameters['exposure_time'] = int(float(request.GET['exposure_time']))
 
+        # Get the groups with permissions for the old observation record
+        print('Getting groups')
+        group_ids = GroupObjectPermission.objects.filter(object_pk=obs_id).values_list('group_id', flat=True).distinct()
+        groups = Group.objects.filter(id__in=group_ids)
+        #observing_parameters['groups'] = groups
+        observing_parameters['groups'] = list(group_ids) #[str(x) for x in group_ids] 
+        print(observing_parameters['groups'])
         form_data['observing_parameters'] = observing_parameters
 
         if request.GET['cadence_strategy']: 
@@ -469,14 +491,25 @@ def scheduling_view(request):
     elif 'stop' in request.GET['button']:
         print('Stopping Sequence')
         ## Delete old sequence
-        #observation_id = int(float(request.GET['observation_id']))
-        #obs = ObservationRecord.objects.get(id=observation_id)
-        #facility = get_service_class(obs.facility)()
-        #errors = facility.cancel_observation(obs.observation_id)
-        #if errors:
-        #    messages.error(
-        #        request,
-        #        f'Unable to cancel observation: {errors}'
-        #    )
+        obs_id = int(float(request.GET['observation_id']))
+        LCO_SETTINGS = settings.FACILITIES['LCO']
+        PORTAL_URL = LCO_SETTINGS['portal_url']
+        portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
+
+        obs = ObservationRecord.objects.get(id=obs_id)
+        query_params = urlencode({'request_id': obs.observation_id})
+
+        r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
+        requestgroups = r.json()
+        if requestgroups['count'] == 1:
+            requestgroup_id = requestgroups['results'][0]['id']
+
+        r = requests.post('{}/api/requestgroups/{}/cancel/'.format(PORTAL_URL, requestgroup_id), headers=portal_headers)
+        success = r.json()['state'] == 'CANCELED'
+        if not success:
+            print('Observation not cancelled due to error')
+            response_data = {'failure': 'Error'}
+            return HttpResponse(json.dumps(response_data), content_type='application/json')
+        
         response_data = {'success': 'Stopped'}
         return HttpResponse(json.dumps(response_data), content_type='application/json')

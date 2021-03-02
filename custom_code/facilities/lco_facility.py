@@ -62,7 +62,7 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
     cadence_frequency = forms.FloatField(required=True, min_value=0.0, initial=3.0, label='')
     ipp_value = forms.FloatField(label='IPP', min_value=0.5, max_value=2.0, initial=1.0)
     observation_mode = forms.ChoiceField(choices=(('NORMAL', 'Normal'), ('RAPID_RESPONSE', 'Rapid-Response'), ('TIME_CRITICAL', 'Time-Critical')), label='Observation Mode')
-
+    reminder = forms.FloatField(required=True, min_value=0.0, initial=6.5, label='Reminder in')
     def __init__(self, *args, **kwargs):
         super(LCOPhotometricSequenceForm, self).__init__(*args, **kwargs)
 
@@ -91,7 +91,8 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
         
         if not settings.TARGET_PERMISSIONS_ONLY:
             self.fields['groups'] = forms.ModelMultipleChoiceField(
-                    Group.objects.none(), 
+                    Group.objects.all(),
+                    initial = Group.objects.filter(name__in=settings.DEFAULT_GROUPS),
                     required=False,
                     widget=forms.CheckboxSelectMultiple, 
                     label='Data granted to')
@@ -190,6 +191,7 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
                     Row('proposal'),
                     Row('observation_mode'),
                     Row('ipp_value'),
+                    Row(AppendedText('reminder', 'days')),
                     css_class='form-row'
                 ),
                 Div(
@@ -340,6 +342,7 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
                 self.fields.pop(field_name)
         if self.fields.get('groups'):
             self.fields['groups'].label = 'Data granted to'
+            self.fields['groups'].initial = Group.objects.filter(name__in=settings.DEFAULT_GROUPS)
         
         self.helper.layout = Layout(
             Div(

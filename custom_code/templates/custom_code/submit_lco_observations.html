@@ -38,7 +38,6 @@
 <script>
 $(function () {
   $("#phot_instrument_type").change(function() {
-    console.log(document.getElementById("phot_instrument_type").value);
     if(document.getElementById("phot_instrument_type").value === '2M0-SCICAM-MUSCAT') {
       document.getElementById("muscat-div").style.display = "block";
     }
@@ -46,5 +45,13 @@ $(function () {
       document.getElementById("muscat-div").style.display = "none";
    }
   });
+});
+
+$("#phot_cadence_frequency").keyup(function() {
+  console.log('Reminder');
+  var cadence = document.getElementById("phot_cadence_frequency").value;
+  var newreminder = 2*parseFloat(cadence);
+  console.log(newreminder);
+  document.getElementById("phot_reminder").value = newreminder;
 });
 </script>
