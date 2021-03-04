@@ -30,7 +30,7 @@
       <th>Exposures</th>
       <th>Reminder in</th>
       <th>Start</th>
-      <th>End</th>
+      <th>Reminder</th>
       <th>Classification</th>
       <th>Redshift</th>
     </tr>
@@ -99,7 +99,7 @@
       </form>
       {% endif %}
       <td>{{ parameter.start }}</td>
-      <td>{{ parameter.end }}</td>
+      <td>{{ parameter.reminder }}</td>
       <td>
       {% with parameter.target as target %}
         {% if target|target_extra_field:"classification" %}
@@ -181,9 +181,11 @@ function modify_sequence(clickedId) {
     });
   }
 
-$("#id_cadence_frequency").keyup(function() {
-  var cadence = document.getElementById("id_cadence_frequency").value;
+$(".table").keyup(function() {
+  var t = this;
+  var cadence = t.querySelectorAll('input[name="cadence_frequency"]')[0].value;
   var newreminder = 2*parseFloat(cadence);
-  document.getElementById("id_reminder").value = newreminder;
+  var reminder = t.querySelectorAll('input[name="reminder"]')[0];
+  reminder.value = newreminder;
 });
 </script>

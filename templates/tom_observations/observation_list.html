@@ -26,8 +26,16 @@
       </div>
     </div>
     {#% observation_distribution filter.qs %#}
-    {#% scheduling_list filter.qs %#}
-    {% for q in filter.qs %}
+    <div class="row">
+      <h4>Expired Reminders</h4>
+    </div>
+    {% for q in filter.qs|order_by_reminder:"expired" %}
+    {% scheduling_list_with_form q %}
+    {% endfor %}
+    <div class="row">
+      <h4>Upcoming Reminders</h4>
+    </div>
+    {% for q in filter.qs|order_by_reminder:"upcoming" %}
     {% scheduling_list_with_form q %}
     {% endfor %}
     {% bootstrap_pagination page_obj extra=request.GET.urlencode %}

@@ -48,10 +48,14 @@ $(function () {
 });
 
 $("#phot_cadence_frequency").keyup(function() {
-  console.log('Reminder');
   var cadence = document.getElementById("phot_cadence_frequency").value;
   var newreminder = 2*parseFloat(cadence);
-  console.log(newreminder);
   document.getElementById("phot_reminder").value = newreminder;
+});
+
+$("#spec_cadence_frequency").keyup(function() {
+  var cadence = document.getElementById("spec_cadence_frequency").value;
+  var newreminder = 2*parseFloat(cadence);
+  document.getElementById("spec_reminder").value = newreminder;
 });
 </script>

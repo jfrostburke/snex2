@@ -63,6 +63,7 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
     ipp_value = forms.FloatField(label='IPP', min_value=0.5, max_value=2.0, initial=1.0)
     observation_mode = forms.ChoiceField(choices=(('NORMAL', 'Normal'), ('RAPID_RESPONSE', 'Rapid-Response'), ('TIME_CRITICAL', 'Time-Critical')), label='Observation Mode')
     reminder = forms.FloatField(required=True, min_value=0.0, initial=6.5, label='Reminder in')
+    
     def __init__(self, *args, **kwargs):
         super(LCOPhotometricSequenceForm, self).__init__(*args, **kwargs)
 
@@ -151,13 +152,14 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
             - Adds the cadence strategy to the form if "repeat" was the selected "cadence_type". If "once" was
               selected, the observation is submitted as a single observation.
         """
-        #TODO: Make sure that my conversion from days to hours works,
+        #TODO: Make sure that my conversion from days to hours works, reminders work,
         #      and look into implementing a "delay start by" option like in SNEx
         cleaned_data = super().clean()
         now = datetime.datetime.now()
         cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
         cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24),
                                                 '%Y-%m-%dT%H:%M:%S')
+        cleaned_data['reminder'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['reminder']), '%Y-%m-%dT%H:%M:%S')
         return cleaned_data
 
     def layout(self):
@@ -307,6 +309,8 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
     exposure_time = forms.IntegerField(min_value=1,
                                      widget=forms.TextInput(attrs={'placeholder': 'Seconds'}),
                                      initial=1800)
+    reminder = forms.FloatField(required=True, min_value=0.0, initial=6.5, label='Reminder in')
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -317,6 +321,7 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
         self.fields['name'].label = ''
         self.fields['name'].widget.attrs['placeholder'] = 'Name'
         self.fields['min_lunar_distance'].widget.attrs['placeholder'] = 'Degrees'
+        self.fields['ipp_value'].label = 'IPP'
         self.fields['cadence_strategy'] = forms.ChoiceField(
             choices=[('', 'Once in the next'), ('ResumeCadenceAfterFailureStrategy', 'Repeating every')],
             required=False,
@@ -338,7 +343,7 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
         # Remove start and end because those are determined by the cadence
         for field_name in ['start', 'end']:
             if self.fields.get(field_name):
-                #TODO: Figure out why start and end aren't fields sometimes
+                #TODO: Figure out why start and end aren't fields sometimes, test reminder
                 self.fields.pop(field_name)
         if self.fields.get('groups'):
             self.fields['groups'].label = 'Data granted to'
@@ -357,24 +362,37 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
         )
 
     def clean(self):
-        """
-        This clean method does the following:
-            - Hardcodes instrument type as "2M0-FLOYDS-SCICAM" because it's the only instrument this form uses
-            - Adds a start time of "right now", as the spectroscopic sequence form does not allow for specification
-              of a start time.
-            - Adds an end time that corresponds with the cadence frequency
-            - Adds the cadence strategy to the form if "repeat" was the selected "cadence_type". If "once" was
-              selected, the observation is submitted as a single observation.
-        """
         cleaned_data = super().clean()
         self.cleaned_data['instrument_type'] = '2M0-FLOYDS-SCICAM'  # SNEx only submits spectra to FLOYDS
         now = datetime.datetime.now()
         cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
         cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24),
                                                 '%Y-%m-%dT%H:%M:%S')
+        cleaned_data['reminder'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['reminder']), '%Y-%m-%dT%H:%M:%S')
 
         return cleaned_data
-
+    
+    def layout(self):
+        if settings.TARGET_PERMISSIONS_ONLY:
+            groups = Div()
+        else:
+            groups = Row('groups')
+        return Div(
+            Row('exposure_count'),
+            Row('exposure_time'),
+            Row('max_airmass'),
+            Row(PrependedText('min_lunar_distance', '>')),
+            Row('site'),
+            Row('filter'),
+            Row('acquisition_radius'),
+            Row('guider_mode'),
+            Row('guider_exposure_time'),
+            Row('proposal'),
+            Row('observation_mode'),
+            Row('ipp_value'),
+            Row(AppendedText('reminder', 'days')),
+            groups,
+        )
 
 class SnexLCOFacility(LCOFacility):
     name = 'LCO'

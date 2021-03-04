@@ -6,6 +6,7 @@ from django.db.models.functions import Lower
 from django.shortcuts import reverse
 from guardian.shortcuts import get_objects_for_user, get_perms
 from django.contrib.auth.models import User, Group
+from django.contrib.postgres.fields.jsonb import KeyTextTransform
 
 from tom_targets.models import Target, TargetExtra
 from tom_targets.forms import TargetVisibilityForm
@@ -26,6 +27,7 @@ from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSched
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
 from custom_code.facilities.lco_facility import SnexPhotometricSequenceForm, SnexSpectroscopicSequenceForm
+
 register = template.Library()
 
 @register.inclusion_tag('custom_code/airmass_collapse.html')
@@ -738,85 +740,6 @@ def observation_summary(context, target=None):
     }
 
 
-@register.inclusion_tag('custom_code/scheduling_list.html', takes_context=True)
-def scheduling_list(context, observations):
-    parameters = []
-    for observation in observations:
-        facility = observation.facility
-        
-        # For now, we'll only worry about scheduling for LCO observations
-        if facility != 'LCO':
-            continue
-
-        observation_id = observation.id
-        target = observation.target
-        target_names = observation.target.names
-
-        parameter = observation.parameters
-        if parameter.get('observation_type', '') == 'IMAGING':
-            observation_type = 'Phot'
-        elif 'SPEC' in parameter.get('observation_type', ''):
-            observation_type = 'Spec'
-        else:
-            observation_type = ''
-
-        if parameter.get('cadence_strategy', ''):
-            cadence = str(parameter.get('cadence_frequency', '')) + ' days'
-        else:
-            cadence = 'Onetime'
-        ipp = parameter.get('ipp_value', '')
-        airmass = parameter.get('max_airmass', '')
-
-        exposures = []
-        if observation_type == 'Phot':
-            if '1M' in parameter.get('instrument_type', ''):
-                instrument = 'Sinistro'
-            elif 'SBIG' in parameter.get('instrument_type', ''):
-                instrument = 'SBIG'
-            else:
-                instrument = 'MuSCAT'
-
-            filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
-            for f in filters:
-                filter_parameters = parameter.get(f, '')
-                if filter_parameters and filter_parameters[0] != 0.0:
-                    exposures.append({'filter': f, 'number': filter_parameters[1], 'exp_time': int(filter_parameters[0])})
-
-        elif observation_type == 'Spec':
-            instrument = 'Floyds'
-
-            exposures.append({'filter': '',
-                               'number': parameter.get('exposure_count', ''), 
-                               'exp_time': parameter.get('exposure_time', '')})
-
-        #TODO: Finish this for non-LCO facilities
-        else: 
-            instrument = 'Gemini'
-
-            exposures.append({'filter': '', 'number': '', 'exp_time': ''})
-
-        start = str(observation.created).split('.')[0]
-        if parameter.get('end', ''):
-            end = str(observation.modified).split('.')[0]
-
-        parameters.append({'observation_id': observation_id,
-                           'target': target,
-                           'facility': facility,
-                           'observation_type': observation_type,
-                           'cadence': cadence,
-                           'ipp': ipp,
-                           'airmass': airmass,
-                           'instrument': instrument,
-                           'exposures': exposures,
-                           'start': start,
-                           'end': end,
-                           'user_id': context['request'].user.id
-                        })
-    return {'observations': observations,
-            'parameters': parameters
-    }
-
-
 @register.inclusion_tag('custom_code/papers_list.html')
 def papers_list(target):
 
@@ -859,7 +782,8 @@ def scheduling_list_with_form(context, observation):
 
         cadence_frequency = parameter.get('cadence_frequency', '')
         start = str(observation.created).split('.')[0]
-        if parameter.get('end', ''):
+        end = str(parameter.get('reminder', '')).replace('T', ' ')
+        if not end:
             end = str(observation.modified).split('.')[0]
 
         observing_parameters = {
@@ -904,7 +828,7 @@ def scheduling_list_with_form(context, observation):
                            'observation_type': observation_type,
                            'instrument': instrument,
                            'start': start,
-                           'end': end,
+                           'reminder': end,
                            'user_id': context['request'].user.id
                         })
     
@@ -962,3 +886,18 @@ def scheduling_list_with_form(context, observation):
             'parameters': parameters,
             'form': form
     }
+
+
+@register.filter
+def order_by_reminder(queryset, time):
+    queryset = queryset.exclude(status='CANCELED')
+    queryset = queryset.annotate(reminder=KeyTextTransform('reminder', 'parameters'))
+    now = datetime.datetime.now()
+    
+    if time == 'expired':
+        queryset = queryset.filter(reminder__lt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S'))
+    elif time == 'upcoming':
+        queryset = queryset.filter(reminder__gt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S'))
+    
+    queryset = queryset.order_by('-reminder')
+    return queryset

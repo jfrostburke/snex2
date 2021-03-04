@@ -410,19 +410,19 @@ def scheduling_view(request):
 
         obs = ObservationRecord.objects.get(id=obs_id)
         print('Canceling Observation for {}'.format(obs.observation_id))
-        #query_params = urlencode({'request_id': obs.observation_id})
+        query_params = urlencode({'request_id': obs.observation_id})
 
-        #r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
-        #requestgroups = r.json()
-        #if requestgroups['count'] == 1:
-        #    requestgroup_id = requestgroups['results'][0]['id']
+        r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
+        requestgroups = r.json()
+        if requestgroups['count'] == 1:
+            requestgroup_id = requestgroups['results'][0]['id']
 
-        #r = requests.post('{}/api/requestgroups/{}/cancel/'.format(PORTAL_URL, requestgroup_id), headers=portal_headers)
-        #success = r.json()['state'] == 'CANCELED'
-        #if not success:
-        #    print('Observation not cancelled due to error')
-        #    response_data = {'failure': 'Error'}
-        #    return HttpResponse(json.dumps(response_data), content_type='application/json')
+        r = requests.post('{}/api/requestgroups/{}/cancel/'.format(PORTAL_URL, requestgroup_id), headers=portal_headers)
+        success = r.json()['state'] == 'CANCELED'
+        if not success:
+            print('Observation not cancelled due to error')
+            response_data = {'failure': 'Error'}
+            return HttpResponse(json.dumps(response_data), content_type='application/json')
 
         print('Getting form data')
         form_data = {'name': request.GET['name'],
@@ -435,8 +435,9 @@ def scheduling_view(request):
         # Append the additional info that users can change to parameters
         observing_parameters['ipp_value'] = float(request.GET['ipp_value'])
         observing_parameters['max_airmass'] = float(request.GET['max_airmass'])
-        now = datetime.now()
-        observing_parameters['reminder'] = datetime.strftime(now + timedelta(days=float(request.GET['reminder'])), '%Y-%m-%dT%H:%M:%S')
+        observing_parameters['cadence_frequency'] = float(request.GET['cadence_frequency'])
+        #now = datetime.now()
+        observing_parameters['reminder'] = float(request.GET['reminder']) #datetime.strftime(now + timedelta(days=float(request.GET['reminder'])), '%Y-%m-%dT%H:%M:%S')
        
         if request.GET['observation_type'] == 'IMAGING':
             filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
@@ -456,14 +457,14 @@ def scheduling_view(request):
         #observing_parameters['groups'] = groups
         observing_parameters['groups'] = list(group_ids) #[str(x) for x in group_ids] 
         print(observing_parameters['groups'])
-        form_data['observing_parameters'] = observing_parameters
 
         if request.GET['cadence_strategy']: 
             cadence = {'cadence_strategy': request.GET['cadence_strategy'],
                        'cadence_frequency': float(request.GET['cadence_frequency'])
                 }
-            form_data['cadence'] = cadence
-        
+            form_data['cadence'] = cadence 
+        form_data['observing_parameters'] = observing_parameters
+
         #user = User.objects.get(username=request.user)
         #token = Token.objects.get(user=user).key
         #r = requests.post('http://127.0.0.1:8000/api/observations/', data=form_data, headers={'Authorization': 'Token ' + token}) #Should also test that this works
@@ -483,8 +484,8 @@ def scheduling_view(request):
         now = datetime.now()
         obs_parameters['reminder'] = datetime.strftime(now + timedelta(days=next_reminder), '%Y-%m-%dT%H:%M:%S')
         print(obs_parameters)
-        #obs.update(parameters=obs_parameters)
-        #obs.save()
+        obs.parameters = obs_parameters
+        obs.save()
         response_data = {'success': 'Continued'}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
     
