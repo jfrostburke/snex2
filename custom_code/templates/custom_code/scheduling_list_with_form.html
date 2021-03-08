@@ -177,15 +177,15 @@ function modify_sequence(clickedId) {
         });
       };
       document.getElementById(clickedId).value = response.success;
-      }
-    });
-  }
+    }
+  });
+}
 
-$(".table").keyup(function() {
+$("#id_cadence_frequency").keyup(function() {
   var t = this;
-  var cadence = t.querySelectorAll('input[name="cadence_frequency"]')[0].value;
-  var newreminder = 2*parseFloat(cadence);
-  var reminder = t.querySelectorAll('input[name="reminder"]')[0];
+  var table = t.closest(".table");
+  var newreminder = 2*parseFloat(t.value) + 0.7;
+  var reminder = table.querySelectorAll('input[name="reminder"]')[0];
   reminder.value = newreminder;
 });
 </script>

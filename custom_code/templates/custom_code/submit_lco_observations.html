@@ -49,13 +49,13 @@ $(function () {
 
 $("#phot_cadence_frequency").keyup(function() {
   var cadence = document.getElementById("phot_cadence_frequency").value;
-  var newreminder = 2*parseFloat(cadence);
+  var newreminder = 2*parseFloat(cadence) + 0.7;
   document.getElementById("phot_reminder").value = newreminder;
 });
 
 $("#spec_cadence_frequency").keyup(function() {
   var cadence = document.getElementById("spec_cadence_frequency").value;
-  var newreminder = 2*parseFloat(cadence);
+  var newreminder = 2*parseFloat(cadence) + 0.7;
   document.getElementById("spec_reminder").value = newreminder;
 });
 </script>

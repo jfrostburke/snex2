@@ -62,7 +62,7 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
     cadence_frequency = forms.FloatField(required=True, min_value=0.0, initial=3.0, label='')
     ipp_value = forms.FloatField(label='IPP', min_value=0.5, max_value=2.0, initial=1.0)
     observation_mode = forms.ChoiceField(choices=(('NORMAL', 'Normal'), ('RAPID_RESPONSE', 'Rapid-Response'), ('TIME_CRITICAL', 'Time-Critical')), label='Observation Mode')
-    reminder = forms.FloatField(required=True, min_value=0.0, initial=6.5, label='Reminder in')
+    reminder = forms.FloatField(required=True, min_value=0.0, initial=6.7, label='Reminder in')
     
     def __init__(self, *args, **kwargs):
         super(LCOPhotometricSequenceForm, self).__init__(*args, **kwargs)
@@ -309,7 +309,7 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
     exposure_time = forms.IntegerField(min_value=1,
                                      widget=forms.TextInput(attrs={'placeholder': 'Seconds'}),
                                      initial=1800)
-    reminder = forms.FloatField(required=True, min_value=0.0, initial=6.5, label='Reminder in')
+    reminder = forms.FloatField(required=True, min_value=0.0, initial=6.7, label='Reminder in')
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

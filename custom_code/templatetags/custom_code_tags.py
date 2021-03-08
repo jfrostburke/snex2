@@ -899,5 +899,5 @@ def order_by_reminder(queryset, time):
     elif time == 'upcoming':
         queryset = queryset.filter(reminder__gt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S'))
     
-    queryset = queryset.order_by('-reminder')
+    queryset = queryset.order_by('reminder')
     return queryset
