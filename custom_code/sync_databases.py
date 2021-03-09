@@ -359,7 +359,7 @@ def update_spec(action, db_address=_SNEX2_DB):
                             snex2_id_query = db_session.query(Datum_Extra).filter(and_(Datum_Extra.target_id==targetid, Datum_Extra.key=='snex_id', Datum_Extra.data_type=='spectroscopy')).all()
                             for snex2_row in snex2_id_query:
                                 value = json.loads(snex2_row.value)
-                                if id_ == vaue.get('snex_id', ''):
+                                if id_ == value.get('snex_id', ''):
                                     snex2_id = value.get('snex2_id', '')
                                     db_session.query(Datum).filter(Datum.id==snex2_id).update({'target_id': targetid, 'timestamp': time, 'value': spec, 'data_type': 'spectroscopy', 'source_name': '', 'source_location': ''})
                                     break
