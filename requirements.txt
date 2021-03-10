@@ -10,3 +10,4 @@ sqlalchemy
 dash
 django_plotly_dash
 lcogt-logging
+tom_registration

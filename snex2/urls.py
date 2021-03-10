@@ -38,6 +38,7 @@ urlpatterns = [
     path('custom-upload-delete/<int:pk>/', CustomDataProductDeleteView.as_view(), name='custom-upload-delete'),
     path('pipeline-upload/', include(custom_router.urls)),
     path('save_dataproduct_groups/', save_dataproduct_groups_view, name='save_dataproduct_groups'),
+    path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),
     path('django_plotly_dash/', include('django_plotly_dash.urls'))

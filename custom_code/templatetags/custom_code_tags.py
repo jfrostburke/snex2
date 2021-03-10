@@ -410,9 +410,13 @@ def spectra_collapse(target):
         datum = spectrum.value
         wavelength = []
         flux = []
-        for key, value in datum.items():
-            wavelength.append(float(value['wavelength']))
-            flux.append(float(value['flux']))
+        if datum.get('photon_flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('photon_flux')
+        else:
+            for key, value in datum.items():
+                wavelength.append(float(value['wavelength']))
+                flux.append(float(value['flux']))
         spectra.append((wavelength, flux))
     plot_data = [
         go.Scatter(

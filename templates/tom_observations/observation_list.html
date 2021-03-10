@@ -25,7 +25,6 @@
         </span>
       </div>
     </div>
-    {#% observation_distribution filter.qs %#}
     <div class="row">
       <h4>Expired Reminders</h4>
     </div>
@@ -40,16 +39,5 @@
     {% endfor %}
     {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
   </div>
-  <!--div class="col-md-2">
-    <form action="" method="get" class="form">
-      {% bootstrap_form filter.form %}
-      {% buttons %}
-        <button type="submit" class="btn btn-primary">
-          Filter
-        </button>
-        <a href="{% url 'tom_observations:list' %}" class="btn btn-secondary" title="Reset">Reset</a>
-      {% endbuttons %}
-    </form>
-  </div-->
 </div>
 {% endblock %}
