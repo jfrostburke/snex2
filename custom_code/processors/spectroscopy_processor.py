@@ -38,8 +38,6 @@ class SpecProcessor(SpectroscopyProcessor):
         
         for facility_class in get_service_classes():
             facility = get_service_class(facility_class)()
-            import pdb
-            pdb.set_trace()
             if facility.is_fits_facility(header):
                 flux_constant = facility.get_flux_constant()
                 date_obs = facility.get_date_obs(header)

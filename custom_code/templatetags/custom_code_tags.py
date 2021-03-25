@@ -358,6 +358,9 @@ def spectra_plot(target, dataproduct=None):
         if datum.get('photon_flux'):
             wavelength = datum.get('wavelength')
             flux = datum.get('photon_flux')
+        elif datum.get('flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('flux')
         else:
             for key, value in datum.items():
                 wavelength.append(float(value['wavelength']))
@@ -413,6 +416,9 @@ def spectra_collapse(target):
         if datum.get('photon_flux'):
             wavelength = datum.get('wavelength')
             flux = datum.get('photon_flux')
+        elif datum.get('flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('flux')
         else:
             for key, value in datum.items():
                 wavelength.append(float(value['wavelength']))
@@ -905,3 +911,64 @@ def order_by_reminder(queryset, time):
     
     queryset = queryset.order_by('reminder')
     return queryset
+
+
+@register.inclusion_tag('custom_code/spectra_page.html')
+def spectra_page(target, dataproduct=None):
+    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy').order_by('-timestamp')
+    if dataproduct:
+        spectral_dataproducts = DataProduct.objects.get(dataproduct=dataproduct)
+    plot_list = []
+    for spectrum in spectral_dataproducts:
+        spectra = []
+        datum = spectrum.value
+        wavelength = []
+        flux = []
+        name = str(spectrum.timestamp).split(' ')[0]
+        if datum.get('photon_flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('photon_flux')
+        elif datum.get('flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('flux')
+        else:
+            for key, value in datum.items():
+                wavelength.append(float(value['wavelength']))
+                flux.append(float(value['flux']))
+        spectra.append((wavelength, flux, name))
+    
+        plot_data = [
+            go.Scatter(
+                x=spectrum[0],
+                y=spectrum[1],
+                name=spectrum[2]
+            ) for spectrum in spectra]
+        layout = go.Layout(
+            height=600,
+            width=700,
+            hovermode='closest',
+            xaxis=dict(
+                tickformat="d",
+                title='Wavelength (angstroms)',
+                gridcolor='#D3D3D3',
+                showline=True,
+                linecolor='#D3D3D3',
+                mirror=True
+            ),
+            yaxis=dict(
+                tickformat=".1eg",
+                title='Flux',
+                gridcolor='#D3D3D3',
+                showline=True,
+                linecolor='#D3D3D3',
+                mirror=True
+            ),
+            plot_bgcolor='white'
+        )
+        if plot_data:
+            plot_list.append({
+                'spectrum_id': spectrum.id,
+                'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)})
+    return {'target': target,
+            'plot_list': plot_list
+        }

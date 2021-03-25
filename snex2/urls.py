@@ -18,7 +18,7 @@ from django.urls import path
 
 from django.urls import include
 
-from custom_code.views import TargetListView, CustomTargetCreateView, CustomDataProductUploadView, CustomDataProductDeleteView, target_redirect_view, add_tag_view, save_target_tag_view, targetlist_collapse_view, save_dataproduct_groups_view
+from custom_code.views import TargetListView, CustomTargetCreateView, CustomDataProductUploadView, CustomDataProductDeleteView, target_redirect_view, add_tag_view, save_target_tag_view, targetlist_collapse_view, save_dataproduct_groups_view, search_name_view, compare_spectra_view
 from custom_code.api_views import CustomDataProductViewSet
 from rest_framework.routers import DefaultRouter
 from custom_code.dash_apps import lightcurve
@@ -38,6 +38,8 @@ urlpatterns = [
     path('custom-upload-delete/<int:pk>/', CustomDataProductDeleteView.as_view(), name='custom-upload-delete'),
     path('pipeline-upload/', include(custom_router.urls)),
     path('save_dataproduct_groups/', save_dataproduct_groups_view, name='save_dataproduct_groups'),
+    path('spectra-search/', search_name_view, name='spectra-search'),
+    path('compare-spectra/', compare_spectra_view, name='compare-spectra'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),

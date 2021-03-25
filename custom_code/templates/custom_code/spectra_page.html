@@ -1,0 +1,59 @@
+{% for entry in plot_list %}
+  <div class="row">
+    <div class="col">
+      {{ entry.plot|safe }}
+    </div>
+    <div class="col" id="compareColumn" style="display: flex; flex-wrap: wrap; align-content: center;">
+      <form method="get" action="/compare-spectra/" autocomplete="off">
+        <div class="autocomplete" style="width:300px;">
+          <div class="row">Compare this spectrum with:
+	    <input class="spectraCompareInput" id="spectraCompareInput-{{ entry.spectrum_id }}" type="text" name="spectraInput" placeholder="Target Name">
+	    <input class="hidden" style="display: none;" name="spectraId" value="{{ entry.spectrum_id }}">
+            <input type="submit" value="Compare">
+          </div>
+	  <div class="replaceableContent" id="replaceable-content-{{ entry.spectrum_id }}">
+	    {% include 'custom_code/partials/compare-spectra-results.html' %}
+	  </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+  var endpoint = '/spectra-search/';
+  var delay_by_in_ms = 700;
+  var scheduled_function = false;
+  
+  $('.spectraCompareInput').on('keyup', function() {
+      var request_parameters = {
+  	    name: $(this).val()
+      };
+      var spectra_input = this;
+      var cl = spectra_input.closest(".autocomplete");
+      var targets_div = cl.querySelectorAll(".replaceableContent")[0];
+
+      if (scheduled_function) {
+  	clearTimeout(scheduled_function)
+      }
+  
+      scheduled_function = setTimeout(ajax_call, delay_by_in_ms, endpoint, request_parameters)
+  
+      function ajax_call(endpoint, request_parameters) {
+	$.getJSON(endpoint, request_parameters)
+	  .done(response => {
+	    var oldlist = document.getElementById('autocomplete-items');
+	    if ( oldlist ) {
+	      oldlist.remove();
+	    }
+  	    targets_div.insertAdjacentHTML('afterend', response['html_from_view'])
+  	  })
+    }
+  
+  });
+
+  function fillName(clickedName) {
+    var t = document.getElementById(clickedName);
+    var spectra_input = t.closest(".autocomplete").querySelectorAll(".spectraCompareInput")[0];
+    spectra_input.value = clickedName;
+  }
+  </script>
+{% endfor %}

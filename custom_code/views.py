@@ -4,6 +4,7 @@ from django.db.models import Q #
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.views.generic.edit import FormView, UpdateView
 from django.urls import reverse
+from django.template.loader import render_to_string
 
 from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter #
@@ -23,6 +24,7 @@ from astropy.time import Time
 from datetime import datetime
 from datetime import timedelta
 import json
+from statistics import median
 
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
@@ -516,3 +518,108 @@ def scheduling_view(request):
         
         response_data = {'success': 'Stopped'}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+
+def search_name_view(request):
+ 
+    search_entry = request.GET.get('name')
+    logger.info("searching for {}".format(search_entry))
+    context = {}
+    if search_entry:
+        target_match_list = Target.objects.filter(Q(name__icontains=search_entry) | Q(aliases__name__icontains=search_entry)).distinct()
+
+    else:
+        target_match_list = Target.objects.none()
+    
+    context['targets'] = target_match_list
+
+    if request.is_ajax():
+        html = render_to_string(
+            template_name='custom_code/partials/compare-spectra-results.html',
+            context={'targets': target_match_list}
+        )
+
+        data_dict = {"html_from_view": html}
+
+        return JsonResponse(data=data_dict, safe=False)
+    return render(request, 'custom_code/spectra_page.html', context=context)
+
+
+def compare_spectra_view(request):
+
+    spec_name = request.GET.get('spectraInput')
+    spec_id = request.GET.get('spectraId')
+
+    target = Target.objects.filter(Q(name__icontains=spec_name) | Q(aliases__name__icontains=spec_name)).first()
+    primary_spec = ReducedDatum.objects.get(id=spec_id)
+
+    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy').order_by('-timestamp')
+    plot_list = []
+    spectra = []
+    for spectrum in spectral_dataproducts:
+        datum = spectrum.value
+        wavelength = []
+        flux = []
+        name = target.name + ' --- ' +  str(spectrum.timestamp).split(' ')[0]
+        if datum.get('photon_flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('photon_flux')
+        elif datum.get('flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('flux')
+        else:
+            for key, value in datum.items():
+                wavelength.append(float(value['wavelength']))
+                flux.append(float(value['flux']))
+        median_flux = [f / median(flux) for f in flux]
+        spectra.append((wavelength, median_flux, name))
+
+    datum = primary_spec.value
+    wavelength = []
+    flux = []
+    name = primary_spec.target.name + ' --- ' + str(primary_spec.timestamp).split(' ')[0]
+    if datum.get('photon_flux'):
+        wavelength = datum.get('wavelength')
+        flux = datum.get('photon_flux')
+    elif datum.get('flux'):
+        wavelength = datum.get('wavelength')
+        flux = datum.get('flux')
+    else:
+        for key, value in datum.items():
+            wavelength.append(float(value['wavelength']))
+            flux.append(float(value['flux']))
+    median_flux = [f / median(flux) for f in flux]
+    spectra.append((wavelength, median_flux, name))
+    
+    plot_data = [
+        go.Scatter(
+            x=spectrum[0],
+            y=spectrum[1],
+            name=spectrum[2]
+        ) for spectrum in spectra]
+    layout = go.Layout(
+        height=600,
+        width=700,
+        hovermode='closest',
+        xaxis=dict(
+            tickformat="d",
+            title='Wavelength (angstroms)',
+            gridcolor='#D3D3D3',
+            showline=True,
+            linecolor='#D3D3D3',
+            mirror=True
+            ),
+            yaxis=dict(
+                tickformat=".1eg",
+                title='Median-Normalized Flux',
+                gridcolor='#D3D3D3',
+                showline=True,
+                linecolor='#D3D3D3',
+                mirror=True
+            ),
+            plot_bgcolor='white'
+        )
+    context = {'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)}
+    
+    return render(request, 'custom_code/compare_spectra.html', context=context)
+
