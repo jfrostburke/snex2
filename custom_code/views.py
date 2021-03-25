@@ -453,10 +453,12 @@ def scheduling_view(request):
         # Get the groups with permissions for the old observation record
         print('Getting groups')
         group_ids = GroupObjectPermission.objects.filter(object_pk=obs_id).values_list('group_id', flat=True).distinct()
-        groups = Group.objects.filter(id__in=group_ids)
+        group_list = []
+        for group_id in group_ids:
+            group_list.append({'id': group_id})
         #observing_parameters['groups'] = groups
-        observing_parameters['groups'] = list(group_ids) #[str(x) for x in group_ids] 
-        print(observing_parameters['groups'])
+        form_data['groups'] = group_list #list(group_ids) #[str(x) for x in group_ids] 
+        print(form_data['groups'])
 
         if request.GET['cadence_strategy']: 
             cadence = {'cadence_strategy': request.GET['cadence_strategy'],

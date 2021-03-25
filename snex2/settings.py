@@ -350,7 +350,7 @@ TARGET_CLASSIFICATIONS = [
 ]
 
 DEFAULT_GROUPS = [
-    'ANU', 'ARIES', 'CSP', 'CU Boulder', 'e/PESSTO', 'ex-LCOGT', 'KMTNet', 'LBNL', 'LCOGT', 'LSQ', 'NAOC', 'Padova', 'QUB', 'SAAO', 'SIRAH', 'Skymapper', 'Tel Aviv U', 'U Penn', 'UC Berkeley', 'US GSP', 'UT Austin'
+    'ANU', 'ARIES', 'CSP', 'CU Boulder', 'DLT40', 'e/PESSTO', 'ex-LCOGT', 'KMTNet', 'LBNL', 'LCOGT', 'LSQ', 'NAOC', 'Padova', 'QUB', 'SAAO', 'SIRAH', 'Skymapper', 'Tel Aviv U', 'U Penn', 'UC Berkeley', 'US GSP', 'UT Austin'
 ]
 
 X_FRAME_OPTIONS = 'ALLOWALL'
@@ -371,6 +371,20 @@ TOM_REGISTRATION = {
     'REGISTRATION_REDIRECT_PATTERN': 'home',
     'SEND_APPROVAL_EMAILS': True
 }
+
+MANAGERS = [
+    ('SNEx Secure', 'sne@lco.global')
+]
+
+EMAIL_HOST = 'smtp.gmail.com'
+
+EMAIL_PORT = 587
+
+EMAIL_USE_TLS = True
+
+EMAIL_HOST_USER = 'snex@lco.global'
+
+EMAIL_HOST_PASSWORD = str(os.environ['SNEX_EMAIL_PASSWORD'])
 
 try:
     from local_settings import * # noqa
