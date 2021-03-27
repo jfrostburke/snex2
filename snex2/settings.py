@@ -350,7 +350,7 @@ TARGET_CLASSIFICATIONS = [
 ]
 
 DEFAULT_GROUPS = [
-    'ANU', 'ARIES', 'CSP', 'CU Boulder', 'DLT40', 'e/PESSTO', 'ex-LCOGT', 'KMTNet', 'LBNL', 'LCOGT', 'LSQ', 'NAOC', 'Padova', 'QUB', 'SAAO', 'SIRAH', 'Skymapper', 'Tel Aviv U', 'U Penn', 'UC Berkeley', 'US GSP', 'UT Austin'
+    'ANU', 'ARIES', 'CSP', 'CU Boulder', 'DLT40', 'e/PESSTO', 'ex-LCOGT', 'KIPMU', 'KMTNet', 'LBNL', 'LCOGT', 'LSQ', 'NAOC', 'Padova', 'QUB', 'SAAO', 'SIRAH', 'Skymapper', 'Tel Aviv U', 'U Penn', 'UC Berkeley', 'US GSP', 'UT Austin'
 ]
 
 X_FRAME_OPTIONS = 'ALLOWALL'
