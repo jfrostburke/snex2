@@ -21,6 +21,7 @@ from astropy import units as u
 from astropy.coordinates import get_moon, get_sun, SkyCoord, AltAz
 import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra, Papers
 from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, SpecSchedulingForm
@@ -621,6 +622,75 @@ def dash_lightcurve(context, target, width, height):
     else:
         dash_context['subtracted-radio'] = {'value': 'Unsubtracted'}
 
+
+    return {'dash_context': dash_context,
+            'request': request}
+
+
+@register.inclusion_tag('custom_code/dash_spectra.html', takes_context=True)
+def dash_spectra(context, target):
+    request = context['request']
+
+    try:
+        z = TargetExtra.objects.filter(target_id=target.id, key='redshift').first().float_value
+    except:
+        z = 0
+
+    ### Send the spectra so they don't have to be replotted every time
+    target_id = target.id
+    spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy')
+    if not spectral_dataproducts:
+        return 'No spectra yet'
+    colormap = plt.cm.gist_rainbow
+    colors = [colormap(i) for i in np.linspace(0, 0.99, len(spectral_dataproducts))]
+    rgb_colors = ['rgb({r}, {g}, {b})'.format(
+        r=int(color[0]*255),
+        g=int(color[1]*255),
+        b=int(color[2]*255),
+    ) for color in colors]
+    all_data = []
+    max_flux = 0
+    min_flux = 0
+    for i in range(len(spectral_dataproducts)):
+        spectrum = spectral_dataproducts[i]
+        datum = spectrum.value
+        wavelength = []
+        flux = []
+        name = str(spectrum.timestamp).split(' ')[0]
+        if datum.get('photon_flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('photon_flux')
+        elif datum.get('flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('flux')
+        else:
+            for key, value in datum.items():
+                wavelength.append(value['wavelength'])
+                flux.append(float(value['flux']))
+        if max(flux) > max_flux: max_flux = max(flux)
+        if min(flux) < min_flux: min_flux = min(flux)
+        scatter_obj = go.Scatter(
+            x=wavelength,
+            y=flux,
+            name=name,
+            line_color=rgb_colors[i]
+        )
+        all_data.append(scatter_obj)
+
+    dash_context = {'table-editing-simple-output': 
+                        {'figure': {'layout' : {'height': 350,
+                                                'margin': {'l': 60, 'b': 30, 'r': 60, 't': 10},
+                                                'yaxis': {'type': 'linear'},
+                                                'xaxis': {'showgrid': False}
+                                            },
+                                    'data' : all_data
+                            }
+                        },
+                    'target_id': {'value': target.id},
+                    'target_redshift': {'value': z},
+                    'min-flux': {'value': min_flux},
+                    'max-flux': {'value': max_flux}
+                }
 
     return {'dash_context': dash_context,
             'request': request}
