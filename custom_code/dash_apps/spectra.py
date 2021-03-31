@@ -1,6 +1,7 @@
 import dash
 from dash.dependencies import Input, Output, State
 import dash_table
+import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
@@ -48,39 +49,69 @@ columns = [{'id': p, 'name': p} for p in params]
 columns.append({'id': 'Element', 'name': 'Element', 'editable': False})
 columns.insert(0, columns.pop())
 
+elem_input_array = []
+for elem in elements:
+    fg = dbc.FormGroup([
+        dbc.Label(elem),
+        dbc.Input(type='number', min=0, max=10.0, className="mb-3"),
+        dbc.Input(type='number')
+    ])
+    elem_input_array.append(fg)
+
 app.layout = html.Div([
     dcc.Graph(id='table-editing-simple-output',
-              figure = {'layout' : {},#{'height': 350,
-                                    #'margin': {'l': 60, 'b': 30, 'r': 60, 't': 10},
-                                    #'yaxis': {'type': 'linear'},
-                                    #'xaxis': {'showgrid': False}
-                                    #},
-                        'data' : [go.Scatter({'x': [], 'y': []})]
+              figure = {'layout' : {'height': 350,
+                                    'margin': {'l': 60, 'b': 30, 'r': 60, 't': 10},
+                                    'yaxis': {'type': 'linear'},
+                                    'xaxis': {'showgrid': False}
+                                    },
+                        'data' : []#[go.Scatter({'x': [], 'y': []})]
                     }
     ),
     dcc.Input(id='target_id', type='hidden', value=0),
     dcc.Input(id='target_redshift', type='hidden', value=0),
     dcc.Input(id='min-flux', type='hidden', value=0),
     dcc.Input(id='max-flux', type='hidden', value=0),
-    dash_table.DataTable(
-        id='table-editing-simple',
-        columns=(columns),
-        data=[
-            {'Element': elem, 'Redshift': 0, 'Velocity (km/s)': 0} for elem in elements
-        ],
-        editable=True,
-        row_selectable='multi',
-        selected_rows=[],
-        tooltip_conditional=tooltips,
-        style_as_list_view=True,
-        style_cell={'padding': '5px',
-                    'textAlign': 'left'},
-        style_header={
-        'backgroundColor': 'white',
-        'fontWeight': 'bold'
-        }
-    )
+    dcc.Checklist(
+        id='line-plotting-checklist',
+        options=[{'label': 'Show line plotting interface', 'value': 'display'}],
+        value=''
+    ),
+    html.Div(
+        id='dash-table-div',
+        children=[
+            dash_table.DataTable(
+                id='table-editing-simple',
+                columns=(columns),
+                data=[
+                    {'Element': elem, 'Redshift': 0, 'Velocity (km/s)': 0} for elem in elements
+                ],
+                editable=True,
+                row_selectable='multi',
+                selected_rows=[],
+                tooltip_conditional=tooltips,
+                style_as_list_view=True,
+                style_cell={'padding': '5px',
+                            'textAlign': 'left'},
+                style_header={
+                'backgroundColor': 'white',
+                'fontWeight': 'bold'
+                    }
+                )
+            ],
+        style={'display': 'none'}
+    ),
+    html.Div(elem_input_array),
 ])
+
+@app.callback(
+    Output('dash-table-div', 'style'),
+    [Input('line-plotting-checklist', 'value')])
+def show_table(value, *args, **kwargs):
+    if 'display' in value:
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
 
 @app.callback(
     Output('table-editing-simple', 'data'),
@@ -103,47 +134,46 @@ def display_output(rows, selected_row_ids, columns, value, min_flux, max_flux, f
     #   Correctly display message when there are no spectra
     
     target_id = value
-#    spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy')
-#    if not spectral_dataproducts:
-#        return 'No spectra yet'
-#    colormap = plt.cm.gist_rainbow
-#    colors = [colormap(i) for i in np.linspace(0, 0.99, len(spectral_dataproducts))]
-#    rgb_colors = ['rgb({r}, {g}, {b})'.format(
-#        r=int(color[0]*255),
-#        g=int(color[1]*255),
-#        b=int(color[2]*255),
-#    ) for color in colors]
-#    all_data = []
-#    max_flux = 0
-#    min_flux = 0
-#    for i in range(len(spectral_dataproducts)):
-#        spectrum = spectral_dataproducts[i]
-#        datum = spectrum.value
-#        wavelength = []
-#        flux = []
-#        name = str(spectrum.timestamp).split(' ')[0]
-#        if datum.get('photon_flux'):
-#            wavelength = datum.get('wavelength')
-#            flux = datum.get('photon_flux')
-#        elif datum.get('flux'):
-#            wavelength = datum.get('wavelength')
-#            flux = datum.get('flux')
-#        else:
-#            for key, value in datum.items():
-#                wavelength.append(value['wavelength'])
-#                flux.append(float(value['flux']))
-#        if max(flux) > max_flux: max_flux = max(flux)
-#        if min(flux) < min_flux: min_flux = min(flux)
-#        scatter_obj = go.Scatter(
-#            x=wavelength,
-#            y=flux,
-#            name=name,
-#            line_color=rgb_colors[i]
-#        )
-#        all_data.append(scatter_obj)
-#
     graph_data = {'data': fig_data['data'],
                   'layout': fig_data['layout']}
+
+    # If the page just loaded, plot all the spectra
+    if not fig_data['data']:
+        spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy')
+        if not spectral_dataproducts:
+            return 'No spectra yet'
+        colormap = plt.cm.gist_rainbow
+        colors = [colormap(i) for i in np.linspace(0, 0.99, len(spectral_dataproducts))]
+        rgb_colors = ['rgb({r}, {g}, {b})'.format(
+            r=int(color[0]*255),
+            g=int(color[1]*255),
+            b=int(color[2]*255),
+        ) for color in colors]
+        all_data = []
+        for i in range(len(spectral_dataproducts)):
+            spectrum = spectral_dataproducts[i]
+            datum = spectrum.value
+            wavelength = []
+            flux = []
+            name = str(spectrum.timestamp).split(' ')[0]
+            if datum.get('photon_flux'):
+                wavelength = datum.get('wavelength')
+                flux = datum.get('photon_flux')
+            elif datum.get('flux'):
+                wavelength = datum.get('wavelength')
+                flux = datum.get('flux')
+            else:
+                for key, value in datum.items():
+                    wavelength.append(value['wavelength'])
+                    flux.append(float(value['flux']))
+            scatter_obj = go.Scatter(
+                x=wavelength,
+                y=flux,
+                name=name,
+                line_color=rgb_colors[i]
+            )
+            graph_data['data'].append(scatter_obj)
+
     for d in reversed(fig_data['data']):
         if d['name'] in elements:
             # Remove all the element lines that were plotted last time

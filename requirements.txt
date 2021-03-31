@@ -11,3 +11,5 @@ dash
 django_plotly_dash
 lcogt-logging
 tom_registration
+dash-bootstrap-components
+

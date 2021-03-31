@@ -636,7 +636,7 @@ def dash_spectra(context, target):
     except:
         z = 0
 
-    ### Send the spectra so they don't have to be replotted every time
+    ### Send the min and max flux values 
     target_id = target.id
     spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy')
     if not spectral_dataproducts:
@@ -669,24 +669,8 @@ def dash_spectra(context, target):
                 flux.append(float(value['flux']))
         if max(flux) > max_flux: max_flux = max(flux)
         if min(flux) < min_flux: min_flux = min(flux)
-        scatter_obj = go.Scatter(
-            x=wavelength,
-            y=flux,
-            name=name,
-            line_color=rgb_colors[i]
-        )
-        all_data.append(scatter_obj)
 
-    dash_context = {'table-editing-simple-output': 
-                        {'figure': {'layout' : {'height': 350,
-                                                'margin': {'l': 60, 'b': 30, 'r': 60, 't': 10},
-                                                'yaxis': {'type': 'linear'},
-                                                'xaxis': {'showgrid': False}
-                                            },
-                                    'data' : all_data
-                            }
-                        },
-                    'target_id': {'value': target.id},
+    dash_context = {'target_id': {'value': target.id},
                     'target_redshift': {'value': z},
                     'min-flux': {'value': min_flux},
                     'max-flux': {'value': max_flux}
