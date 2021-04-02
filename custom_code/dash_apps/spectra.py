@@ -51,12 +51,41 @@ columns.insert(0, columns.pop())
 
 elem_input_array = []
 for elem in elements:
-    fg = dbc.FormGroup([
-        dbc.Label(elem),
-        dbc.Input(type='number', min=0, max=10.0, className="mb-3"),
-        dbc.Input(type='number')
+    row = html.Tr([
+        html.Td(
+            dbc.Checkbox(id='standalone-checkbox-'+elem.replace(' ', '-'))
+        ),
+        html.Td(
+            elem
+        ),
+        html.Td(
+           dbc.Badge(
+               '__',#elem,
+               color=elements[elem]['color']
+            )
+        ),
+        html.Td(
+            dbc.Input(
+                id='z-'+elem.replace(' ', '-'),
+                value=0,
+                type='number',
+                min=0,
+                max=10,
+                step=0.0000001,
+                placeholder='z'
+            )
+        ),
+        html.Td(
+            dbc.Input(
+                id='v-'+elem.replace(' ', '-'),
+                type='number',
+                placeholder='Velocity (km/s)',
+                value=0
+            )
+        )
     ])
-    elem_input_array.append(fg)
+    elem_input_array.append(row)
+table_body =[html.Tbody(elem_input_array)]
 
 app.layout = html.Div([
     dcc.Graph(id='table-editing-simple-output',
@@ -78,34 +107,18 @@ app.layout = html.Div([
         value=''
     ),
     html.Div(
-        id='dash-table-div',
-        children=[
-            dash_table.DataTable(
-                id='table-editing-simple',
-                columns=(columns),
-                data=[
-                    {'Element': elem, 'Redshift': 0, 'Velocity (km/s)': 0} for elem in elements
-                ],
-                editable=True,
-                row_selectable='multi',
-                selected_rows=[],
-                tooltip_conditional=tooltips,
-                style_as_list_view=True,
-                style_cell={'padding': '5px',
-                            'textAlign': 'left'},
-                style_header={
-                'backgroundColor': 'white',
-                'fontWeight': 'bold'
-                    }
-                )
-            ],
+        id='checked-rows',
         style={'display': 'none'}
     ),
-    html.Div(elem_input_array),
+    html.Div(
+        id='table-container-div',
+        children=[dbc.Table(table_body, bordered=True)],
+        style={'display': 'none'}
+    )
 ])
 
 @app.callback(
-    Output('dash-table-div', 'style'),
+    Output('table-container-div', 'style'),
     [Input('line-plotting-checklist', 'value')])
 def show_table(value, *args, **kwargs):
     if 'display' in value:
@@ -119,16 +132,100 @@ def show_table(value, *args, **kwargs):
 def change_redshift(z, *args, **kwargs):
     return [{'Element': elem, 'Redshift': z, 'Velocity (km/s)': 0} for elem in elements]
 
+
+line_plotting_input = [Input('standalone-checkbox-'+elem.replace(' ', '-'), 'checked') for elem in elements]
+line_plotting_input += [Input('v-'+elem.replace(' ', '-'), 'value') for elem in elements]
+line_plotting_input += [Input('z-'+elem.replace(' ', '-'), 'value') for elem in elements]
+@app.callback(
+    Output('checked-rows', 'children'),
+    line_plotting_input)
+def checked_boxes(h_row, he_row, he_ii_row, o_row, o_ii_row, o_iii_row, na_row, mg_row, mg_ii_row, 
+                  si_ii_row, s_ii_row, ca_ii_row, fe_ii_row, fe_iii_row, c_ii_row, 
+                  galaxy_row, tellurics_row, 
+                  h_v, he_v, he_ii_v, o_v, o_ii_v, o_iii_v, na_v, mg_v, 
+                  mg_ii_v, si_ii_v, s_ii_v, ca_ii_v, fe_ii_v, fe_iii_v, c_ii_v,
+                  galaxy_v, tellurics_v,
+                  h_z, he_z, he_ii_z, o_z, o_ii_z, o_iii_z, na_z, mg_z, 
+                  mg_ii_z, si_ii_z, s_ii_z, ca_ii_z, fe_ii_z, fe_iii_z, c_ii_z,
+                  galaxy_z, tellurics_z, *args, **kwargs):
+    
+    all_rows = [h_row, he_row, he_ii_row, o_row, o_ii_row, o_iii_row, na_row, mg_row, 
+                mg_ii_row, si_ii_row, s_ii_row, ca_ii_row, fe_ii_row, fe_iii_row, c_ii_row,
+                galaxy_row, tellurics_row]
+
+    velocity_rows = [h_v, he_v, he_ii_v, o_v, o_ii_v, o_iii_v, na_v, mg_v, 
+                  mg_ii_v, si_ii_v, s_ii_v, ca_ii_v, fe_ii_v, fe_iii_v, c_ii_v,
+                  galaxy_v, tellurics_v]
+
+    redshift_rows = [h_z, he_z, he_ii_z, o_z, o_ii_z, o_iii_z, na_z, mg_z, 
+                  mg_ii_z, si_ii_z, s_ii_z, ca_ii_z, fe_ii_z, fe_iii_z, c_ii_z,
+                  galaxy_z, tellurics_z]
+
+    checked_rows = []
+    count = 0
+    for row in all_rows:
+        if row:
+            elem = list(elements.keys())[count]
+            checked_rows.append({elem: {'redshift': redshift_rows[count],
+                                        'velocity': velocity_rows[count]
+                                    }
+                                })
+        count += 1
+    return checked_rows
+
+@app.callback(
+    Output('table-container-div', 'children'),
+    [Input('target_redshift', 'value')])
+def change_redshift_v2(z, *args, **kwargs):
+    elem_input_array = []
+    for elem in elements:
+        row = html.Tr([
+            html.Td(
+                dbc.Checkbox(id='standalone-checkbox-'+elem.replace(' ', '-'))
+            ),
+            html.Td(
+                elem
+            ),
+            html.Td(
+               dbc.Badge(
+                   '__',#elem,
+                   color=elements[elem]['color']
+                )
+            ),
+            html.Td(
+                dbc.Input(
+                    id='z-'+elem.replace(' ', '-'),
+                    value=z,
+                    type='number',
+                    min=0,
+                    max=10,
+                    step=0.0000001,
+                    placeholder='z'
+                )
+            ),
+            html.Td(
+                dbc.Input(
+                    id='v-'+elem.replace(' ', '-'),
+                    type='number',
+                    placeholder='Velocity (km/s)',
+                    value=0
+                )
+            )
+        ])
+        elem_input_array.append(row)
+    table_body =[html.Tbody(elem_input_array)]
+    return [dbc.Table(table_body, bordered=True)]
+
 @app.expanded_callback(
     Output('table-editing-simple-output', 'figure'),
-    [Input('table-editing-simple', 'data'),
-     Input('table-editing-simple', 'selected_rows'),
-     Input('table-editing-simple', 'columns'),
+    [Input('checked-rows', 'children'),
      Input('target_id', 'value'),
      Input('min-flux', 'value'),
      Input('max-flux', 'value'),
      State('table-editing-simple-output', 'figure')])
-def display_output(rows, selected_row_ids, columns, value, min_flux, max_flux, fig_data, *args, **kwargs):
+def display_output(selected_rows,
+                   #selected_row_ids, columns, 
+                   value, min_flux, max_flux, fig_data, *args, **kwargs):
     # Improvements:
     #   Fix dataproducts so they're correctly serialized
     #   Correctly display message when there are no spectra
@@ -179,14 +276,14 @@ def display_output(rows, selected_row_ids, columns, value, min_flux, max_flux, f
             # Remove all the element lines that were plotted last time
             fig_data['data'].remove(d)
     
-    for row_id in selected_row_ids:
-        row = rows[row_id]
-        elem = row['Element']
-        try:
-            z = float(row['Redshift'])
-            v_over_c = (float(row['Velocity (km/s)']))/(3e5)
-        except:
-            continue
+    for row in selected_rows:
+        for elem, row_extras in row.items():
+            z = row_extras['redshift']
+            v = row_extras['velocity']
+            try:
+                v_over_c = float(v/(3e5))
+            except:
+                v_over_c = 0
         x = []
         y = []
         
@@ -211,5 +308,4 @@ def display_output(rows, selected_row_ids, columns, value, min_flux, max_flux, f
                 line=dict(color=elements[elem]['color'])
             )
         )
-    #print(graph_data)
     return graph_data
