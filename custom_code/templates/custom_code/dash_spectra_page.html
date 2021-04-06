@@ -1,0 +1,4 @@
+{% load plotly_dash %}
+{% for entry in plot_list %}
+  {% plotly_app name="Spectra_Individual" ratio=1.0 initial_arguments=entry.dash_context %}
+{% endfor %}

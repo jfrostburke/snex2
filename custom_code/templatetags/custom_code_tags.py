@@ -1026,3 +1026,52 @@ def spectra_page(target, dataproduct=None):
     return {'target': target,
             'plot_list': plot_list
         }
+
+@register.inclusion_tag('custom_code/dash_spectra_page.html', takes_context=True)
+def dash_spectra_page(context, target):
+    request = context['request']
+
+    try:
+        z = TargetExtra.objects.filter(target_id=target.id, key='redshift').first().float_value
+    except:
+        z = 0
+
+    ### Send the min and max flux values
+    target_id = target.id
+    spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy')
+    if not spectral_dataproducts:
+        return 'No spectra yet'
+
+    plot_list = []
+    for i in range(len(spectral_dataproducts)):
+    
+        max_flux = 0
+        min_flux = 0
+        
+        spectrum = spectral_dataproducts[i]
+        datum = spectrum.value
+        wavelength = []
+        flux = []
+        name = str(spectrum.timestamp).split(' ')[0]
+        if datum.get('photon_flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('photon_flux')
+        elif datum.get('flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('flux')
+        else:
+            for key, value in datum.items():
+                wavelength.append(value['wavelength'])
+                flux.append(float(value['flux']))
+        if max(flux) > max_flux: max_flux = max(flux)
+        if min(flux) < min_flux: min_flux = min(flux)
+
+        plot_list.append({'dash_context': {'spectrum_id': {'value': spectrum.id},
+                                           'target_redshift': {'value': z},
+                                           'min-flux': {'value': min_flux},
+                                           'max-flux': {'value': max_flux}
+                                        }
+                                    })
+
+    return {'plot_list': plot_list,
+            'request': request}

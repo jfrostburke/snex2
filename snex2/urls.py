@@ -21,7 +21,7 @@ from django.urls import include
 from custom_code.views import TargetListView, CustomTargetCreateView, CustomDataProductUploadView, CustomDataProductDeleteView, target_redirect_view, add_tag_view, save_target_tag_view, targetlist_collapse_view, save_dataproduct_groups_view, search_name_view, compare_spectra_view
 from custom_code.api_views import CustomDataProductViewSet
 from rest_framework.routers import DefaultRouter
-from custom_code.dash_apps import lightcurve, spectra
+from custom_code.dash_apps import lightcurve, spectra, spectra_individual
 
 custom_router = DefaultRouter()
 custom_router.register(r'photometry-upload', CustomDataProductViewSet, 'photometry-upload')

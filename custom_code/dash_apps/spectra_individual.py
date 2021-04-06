@@ -7,17 +7,20 @@ import dash_html_components as html
 import plotly.graph_objs as go
 import numpy as np
 import json
+from statistics import median
 
 ### Jamie's Dash spectra plotting, currently a WIP
 ### Jamie: "lots of help from https://community.plot.ly/t/django-and-dash-eads-method/7717"
 
 from django_plotly_dash import DjangoDash
 from tom_dataproducts.models import ReducedDatum
+from tom_targets.models import Target
+from django.db.models import Q
 import matplotlib.pyplot as plt
 
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 
-app = DjangoDash(name='Spectra', id='target_id')   # replaces dash.Dash
+app = DjangoDash(name='Spectra_Individual', id='spectrum_id')   # replaces dash.Dash
 
 params = [
     'Redshift', 'Velocity (km/s)'
@@ -138,7 +141,7 @@ app.layout = html.Div([
                         'data' : []#[go.Scatter({'x': [], 'y': []})]
                     }
     ),
-    dcc.Input(id='target_id', type='hidden', value=0),
+    dcc.Input(id='spectrum_id', type='hidden', value=0),
     dcc.Input(id='target_redshift', type='hidden', value=0),
     dcc.Input(id='min-flux', type='hidden', value=0),
     dcc.Input(id='max-flux', type='hidden', value=0),
@@ -171,8 +174,28 @@ app.layout = html.Div([
         ],
         id='table-container-div',
         style={'display': 'none'}
-    )
-])
+    ),
+    dcc.Checklist(
+        id='compare-spectra-checklist',
+        options=[{'label': 'Compare this spectrum to another object?', 'value': 'display'}],
+        value=''
+    ),
+    html.Div([
+        dbc.Input(id='spectra-compare-input', type='text', placeholder='Search for target', value='', style={'display': 'none'}),
+        html.Div(
+            children=[
+                dcc.Dropdown(
+                    options=[{'label': target.name, 'value': target.name} for target in Target.objects.all()],
+                    value='',
+                    placeholder='Search for a target',
+                    id='spectra-compare-dropdown'
+                )
+            ],
+            id='spectra-compare-results',
+            style={'display': 'none'}
+        )
+    ])
+], style={'padding-bottom': '0px'})
 
 @app.callback(
     Output('table-container-div', 'style'),
@@ -182,6 +205,26 @@ def show_table(value, *args, **kwargs):
         return {'display': 'block'}
     else:
         return {'display': 'none'}
+
+@app.callback(
+    Output('spectra-compare-results', 'style'),
+    [Input('compare-spectra-checklist', 'value')])
+def show_compare(value, *args, **kwargs):
+    if 'display' in value:
+        return {'display': 'block'}
+    else:
+        return {'display': 'none'}
+
+@app.callback(
+    Output('spectra-compare-dropdown', 'options'),
+    [Input('spectra-compare-input', 'value')])
+def show_search_results(value, *args, **kwargs):
+    target_query = Target.objects.filter(Q(name__icontains=value) | Q(aliases__name__icontains=value))
+
+    if not target_query or len(target_query) > 10:
+        return []
+
+    return [{'label': target.name, 'value': target.name} for target in target_query]
 
 line_plotting_input = [Input('standalone-checkbox-'+elem.replace(' ', '-'), 'checked') for elem in elements]
 line_plotting_input += [Input('v-'+elem.replace(' ', '-'), 'value') for elem in elements]
@@ -321,40 +364,67 @@ def change_redshift(z, *args, **kwargs):
 @app.expanded_callback(
     Output('table-editing-simple-output', 'figure'),
     [Input('checked-rows', 'children'),
-     Input('target_id', 'value'),
+     Input('spectrum_id', 'value'),
      Input('min-flux', 'value'),
      Input('max-flux', 'value'),
+     Input('spectra-compare-dropdown', 'value'),
      State('table-editing-simple-output', 'figure')])
 def display_output(selected_rows,
                    #selected_row_ids, columns, 
-                   value, min_flux, max_flux, fig_data, *args, **kwargs):
+                   value, min_flux, max_flux, compare_target, fig_data, *args, **kwargs):
     # Improvements:
     #   Fix dataproducts so they're correctly serialized
     #   Correctly display message when there are no spectra
     
-    target_id = value
+    spectrum_id = value
     graph_data = {'data': fig_data['data'],
                   'layout': fig_data['layout']}
 
-    # If the page just loaded, plot all the spectra
-    if not fig_data['data']:
-        spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy')
-        if not spectral_dataproducts:
+    if compare_target:
+        # Plot this spectrum and the spectrum for the selected target, normalized to the median
+        graph_data['data'] = []
+        spectrum = ReducedDatum.objects.get(id=spectrum_id)
+        
+        if not spectrum:
             return 'No spectra yet'
-        colormap = plt.cm.gist_rainbow
-        colors = [colormap(i) for i in np.linspace(0, 0.99, len(spectral_dataproducts))]
-        rgb_colors = ['rgb({r}, {g}, {b})'.format(
-            r=int(color[0]*255),
-            g=int(color[1]*255),
-            b=int(color[2]*255),
-        ) for color in colors]
-        all_data = []
-        for i in range(len(spectral_dataproducts)):
-            spectrum = spectral_dataproducts[i]
+            
+        datum = spectrum.value
+        wavelength = []
+        flux = []
+        name = str(spectrum.timestamp).split(' ')[0]
+        if datum.get('photon_flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('photon_flux')
+        elif datum.get('flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('flux')
+        else:
+            for key, value in datum.items():
+                wavelength.append(value['wavelength'])
+                flux.append(float(value['flux']))
+                
+        median_flux = [f / median(flux) for f in flux]
+        
+        scatter_obj = go.Scatter(
+            x=wavelength,
+            y=median_flux,
+            name='This Target',
+            line_color='black'
+        )
+        graph_data['data'].append(scatter_obj)
+
+        min_flux = 0
+        max_flux = 2
+
+        target = Target.objects.filter(Q(name__icontains=compare_target) | Q(aliases__name__icontains=compare_target)).first()
+
+        spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy').order_by('-timestamp')
+        spectra = []
+        for spectrum in spectral_dataproducts:
             datum = spectrum.value
             wavelength = []
             flux = []
-            name = str(spectrum.timestamp).split(' ')[0]
+            name = target.name + ' --- ' +  str(spectrum.timestamp).split(' ')[0]
             if datum.get('photon_flux'):
                 wavelength = datum.get('wavelength')
                 flux = datum.get('photon_flux')
@@ -363,15 +433,50 @@ def display_output(selected_rows,
                 flux = datum.get('flux')
             else:
                 for key, value in datum.items():
-                    wavelength.append(value['wavelength'])
+                    wavelength.append(float(value['wavelength']))
                     flux.append(float(value['flux']))
+            median_flux = [f / median(flux) for f in flux]
             scatter_obj = go.Scatter(
                 x=wavelength,
-                y=flux,
-                name=name,
-                line_color=rgb_colors[i]
+                y=median_flux,
+                name=name
             )
             graph_data['data'].append(scatter_obj)
+
+
+    for d in reversed(fig_data['data']):
+        if 'SN' in d['name'] or 'ZTF' in d['name'] or 'AT' in d['name'] or 'This' in d['name'] or 'test' in d['name']:
+            # Remove all the element lines that were plotted last time
+            fig_data['data'].remove(d)
+    
+    # If the page just loaded, plot all the spectra
+    if not fig_data['data']:
+        spectrum = ReducedDatum.objects.get(id=spectrum_id)
+        
+        if not spectrum:
+            return 'No spectra yet'
+            
+        datum = spectrum.value
+        wavelength = []
+        flux = []
+        name = str(spectrum.timestamp).split(' ')[0]
+        if datum.get('photon_flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('photon_flux')
+        elif datum.get('flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('flux')
+        else:
+            for key, value in datum.items():
+                wavelength.append(value['wavelength'])
+                flux.append(float(value['flux']))
+        scatter_obj = go.Scatter(
+            x=wavelength,
+            y=flux,
+            name=name,
+            line_color='black'
+        )
+        graph_data['data'].append(scatter_obj)
 
     for d in reversed(fig_data['data']):
         if d['name'] in elements:
