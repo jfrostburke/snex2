@@ -14,7 +14,7 @@ from statistics import median
 
 from django_plotly_dash import DjangoDash
 from tom_dataproducts.models import ReducedDatum
-from tom_targets.models import Target
+from tom_targets.models import Target, TargetExtra
 from django.db.models import Q
 import matplotlib.pyplot as plt
 
@@ -215,16 +215,16 @@ def show_compare(value, *args, **kwargs):
     else:
         return {'display': 'none'}
 
-@app.callback(
-    Output('spectra-compare-dropdown', 'options'),
-    [Input('spectra-compare-input', 'value')])
-def show_search_results(value, *args, **kwargs):
-    target_query = Target.objects.filter(Q(name__icontains=value) | Q(aliases__name__icontains=value))
-
-    if not target_query or len(target_query) > 10:
-        return []
-
-    return [{'label': target.name, 'value': target.name} for target in target_query]
+#@app.callback(
+#    Output('spectra-compare-dropdown', 'options'),
+#    [Input('spectra-compare-input', 'value')])
+#def show_search_results(value, *args, **kwargs):
+#    target_query = Target.objects.filter(Q(name__icontains=value) | Q(aliases__name__icontains=value))
+#
+#    if not target_query or len(target_query) > 10:
+#        return []
+#
+#    return [{'label': target.name, 'value': target.name} for target in target_query]
 
 line_plotting_input = [Input('standalone-checkbox-'+elem.replace(' ', '-'), 'checked') for elem in elements]
 line_plotting_input += [Input('v-'+elem.replace(' ', '-'), 'value') for elem in elements]
@@ -384,7 +384,13 @@ def display_output(selected_rows,
         # Plot this spectrum and the spectrum for the selected target, normalized to the median
         graph_data['data'] = []
         spectrum = ReducedDatum.objects.get(id=spectrum_id)
-        
+       
+        object_z_query = TargetExtra.objects.filter(target_id=spectrum.target_id,key='redshift').first()
+        if not object_z_query:
+            object_z = 0
+        else:
+            object_z = float(object_z_query.value)
+
         if not spectrum:
             return 'No spectra yet'
             
@@ -417,6 +423,12 @@ def display_output(selected_rows,
         max_flux = 2
 
         target = Target.objects.filter(Q(name__icontains=compare_target) | Q(aliases__name__icontains=compare_target)).first()
+        
+        compare_z_query = TargetExtra.objects.filter(target_id=target.id,key='redshift').first()
+        if not compare_z_query:
+            compare_z = 0
+        else:
+            compare_z = float(compare_z_query.value)
 
         spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy').order_by('-timestamp')
         spectra = []
@@ -435,9 +447,10 @@ def display_output(selected_rows,
                 for key, value in datum.items():
                     wavelength.append(float(value['wavelength']))
                     flux.append(float(value['flux']))
+            shifted_wavelength = [w * (1+object_z) / (1+compare_z) for w in wavelength]
             median_flux = [f / median(flux) for f in flux]
             scatter_obj = go.Scatter(
-                x=wavelength,
+                x=shifted_wavelength,
                 y=median_flux,
                 name=name
             )
