@@ -384,6 +384,10 @@ EMAIL_HOST_PASSWORD = str(os.environ['SNEX_EMAIL_PASSWORD'])
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 7000000
 
+PLOTLY_DASH = {
+    'cache_timeout_initial_arguments': 120,
+}
+
 try:
     from local_settings import * # noqa
 except ImportError:

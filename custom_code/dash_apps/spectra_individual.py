@@ -17,6 +17,9 @@ from tom_dataproducts.models import ReducedDatum
 from tom_targets.models import Target, TargetExtra
 from django.db.models import Q
 import matplotlib.pyplot as plt
+import logging
+
+logger = logging.getLogger(__name__)
 
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 
@@ -383,6 +386,10 @@ def display_output(selected_rows,
     if compare_target:
         # Plot this spectrum and the spectrum for the selected target, normalized to the median
         graph_data['data'] = []
+        
+        min_flux = 0
+        max_flux = 0
+
         spectrum = ReducedDatum.objects.get(id=spectrum_id)
        
         object_z_query = TargetExtra.objects.filter(target_id=spectrum.target_id,key='redshift').first()
@@ -410,7 +417,8 @@ def display_output(selected_rows,
                 flux.append(float(value['flux']))
                 
         median_flux = [f / median(flux) for f in flux]
-        
+        if max(median_flux) > max_flux: max_flux = max(median_flux)
+
         scatter_obj = go.Scatter(
             x=wavelength,
             y=median_flux,
@@ -418,9 +426,6 @@ def display_output(selected_rows,
             line_color='black'
         )
         graph_data['data'].append(scatter_obj)
-
-        min_flux = 0
-        max_flux = 2
 
         target = Target.objects.filter(Q(name__icontains=compare_target) | Q(aliases__name__icontains=compare_target)).first()
         
@@ -449,6 +454,7 @@ def display_output(selected_rows,
                     flux.append(float(value['flux']))
             shifted_wavelength = [w * (1+object_z) / (1+compare_z) for w in wavelength]
             median_flux = [f / median(flux) for f in flux]
+            if max(median_flux) > max_flux: max_flux = max(median_flux)
             scatter_obj = go.Scatter(
                 x=shifted_wavelength,
                 y=median_flux,
@@ -458,14 +464,18 @@ def display_output(selected_rows,
 
 
     for d in reversed(fig_data['data']):
-        if 'SN' in d['name'] or 'ZTF' in d['name'] or 'AT' in d['name'] or 'This' in d['name'] or 'test' in d['name']:
-            # Remove all the element lines that were plotted last time
+        # Check if any letters are in the name, if so we want to get rid of those to replot
+        # A way of checking is to see if everything in the string is lowercase after calling 
+        # lower() on it
+        lower_name = d['name'].lower()
+        if lower_name.islower():
             fig_data['data'].remove(d)
     
     # If the page just loaded, plot all the spectra
     if not fig_data['data']:
         spectrum = ReducedDatum.objects.get(id=spectrum_id)
-        
+        logger.info('Plotting dash spectrum for dataproduct %s', spectrum_id)
+ 
         if not spectrum:
             return 'No spectra yet'
             
@@ -491,11 +501,6 @@ def display_output(selected_rows,
         )
         graph_data['data'].append(scatter_obj)
 
-    for d in reversed(fig_data['data']):
-        if d['name'] in elements:
-            # Remove all the element lines that were plotted last time
-            fig_data['data'].remove(d)
-    
     for row in selected_rows:
         for elem, row_extras in json.loads(row).items():
             z = row_extras['redshift']
