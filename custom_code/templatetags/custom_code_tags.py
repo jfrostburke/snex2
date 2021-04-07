@@ -640,7 +640,9 @@ def dash_spectra(context, target):
     target_id = target.id
     spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy')
     if not spectral_dataproducts:
-        return 'No spectra yet'
+        return {'dash_context': {},
+                'request': request
+            }
     colormap = plt.cm.gist_rainbow
     colors = [colormap(i) for i in np.linspace(0, 0.99, len(spectral_dataproducts))]
     rgb_colors = ['rgb({r}, {g}, {b})'.format(
@@ -1040,8 +1042,10 @@ def dash_spectra_page(context, target):
     target_id = target.id
     spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy')
     if not spectral_dataproducts:
-        return 'No spectra yet'
-
+        return {'dash_context': {},
+                'request': request
+            }
+    
     plot_list = []
     for i in range(len(spectral_dataproducts)):
     

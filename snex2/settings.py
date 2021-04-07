@@ -382,6 +382,8 @@ EMAIL_HOST_USER = 'snex@lco.global'
 
 EMAIL_HOST_PASSWORD = str(os.environ['SNEX_EMAIL_PASSWORD'])
 
+DATA_UPLOAD_MAX_MEMORY_SIZE = 7000000
+
 try:
     from local_settings import * # noqa
 except ImportError:
