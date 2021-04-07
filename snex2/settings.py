@@ -287,28 +287,30 @@ HOOKS = {
     'targetextra_post_save': 'custom_code.hooks.targetextra_post_save'
 }
 
+BROKERS = {
+    'TNS': {'api_key': os.environ['TNS_APIKEY']}
+}
+
 TOM_ALERT_CLASSES = [
     'custom_code.brokers.mars.CustomMARSBroker',
     'tom_alerts.brokers.lasair.LasairBroker',
-    ]
+    'tom_alerts.brokers.gaia.GaiaBroker',
+    'tom_alerts.brokers.tns.TNSBroker',
+    'tom_alerts.brokers.alerce.ALeRCEBroker',
+]
 
 TOM_FACILITY_CLASSES = [
-    #'tom_observations.facilities.gemini.GEMFacility',
     'custom_code.facilities.gemini_facility.GeminiFacility',
-    #'tom_observations.facilities.lco.LCOFacility',
     'custom_code.facilities.lco_facility.SnexLCOFacility',
-    #'custom_code.facilities.soar_facility.SOARFacility',
     'tom_observations.facilities.soar.SOARFacility',
-    ]
+]
 
 TOM_HARVESTER_CLASSES = [
     'custom_code.harvesters.tns_harvester.TNSHarvester',
     'custom_code.harvesters.mars_harvester.MARSHarvester',
     'tom_catalogs.harvesters.simbad.SimbadHarvester',
     'tom_catalogs.harvesters.ned.NEDHarvester',
-    #'tom_catalogs.harvesters.jplhorizons.JPLHorizonsHarvester',
-    #'tom_catalogs.harvesters.mpc.MPCHarvester',
-    ]
+]
 
 DATA_TYPES = (
     ('SPECTROSCOPY', 'Spectroscopy'),
