@@ -1070,8 +1070,9 @@ def dash_spectra_page(context, target):
                                            'target_redshift': {'value': z},
                                            'min-flux': {'value': min_flux},
                                            'max-flux': {'value': max_flux}
-                                        }
-                                    })
+                                        },
+                          'time': str(spectrum.timestamp)
+                        })
 
     return {'plot_list': plot_list,
             'request': request}
