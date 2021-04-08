@@ -243,12 +243,12 @@ class OpticalSpectraForm(BaseObservationForm):
                             css_class='form-row',
                         ),
                         Div(
-                            Div(HTML('<p style="text-align:center;">B600/500nm</p>'), css_class='col-md-2'),
-                            Div('b_exptime', css_class='col-md-10'), css_class='form-row'
+                            Div(HTML('<p style="text-align:center;">B600/500nm</p>'), css_class='col-md-4'),
+                            Div('b_exptime', css_class='col-md-8'), css_class='form-row'
                         ),
                         Div(
-                            Div(HTML('<p style="text-align:center;">R400/850nm</p>'), css_class='col-md-2'),
-                            Div('r_exptime', css_class='col-md-10'), css_class='form-row'
+                            Div(HTML('<p style="text-align:center;">R400/850nm</p>'), css_class='col-md-4'),
+                            Div('r_exptime', css_class='col-md-8'), css_class='form-row'
                         ),
                         Div(
                             Div(HTML('<p style="text-align:center;">Slit</p>'), css_class='col-md-12'),
@@ -264,7 +264,7 @@ class OpticalSpectraForm(BaseObservationForm):
                         Div(
                             Div('ready', css_class='col-md-12'), css_class='form-row'
                         ),
-                        ), css_class='col-md-8'
+                        ), css_class='col-md-12'
                 ), css_class='row justify-content-md-center'
             ),
             self.button_layout()
@@ -448,7 +448,25 @@ class GeminiFacility(BaseRoboticObservationFacility):
 
     @classmethod
     def validate_observation(clz, observation_payload):
-        return {}
+        # Gemini doesn't have an API for validation, but run some checks
+        errors = {}
+        if 'elevationType' in observation_payload[0].keys():
+            if observation_payload[0]['elevationType'] == 'airmass':
+                if float(observation_payload[0]['elevationMin']) < 1.0:
+                    errors['elevationMin'] = 'Airmass must be >= 1.0'
+                if float(observation_payload[0]['elevationMax']) > 2.5:
+                    errors['elevationMax'] = 'Airmass must be <= 2.5'
+
+        for payload in observation_payload:
+            if 'error' in payload.keys():
+                errors['exptimes'] = payload['error']
+            if 'exptime' in payload.keys():
+                if payload['exptime'] <= 0:
+                    errors['exptimes'] = 'Exposure time must be >= 1'
+                if payload['exptime'] > 1200:
+                    errors['exptimes'] = 'Exposure time must be <= 1200'
+
+        return errors
 
     @classmethod
     def get_observation_url(clz, observation_id):
@@ -464,7 +482,7 @@ class GeminiFacility(BaseRoboticObservationFacility):
 
     @classmethod
     def get_observation_status(clz, observation_id):
-        return ['IN_PROGRESS']
+        return {'state': '', 'scheduled_start': None, 'scheduled_end': None}
 
     @classmethod
     def data_products(clz, observation_record, product_id=None):
