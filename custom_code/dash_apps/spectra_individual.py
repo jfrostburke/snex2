@@ -473,8 +473,8 @@ def display_output(selected_rows,
     
     # If the page just loaded, plot all the spectra
     if not fig_data['data']:
-        spectrum = ReducedDatum.objects.get(id=spectrum_id)
         logger.info('Plotting dash spectrum for dataproduct %s', spectrum_id)
+        spectrum = ReducedDatum.objects.get(id=spectrum_id)
  
         if not spectrum:
             return 'No spectra yet'
