@@ -11,7 +11,9 @@
         <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.name }}</a></li>
         <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target.ra|deg_to_sexigesimal:"hms" }} {{ target.dec|deg_to_sexigesimal:"dms" }}<br>{{ target.ra|floatformat:4 }} {{ target.dec|floatformat:4 }}</a></li>
         <li style="float: left;"><a style="display: inline-block; list-style-type: none;">{{ target|target_extra_field:"classification" }}</a></li>
-        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">z = {{ target|target_extra_field:"redshift" }}</a></li>
+	{% with z=target|target_extra_field:"redshift" %}
+        <li style="float: left;"><a style="display: inline-block; list-style-type: none;">z = {{ z|strip_trailing_zeros }}</a></li>
+	{% endwith %}
       </ul>
   </div>
 </nav>

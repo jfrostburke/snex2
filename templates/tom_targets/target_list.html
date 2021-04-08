@@ -79,7 +79,9 @@
 	  {% else %}
 	    <td>{{ target|target_extra_field:"classification" }}</td>
 	  {% endif %}
-	  <td>{{ target|target_extra_field:"redshift" }}</td>
+	  {% with z=target|target_extra_field:"redshift" %}
+	  <td>{{ z|strip_trailing_zeros }}</td>
+	  {% endwith %}
         </tr>
         <tr>
           <td colspan=5 style="border-top:none;">

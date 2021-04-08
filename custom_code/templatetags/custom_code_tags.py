@@ -1080,3 +1080,10 @@ def dash_spectra_page(context, target):
 
     return {'plot_list': plot_list,
             'request': request}
+
+@register.filter
+def strip_trailing_zeros(value):
+    try:
+        return str(float(value))
+    except:
+        return value

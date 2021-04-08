@@ -110,7 +110,9 @@
       </td>
       <td>
 	{% if target|target_extra_field:"redshift" %}
-	  {{ target|target_extra_field:"redshift" }}
+	  {% with z=target|target_extra_field:"redshift" %}
+	  {{ z|strip_trailing_zeros }}
+	  {% endwith %}
 	{% else %}
 	  None
 	{% endif %}

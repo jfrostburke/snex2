@@ -40,7 +40,9 @@ $(document).ready(function(){
       <form style="display: inline; font-size: 20px" name="form_redshift_theredshift" autocomplete="off" action="javascript: edit_redshift()">
         <span id="zpre">z=</span>
         <input type="hidden" name="targetid" id="thetargetid" value={{ target.id }}>
-        <input type="text" name="redshift" id="thenewredshift" value={{ target|target_extra_field:"redshift" }} autocomplete="off" style="background: none; border: 0px solid #174460; font-family: 'Open Sans', sans-serif; color: white;">
+	{% with z=target|target_extra_field:"redshift" %}
+        <input type="text" name="redshift" id="thenewredshift" value={{ z|strip_trailing_zeros }} autocomplete="off" style="background: none; border: 0px solid #174460; font-family: 'Open Sans', sans-serif; color: white;">
+	{% endwith %}
       </form>
     </td>
     <script>
