@@ -338,7 +338,7 @@ def display_output(selected_rows,
 
     # If the page just loaded, plot all the spectra
     if not fig_data['data']:
-        spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy')
+        spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy').order_by('timestamp')
         if not spectral_dataproducts:
             return 'No spectra yet'
         colormap = plt.cm.gist_rainbow
