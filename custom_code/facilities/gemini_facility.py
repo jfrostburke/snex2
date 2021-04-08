@@ -162,6 +162,8 @@ class OpticalImagingForm(BaseObservationForm):
 
 class OpticalSpectraForm(BaseObservationForm):
 
+    name = forms.CharField(label='', initial='Science with Flats')
+    
     north_south_choice = (
         ('north', 'North'),
         ('south', 'South'),
@@ -220,6 +222,9 @@ class OpticalSpectraForm(BaseObservationForm):
             Div(
                 Div(
                     Div(HTML("<p></p>"),
+                        PrependedText(
+                            'name', 'Name'
+                        ),
                         Div(
                             Div(HTML('<p style="text-align:center;">Gemini North or South?</p>'), css_class='col-md-4'),
                             Div('n_or_s', css_class='col-md-8'),
@@ -450,21 +455,21 @@ class GeminiFacility(BaseRoboticObservationFacility):
     def validate_observation(clz, observation_payload):
         # Gemini doesn't have an API for validation, but run some checks
         errors = {}
-        if 'elevationType' in observation_payload[0].keys():
-            if observation_payload[0]['elevationType'] == 'airmass':
-                if float(observation_payload[0]['elevationMin']) < 1.0:
-                    errors['elevationMin'] = 'Airmass must be >= 1.0'
-                if float(observation_payload[0]['elevationMax']) > 2.5:
-                    errors['elevationMax'] = 'Airmass must be <= 2.5'
+        #if 'elevationType' in observation_payload[0].keys():
+        #    if observation_payload[0]['elevationType'] == 'airmass':
+        #        if float(observation_payload[0]['elevationMin']) < 1.0:
+        #            errors['elevationMin'] = 'Airmass must be >= 1.0'
+        #        if float(observation_payload[0]['elevationMax']) > 2.5:
+        #            errors['elevationMax'] = 'Airmass must be <= 2.5'
 
-        for payload in observation_payload:
-            if 'error' in payload.keys():
-                errors['exptimes'] = payload['error']
-            if 'exptime' in payload.keys():
-                if payload['exptime'] <= 0:
-                    errors['exptimes'] = 'Exposure time must be >= 1'
-                if payload['exptime'] > 1200:
-                    errors['exptimes'] = 'Exposure time must be <= 1200'
+        #for payload in observation_payload:
+        #    if 'error' in payload.keys():
+        #        errors['exptimes'] = payload['error']
+        #    if 'exptime' in payload.keys():
+        #        if payload['exptime'] <= 0:
+        #            errors['exptimes'] = 'Exposure time must be >= 1'
+        #        if payload['exptime'] > 1200:
+        #            errors['exptimes'] = 'Exposure time must be <= 1200'
 
         return errors
 

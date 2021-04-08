@@ -791,10 +791,10 @@ def observation_summary(context, target=None):
         elif parameter.get('facility', '') == 'Gemini':
             
             if 'SPECTRA' in parameter.get('observation_type', ''):
-                parameter_string = 'Gemini spectrum of B exposure time ' + parameter.get('b_exptime', '') + 's and R exposure time ' + parameter.get('r_exptime', '') + 's with airmass <' + str(parameter.get('max_airmass', '')) + ', scheduled on ' + str(observation.created).split(' ')[0]
+                parameter_string = 'Gemini spectrum of B exposure time ' + str(parameter.get('b_exptime', '')) + 's and R exposure time ' + str(parameter.get('r_exptime', '')) + 's with airmass <' + str(parameter.get('max_airmass', '')) + ', scheduled on ' + str(observation.created).split(' ')[0]
 
             else: # Gemini photometry
-                parameter_string = 'Gemini photometry of g (' + parameter.get('g_exptime', '') + 's), r (' + parameter.get('r_exptime', '') + 's), i (' + parameter.get('i_exptime', '') + 's), and z (' + parameter.get('z_exptime', '') + 's), with airmass < ' + str(parameter.get('max_airmass', '')) + ', scheduled on ' + str(observation.created).split(' ')[0]
+                parameter_string = 'Gemini photometry of g (' + str(parameter.get('g_exptime', '')) + 's), r (' + str(parameter.get('r_exptime', '')) + 's), i (' + str(parameter.get('i_exptime', '')) + 's), and z (' + str(parameter.get('z_exptime', '')) + 's), with airmass < ' + str(parameter.get('max_airmass', '')) + ', scheduled on ' + str(observation.created).split(' ')[0]
 
             parameters.append({'title': 'Gemini Sequence',
                                'summary': parameter_string,
