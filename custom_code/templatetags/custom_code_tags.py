@@ -1087,3 +1087,21 @@ def strip_trailing_zeros(value):
         return str(float(value))
     except:
         return value
+
+@register.filter
+def get_best_name(target):
+
+    def find_name(namelist, n):
+        for name in namelist:
+            if n in name:
+                return name
+        return False
+
+    namelist = [target.name] + [alias.name for alias in target.aliases.all()]
+    bestname = find_name(namelist, 'SN')
+    if not bestname:
+        bestname = find_name(namelist, 'AT')
+    if not bestname:
+        bestname = namelist[0]
+    
+    return bestname
