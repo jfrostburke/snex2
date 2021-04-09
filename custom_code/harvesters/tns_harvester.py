@@ -7,7 +7,7 @@ from collections import OrderedDict
 
 def get(term):
   api_key = os.environ['SNEXBOT_APIKEY']
-  url = "https://wis-tns.weizmann.ac.il/api/get"
+  url = "https://www.wis-tns.org/api/get"
   try:
     get_url = url + '/object'
     
