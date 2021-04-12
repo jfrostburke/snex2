@@ -108,7 +108,7 @@ def target_post_save(target, created):
             }
             rd, created = ReducedDatum.objects.get_or_create(
                 timestamp=datum_jd.to_datetime(timezone=TimezoneInfo()),
-                value=json.dumps(value),
+                value=value,
                 source_name=target.name,
                 source_location=lightcurve_url,
                 data_type='photometry',
