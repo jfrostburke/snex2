@@ -67,10 +67,6 @@ def target_post_save(target, created):
   if ztf_name:
     alerts = get(ztf_name)
 
-  #if 'ZTF' in target.name:
-  #  objectId = target.name 
-  #  alerts = get(objectId)
-    
     filters = {1: 'g_ZTF', 2: 'r_ZTF', 3: 'i_ZTF'}
     for alert in alerts:
         if all([key in alert['candidate'] for key in ['jd', 'magpsf', 'fid', 'sigmapsf']]):
@@ -83,7 +79,7 @@ def target_post_save(target, created):
             }
             rd, created = ReducedDatum.objects.get_or_create(
                 timestamp=jd.to_datetime(timezone=TimezoneInfo()),
-                value=json.dumps(value),
+                value=value,
                 source_name=target.name,
                 source_location=alert['lco_id'],
                 data_type='photometry',
@@ -112,7 +108,7 @@ def target_post_save(target, created):
             }
             rd, created = ReducedDatum.objects.get_or_create(
                 timestamp=datum_jd.to_datetime(timezone=TimezoneInfo()),
-                value=json.dumps(value),
+                value=value,
                 source_name=target.name,
                 source_location=lightcurve_url,
                 data_type='photometry',

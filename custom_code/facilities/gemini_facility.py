@@ -223,7 +223,7 @@ class OpticalSpectraForm(BaseObservationForm):
                 Div(
                     Div(HTML("<p></p>"),
                         PrependedText(
-                            'name', 'Name'
+                            'name', 'Name', type='hidden'
                         ),
                         Div(
                             Div(HTML('<p style="text-align:center;">Gemini North or South?</p>'), css_class='col-md-4'),
