@@ -378,21 +378,43 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
         else:
             groups = Row('groups')
         return Div(
-            Row('exposure_count'),
-            Row('exposure_time'),
-            Row('max_airmass'),
-            Row(PrependedText('min_lunar_distance', '>')),
-            Row('site'),
-            Row('filter'),
-            Row('acquisition_radius'),
-            Row('guider_mode'),
-            Row('guider_exposure_time'),
-            Row('proposal'),
-            Row('observation_mode'),
-            Row('ipp_value'),
-            Row(AppendedText('reminder', 'days')),
-            groups,
-        )
+            Div(
+                Row('exposure-count'),
+                Row('exposure-time'),
+                Row('max_airmass'),
+                Row(PrependedText('min_lunar_distance', '>')),
+                Row('site'),
+                Row('filter'),
+                groups,
+                css_class='col-md-6'
+            ),
+            Div(
+                Row('acquisition_radius'),
+                Row('guider_mode'),
+                Row('guider_exposure_time'),
+                Row('proposal'),
+                Row('observation_mode'),
+                Row('ipp_value'),
+                Row(AppendedText('reminder', 'days')),
+                css_class='col-md-6'
+            ),
+            
+            #Row('exposure_count'),
+            #Row('exposure_time'),
+            #Row('max_airmass'),
+            #Row(PrependedText('min_lunar_distance', '>')),
+            #Row('site'),
+            #Row('filter'),
+            #Row('acquisition_radius'),
+            #Row('guider_mode'),
+            #Row('guider_exposure_time'),
+            #Row('proposal'),
+            #Row('observation_mode'),
+            #Row('ipp_value'),
+            #Row(AppendedText('reminder', 'days')),
+            #groups,
+
+        css_class='form-row')
 
 class SnexLCOFacility(LCOFacility):
     name = 'LCO'

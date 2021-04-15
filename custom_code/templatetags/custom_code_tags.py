@@ -1040,7 +1040,7 @@ def dash_spectra_page(context, target):
 
     ### Send the min and max flux values
     target_id = target.id
-    spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy')
+    spectral_dataproducts = ReducedDatum.objects.filter(target_id=target_id, data_type='spectroscopy').order_by('timestamp')
     if not spectral_dataproducts:
         return {'dash_context': {},
                 'request': request

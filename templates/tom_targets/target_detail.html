@@ -31,7 +31,7 @@ $(document).ready(function(){
 <table class="header-table" cellpadding="0" cellspacing="0" style="background: #174460; font-family: 'Open Sans', sans-serif; color: white; width: 104.45%; margin-left: -39px; margin-top: -100px;">
   <tr height="89">
     <td align="left">
-      <span style="display: inline-block; font-size: 30px; margin-left: 30px;">{{ target|get_best_name }}</span>
+      <span style="display: inline-block; font-size: 35px; margin-left: 30px;">{{ target|get_best_name }}</span>
     </td>
     <td align="left">
       {% classifications_dropdown target%}
@@ -80,28 +80,28 @@ $(document).ready(function(){
     }
     </script>
     <td align="left">
-      <span style="display: inline-block; font-size: 20px;">{{ target.ra|deg_to_sexigesimal:"hms" }} {{ target.dec|deg_to_sexigesimal:"dms" }}<br>{{ target.ra|floatformat:4 }} {{ target.dec|floatformat:4 }}</span>
+      <span style="display: inline-block; font-size: 23px;">{{ target.ra|deg_to_sexigesimal:"hms" }} {{ target.dec|deg_to_sexigesimal:"dms" }}</span><br><span style="display: inline-block; font-size: 20px;">{{ target.ra|floatformat:4 }} {{ target.dec|floatformat:4 }}</span>
     </td>
   </tr>
 </table>
 <ul class="nav nav-tabs" role="tablist" id="tabs">
   <li class="nav-item">
-    <a class="nav-link active" id="observe-tab" href="#observe" role="tab" data-toggle="tab">Observe</a>
+    <a class="nav-link active" id="observe-tab" href="#observe" role="tab" data-toggle="tab" style="color: #174460;">Observe</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="observations-tab" href="#observations" role="tab" data-toggle="tab">Observations</a>
+    <a class="nav-link" id="observations-tab" href="#observations" role="tab" data-toggle="tab" style="color: #174460;">Observations</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="manage-data-tab" href="#manage-data" role="tab" data-toggle="tab">Manage Data</a>
+    <a class="nav-link" id="manage-data-tab" href="#manage-data" role="tab" data-toggle="tab" style="color: #174460;">Manage Data</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="manage-groups-tab" href="#manage-groups" role="tab" data-toggle="tab">Manage Groups</a>
+    <a class="nav-link" id="manage-groups-tab" href="#manage-groups" role="tab" data-toggle="tab" style="color: #174460;">Manage Groups</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="photometry-tab" href="#photometry" role="tab" data-toggle="tab">Photometry</a>
+    <a class="nav-link" id="photometry-tab" href="#photometry" role="tab" data-toggle="tab" style="color: #174460;">Photometry</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="spectroscopy-tab" href="#spectroscopy" role="tab" data-toggle="tab">Spectroscopy</a>
+    <a class="nav-link" id="spectroscopy-tab" href="#spectroscopy" role="tab" data-toggle="tab" style="color: #174460;">Spectroscopy</a>
   </li>
 </ul>
 <div class="row" style="padding-top: 10px;">
