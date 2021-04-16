@@ -379,8 +379,8 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
             groups = Row('groups')
         return Div(
             Div(
-                Row('exposure-count'),
-                Row('exposure-time'),
+                Row('exposure_count'),
+                Row('exposure_time'),
                 Row('max_airmass'),
                 Row(PrependedText('min_lunar_distance', '>')),
                 Row('site'),
