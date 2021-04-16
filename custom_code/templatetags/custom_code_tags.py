@@ -1105,3 +1105,28 @@ def get_best_name(target):
         bestname = namelist[0]
     
     return bestname
+
+@register.filter
+def smart_name_list(target):
+
+    namelist = [target.name] + [alias.name for alias in target.aliases.all()]
+    good_names = []
+    for name in namelist:
+        if ('SN ' in name or 'AT ' in name or 'ZTF' in name) and name not in good_names:
+            good_names.append(name)
+        elif 'sn ' in name[:4] or 'at ' in name[:4] or 'ztf' in name[:4]:
+            new_name = name.replace(name[:3], name[:3].upper())
+            if new_name not in good_names:
+                good_names.append(new_name)
+        elif ('sn' in name[:4] or 'at' in name[:4] or 'SN' in name[:4] or 'AT' in name[:4]) and name not in good_names and ('las' not in name[:4] and 'LAS' not in name):
+            new_name = name[:2].upper() + ' ' + name[2:]
+            if new_name not in good_names:
+                good_names.append(new_name)
+        elif 'dlt' in name[:4]:
+            new_name = name.replace(name[:3], name[:3].upper())
+            if new_name not in good_names:
+                good_names.append(new_name)
+        elif name not in good_names:
+            good_names.append(name)
+    
+    return good_names

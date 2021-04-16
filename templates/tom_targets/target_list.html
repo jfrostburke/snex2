@@ -70,7 +70,9 @@
           <td><input type="checkbox" name="selected-target" value="{{ target.id }}" onClick="single_select()"/></td>
           <td rowspan=2>
       	    <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{target.name|cut:" "}}" aria-expanded="true">+</button>
-            <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target.names|join:", " }}</a>
+	    {% with target|smart_name_list as target_names %}
+            <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target_names|join:", " }}</a>
+	    {% endwith %}
           </td>
           <td>{{ target.ra|deg_to_sexigesimal:"hms" }}</td>
           <td>{{ target.dec|deg_to_sexigesimal:"dms" }}</td>

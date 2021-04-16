@@ -3,9 +3,17 @@
   <h4>Known as: </h4>
 </dl>
 <dl class="row">
-  {% for target_name in target.names %}
-    {{ target_name }}<br> 
+  <ul style="list-style-type: none; margin-left: -30px; margin-bottom: -10px;">
+  {% for target_name in target|smart_name_list %}
+    {% if 'AT' in target_name or 'SN' in target_name %}
+    <li><a href="https://www.wis-tns.org/object/{{ target_name|slice:"3:" }}" style="color: black;" target="_blank">{{ target_name }}</a><br></li>
+    {% elif 'ZTF' in target_name %}
+    <li><a href="https://lasair.roe.ac.uk/object/{{ target_name }}/" style="color: black;" target="_blank">{{ target_name }}</a><br></li>
+    {% else %}
+    <li><a>{{ target_name }}</a><br></li>
+    {% endif %}
   {% endfor %}
+  </ul>
 </dl>
 <dl class="row" style="margin-left: -15px;">
   <form style="display: inline"; name="form_addname" action="javascript: add_name()">
