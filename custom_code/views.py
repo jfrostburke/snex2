@@ -13,6 +13,7 @@ from tom_targets.models import TargetList
 from tom_targets.models import Target, TargetExtra
 from guardian.mixins import PermissionListMixin
 from guardian.models import GroupObjectPermission
+from guardian.shortcuts import get_objects_for_user, assign_perm, remove_perm
 from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.conf import settings
@@ -622,4 +623,33 @@ def compare_spectra_view(request):
     context = {'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)}
     
     return render(request, 'custom_code/compare_spectra.html', context=context)
+
+
+def change_target_known_to_view(request):
+    action = request.GET.get('action')
+    group_name = request.GET.get('group')
+    group = Group.objects.get(name=group_name)
+    target_name = request.GET.get('target')
+    target = Target.objects.get(name=target_name)
+    
+    if target not in get_objects_for_user(request.user, 'tom_targets.change_target'):
+        response_data = {'failure': 'Error'}
+        return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+    if action == 'add':
+        # Add permissions for this group
+        assign_perm('tom_targets.view_target', group, target)
+        assign_perm('tom_targets.change_target', group, target)
+        assign_perm('tom_targets.delete_target', group, target)
+        response_data = {'success': 'Added'}
+        return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+    elif action == 'remove':
+        # Remove permissions for this group
+        remove_perm('tom_targets.view_target', group, target)
+        remove_perm('tom_targets.change_target', group, target)
+        remove_perm('tom_targets.delete_target', group, target)
+        response_data = {'success': 'Removed'}
+        return HttpResponse(json.dumps(response_data), content_type='application/json')
+        
 

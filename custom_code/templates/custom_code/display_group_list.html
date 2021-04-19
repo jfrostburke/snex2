@@ -1,0 +1,35 @@
+{% load custom_code_tags %}
+<dl class="row" style="display: block;">
+  <ul style="list-style-type: none; margin-left: -30px; margin-bottom: -10px;">
+  {% with target|target_known_to as target_groups %}
+    {% for group in groups %}
+      {% if group in target_groups %}
+      <li><a style="color: #174460; cursor: pointer;" name="{{ group }}" onclick="change_group_perm(this.attributes['name'].value, 'remove')">{{ group }}</a></li>
+      {% else %}
+      <li><a style="color: gray; cursor: pointer;" name="{{ group }}" onclick="change_group_perm(this.attributes['name'].value, 'add')">{{ group }}</a></li>
+      {% endif %}
+    {% endfor %}
+  {% endwith %}
+  </ul>
+</dl>
+<script>
+  function change_group_perm(groupName, action) {
+    $.ajax({
+      url: '{% url "change-target-known-to" %}',
+      data: {'action': action,
+	     'group': groupName,
+	     'target': '{{ target.name }}'
+      },
+      dataType: 'json',
+      success: function(response) {
+	if (response.success === 'Added') {
+	  document.getElementsByName(groupName)[0].style.color = '#174460';
+	} else if (response.success === 'Removed') {
+          document.getElementsByName(groupName)[0].style.color = 'gray';
+        };
+      }
+    })
+  }
+</script>
+      
+	

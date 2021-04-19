@@ -4,11 +4,11 @@ from django import template
 from django.conf import settings
 from django.db.models.functions import Lower
 from django.shortcuts import reverse
-from guardian.shortcuts import get_objects_for_user, get_perms
+from guardian.shortcuts import get_objects_for_user, get_perms, get_groups_with_perms
 from django.contrib.auth.models import User, Group
 from django.contrib.postgres.fields.jsonb import KeyTextTransform
 
-from tom_targets.models import Target, TargetExtra
+from tom_targets.models import Target, TargetExtra, TargetList
 from tom_targets.forms import TargetVisibilityForm
 from tom_observations import utils, facility
 from tom_dataproducts.models import DataProduct, ReducedDatum, ObservationRecord
@@ -1130,3 +1130,15 @@ def smart_name_list(target):
             good_names.append(name)
     
     return good_names
+
+@register.inclusion_tag('custom_code/display_group_list.html')
+def display_group_list(target):
+    groups = Group.objects.all()
+    return {'target': target,
+            'groups': groups
+        }
+
+@register.filter
+def target_known_to(target):
+    groups = get_groups_with_perms(target)
+    return groups
