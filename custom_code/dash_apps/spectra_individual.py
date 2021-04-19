@@ -218,17 +218,6 @@ def show_compare(value, *args, **kwargs):
     else:
         return {'display': 'none'}
 
-#@app.callback(
-#    Output('spectra-compare-dropdown', 'options'),
-#    [Input('spectra-compare-input', 'value')])
-#def show_search_results(value, *args, **kwargs):
-#    target_query = Target.objects.filter(Q(name__icontains=value) | Q(aliases__name__icontains=value))
-#
-#    if not target_query or len(target_query) > 10:
-#        return []
-#
-#    return [{'label': target.name, 'value': target.name} for target in target_query]
-
 line_plotting_input = [Input('standalone-checkbox-'+elem.replace(' ', '-'), 'checked') for elem in elements]
 line_plotting_input += [Input('v-'+elem.replace(' ', '-'), 'value') for elem in elements]
 line_plotting_input += [Input('z-'+elem.replace(' ', '-'), 'value') for elem in elements]
