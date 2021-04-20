@@ -8,7 +8,7 @@
     {% if 'AT' in target_name or 'SN' in target_name %}
     <li><a href="https://www.wis-tns.org/object/{{ target_name|slice:"3:" }}" style="color: black;" target="_blank">{{ target_name }}</a><br></li>
     {% elif 'ZTF' in target_name %}
-    <li><a href="https://lasair.roe.ac.uk/object/{{ target_name }}/" style="color: black;" target="_blank">{{ target_name }}</a><br></li>
+    <li><a href="https://alerce.online/object/{{ target_name }}" style="color: black;" target="_blank">{{ target_name }}</a><br></li>
     {% else %}
     <li><a>{{ target_name }}</a><br></li>
     {% endif %}
