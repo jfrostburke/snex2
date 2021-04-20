@@ -24,7 +24,7 @@ import time
 import matplotlib.pyplot as plt
 
 from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra, Papers
-from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, SpecSchedulingForm
+from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, SpecSchedulingForm, ReferenceStatusForm
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
 from custom_code.facilities.lco_facility import SnexPhotometricSequenceForm, SnexSpectroscopicSequenceForm
@@ -1082,3 +1082,18 @@ def display_group_list(target):
 def target_known_to(target):
     groups = get_groups_with_perms(target)
     return groups
+
+
+@register.inclusion_tag('custom_code/reference_status.html')
+def reference_status(target):
+    old_status_query = TargetExtra.objects.filter(target=target, key='reference')
+    if not old_status_query:
+        old_status = 'Undetermined'
+    else:
+        old_status = old_status_query.first().value
+
+    reference_form = ReferenceStatusForm(initial={'target': target.id,
+                                                  'status': old_status})
+    
+    return {'object': target,
+            'form': reference_form}

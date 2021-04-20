@@ -1,5 +1,5 @@
 from tom_targets.forms import SiderealTargetCreateForm, TargetForm
-from tom_targets.models import TargetExtra
+from tom_targets.models import Target, TargetExtra
 from tom_dataproducts.forms import DataProductUploadForm
 from tom_observations.widgets import FilterField
 from tom_dataproducts.models import DataProduct
@@ -272,3 +272,24 @@ class SpecSchedulingForm(forms.Form):
     
     def __init__(self, *args, **kwargs):
         super(SpecSchedulingForm, self).__init__(*args, **kwargs)
+
+
+class ReferenceStatusForm(forms.Form):
+
+    status = forms.ChoiceField(
+        choices=[('Required', 'Required'),
+                 ('Undetermined', 'Undetermined'),
+                 ('Not Necessary', 'Not Necessary'),
+                 ('Obtained', 'Obtained')
+        ],
+        widget=forms.RadioSelect(),
+        label=''
+    )
+
+    target = forms.IntegerField(widget=forms.HiddenInput())
+
+    #target = forms.ModelChoiceField(queryset=Target.objects.none(),
+    #                                widget=forms.HiddenInput())
+
+    def __init__(self, *args, **kwargs):
+        super(ReferenceStatusForm, self).__init__(*args, **kwargs)

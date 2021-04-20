@@ -1,0 +1,11 @@
+{% load bootstrap4 custom_code_tags %}
+<dl class="row" style="display: block;">
+  <form class="form" action="{% url 'custom_code:update-reference-status' %}" method="post">
+    {% bootstrap_form form %}
+    {% csrf_token %}
+    {% buttons %}
+    <button type="submit" class="btn btn-primary" formaction="{% url 'custom_code:update-reference-status' %}">Submit</button>
+    {% endbuttons %}
+  </form>
+</dl>
+

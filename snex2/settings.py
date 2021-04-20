@@ -251,7 +251,7 @@ FACILITIES = {
             'GN': '',
         },
         'user_email': '',
-        'programs': 'GS-2019A-Q-113' 
+        'programs': 'GS-2019A-Q-113'
     }
 }
 
@@ -268,6 +268,7 @@ EXTRA_FIELDS = [
     {'name': 'redshift', 'type': 'number'},
     {'name': 'classification', 'type': 'string'},
     {'name': 'tweet', 'type': 'boolean'},
+    {'name': 'reference', 'type': 'string', 'hidden': True},
 ]
 
 # Authentication strategy can either be LOCKED (required login for all views)
@@ -301,6 +302,7 @@ TOM_ALERT_CLASSES = [
 
 TOM_FACILITY_CLASSES = [
     'custom_code.facilities.gemini_facility.GeminiFacility',
+    #'tom_observations.facilities.gemini.GEMFacility',
     'custom_code.facilities.lco_facility.SnexLCOFacility',
     'tom_observations.facilities.soar.SOARFacility',
 ]

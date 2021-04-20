@@ -37,7 +37,7 @@ from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
 from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse
 
-from .forms import CustomTargetCreateForm, CustomDataProductUploadForm, PapersForm, PhotSchedulingForm
+from .forms import CustomTargetCreateForm, CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, ReferenceStatusForm
 from tom_targets.views import TargetCreateView
 from tom_common.hooks import run_hook
 from tom_dataproducts.views import DataProductUploadView, DataProductDeleteView
@@ -549,3 +549,27 @@ def change_target_known_to_view(request):
         return HttpResponse(json.dumps(response_data), content_type='application/json')
         
 
+class ReferenceStatusUpdateView(FormView):
+
+    form_class = ReferenceStatusForm
+    template_name = 'custom_code/reference_status.html'
+
+    def form_valid(self, form):
+        target_id = form.cleaned_data['target']
+        target = Target.objects.get(id=target_id)
+        status = form.cleaned_data['status']
+        old_status_query = TargetExtra.objects.filter(target=target, key='reference')
+        if not old_status_query:
+            reference = TargetExtra(
+                    target=target,
+                    key='reference',
+                    value=status
+                )
+            reference.save()
+
+        else:
+            old_status = old_status_query.first()
+            old_status.value = status
+            old_status.save()
+            
+        return HttpResponseRedirect('/targets/{}/'.format(target.id))
