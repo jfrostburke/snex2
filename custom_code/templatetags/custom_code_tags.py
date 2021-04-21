@@ -23,7 +23,7 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 
-from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra, Papers
+from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons
 from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, SpecSchedulingForm, ReferenceStatusForm
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
@@ -972,7 +972,6 @@ def order_by_reminder(queryset, time):
 @register.inclusion_tag('custom_code/dash_spectra_page.html', takes_context=True)
 def dash_spectra_page(context, target):
     request = context['request']
-
     try:
         z = TargetExtra.objects.filter(target_id=target.id, key='redshift').first().float_value
     except:
@@ -1097,3 +1096,13 @@ def reference_status(target):
     
     return {'object': target,
             'form': reference_form}
+
+
+@register.inclusion_tag('custom_code/interested_persons.html')
+def interested_persons(target):
+    interested_persons_query = InterestedPersons.objects.filter(target=target)
+    interested_persons = [u.user.get_full_name() for u in interested_persons_query]
+
+    return {'target': target,
+            'interested_persons': interested_persons
+        }

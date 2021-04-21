@@ -1,6 +1,7 @@
 from django.db import models
 from tom_dataproducts.models import ReducedDatum
 from tom_targets.models import Target
+from django.contrib.auth.models import User
 
 # Create your models here.
 
@@ -186,3 +187,14 @@ class Papers(models.Model):
 
     class Meta:
         get_latest_by = ('id',)
+
+
+class InterestedPersons(models.Model):
+
+    target = models.ForeignKey(
+        Target, on_delete=models.CASCADE
+    )
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE
+    )

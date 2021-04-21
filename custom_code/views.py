@@ -6,7 +6,7 @@ from django.views.generic.edit import FormView, UpdateView
 from django.urls import reverse
 from django.template.loader import render_to_string
 
-from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers
+from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter #
 from tom_targets.models import TargetList
 
@@ -573,3 +573,26 @@ class ReferenceStatusUpdateView(FormView):
             old_status.save()
             
         return HttpResponseRedirect('/targets/{}/'.format(target.id))
+
+
+def change_interest_view(request):
+    target_name = request.GET.get('target')
+    target = Target.objects.get(name=target_name)
+    user = request.user
+
+    interested_persons = [p.user for p in InterestedPersons.objects.filter(target=target)]
+    if user in interested_persons:
+        user_interest_row = InterestedPersons.objects.get(target=target, user=user)
+        user_interest_row.delete()
+
+        response_data = {'success': 'Uninterested'}
+        return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+    else:
+        user_interest_row = InterestedPersons(target=target, user=user)
+        user_interest_row.save()
+
+        response_data = {'success': 'Interested',
+                         'name': user.get_full_name()
+                    }
+        return HttpResponse(json.dumps(response_data), content_type='application/json')

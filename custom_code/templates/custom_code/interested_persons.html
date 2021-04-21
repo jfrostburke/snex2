@@ -1,0 +1,30 @@
+{% load custom_code_tags %}
+<dl class="row" style="display: block;">
+  {% for person in interested_persons %}
+    {{ person }}
+  {% endfor %}
+  <div id="new-interested-person" style="display: none;"></div><br>
+  <button class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Interested</button>
+</dl>
+<script>
+  function changeInterest() {
+    $.ajax({
+      url: '{% url "change-interest" %}',
+      data: {'target': '{{ target.name }}'
+      },
+      dataType: 'json',
+      success: function(response) {
+        if (response.success === 'Interested') {
+          document.getElementById("new-interested-person").innerHTML = response.name;
+	  document.getElementById("new-interested-person").style.display = "block";
+	  document.getElementById("interest-button").innerHTML = "I'm Not Interested";
+	} else if (response.success === 'Uninterested') {
+	  document.getElementById("new-interested-person").style.display = "none";
+	  document.getElementById("interest-button").innerHTML = "I'm Interested";
+	};
+      }
+    })
+  }
+</script>
+
+
