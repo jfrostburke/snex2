@@ -337,6 +337,10 @@ def update_spec(action, db_address=_SNEX2_DB):
             else:
                 spec_row = get_current_row(Spec, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the spec table
 
+                if not spec_row:
+                    delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
+                    continue
+
                 targetid = spec_row.targetid
                 time = '{} {}'.format(spec_row.dateobs, spec_row.ut) 
                 spec = read_spec(spec_row.filepath + spec_row.filename.replace('.fits', '.ascii'))
