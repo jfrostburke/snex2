@@ -1,10 +1,13 @@
 {% extends 'tom_common/base.html' %}
-{% load bootstrap4 static %}
+{% load bootstrap4 static custom_code_tags %}
 {% block title %}Target Groups{% endblock %}
 {% block additional_css %}
 <link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
 {% endblock %}
 {% block content %}
+<head>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
     <h3>Target Groupings</h3>
@@ -18,22 +21,69 @@
     </div>
 </div>
 {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
-<form action="{% url 'targets:list' %}" method="GET">
+<!--form action="{% url 'targets:list' %}" method="GET"-->
   <table class="table table-striped">
     <thead>
       <tr>
         <th>Group</th>
         <th>Total Targets</th>
-        <th>Delete</th>
+	<th>Add a Target</th>
+        <th>Delete Group</th>
       </tr>
     </thead>
     <tbody>
       {% for group in object_list %}
       <tr>
-        <td><button type="submit" class="btn btn-link" name="targetlist__name" value="{{group.id}}" title="View Group">{{ group.name }}</button></td>
-        <td valign="middle">{{ group.targets.count }}</td>        
+        <td>
+	  <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{group.name}}" aria-expanded="true">+</button>
+	  <button type="submit" class="btn btn-link" name="targetlist__name" value="{{group.id}}" title="View Group">{{ group.name }}</button>
+	</td>
+	<td valign="middle"><div id="targetCount-{{ group.id }}">{{ group.targets.count }}</div></td>
+	<td>
+	  <div class="autocomplete">
+	    <form action="/name-search/" method="get">
+	      <input class="addTargetInput" id="addTargetInput-{{ group.id }}" type="text" placeholder="Search for a target to add">
+	      <input type="button" value="Add" onclick="addTarget('{{ group.id }}')">
+	      <input class="hidden" style="display: none;" name="groupID" value="{{ group.id }}">
+	    </form>
+	    <div class="replaceableContent" id="replaceable-content-{{ group.id }}">
+	    {% include 'custom_code/partials/name-search-results.html' %}
+	    </div>
+	  </div>
+	</td>
         <td><a href="{% url 'targets:delete-group' group.id%}" title="Delete Group" class="btn btn-danger">Delete</a></td>
       </tr>
+      <table>
+        <tbody>
+        {% for target in group.targets.all %}
+        <tr class="collapse show" id="show-both-{{group.name}}">
+            <td colspan=5 style="border-top:none;"-->
+              {% with target|smart_name_list as target_names %}
+              <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target_names|join:", " }}</a>
+                {% endwith %}
+	    </td>
+	    <td>
+	      <form>
+		<label>Priority:</label>
+		<div class="row">
+		<input type="number" name="priority" style="width: 30px; margin-left: 20px;">
+		</div>
+	      </form>
+	    </td>  
+	    <td>
+              <div id="lightcurve-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+	    </td>
+	    <td>
+              <div id="spectra-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+	    </td>
+	    <td>
+              <div id="airmass-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+	    </td>
+	    <!--/div-->
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
       {% empty %}
       <tr>
         <td>No groups yet</td>
@@ -42,6 +92,85 @@
       {% endfor %}
     </tbody>
   </table>
-</form>
+<!--/form-->
 {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
+<script>
+var endpoint = '/name-search/';
+var delay_by_in_ms = 700;
+var scheduled_function = false;
+
+$('.addTargetInput').on('keyup', function() {
+    var request_parameters = {
+	    name: $(this).val()
+    };
+    var spectra_input = this;
+    var cl = spectra_input.closest(".autocomplete");
+    var targets_div = cl.querySelectorAll(".replaceableContent")[0];
+
+    if (scheduled_function) {
+	clearTimeout(scheduled_function)
+    }
+
+    scheduled_function = setTimeout(ajax_call, delay_by_in_ms, endpoint, request_parameters)
+
+    function ajax_call(endpoint, request_parameters) {
+      $.getJSON(endpoint, request_parameters)
+        .done(response => {
+          var oldlist = document.getElementById('autocomplete-items');
+          if ( oldlist ) {
+            oldlist.remove();
+          }
+	    targets_div.insertAdjacentHTML('afterend', response['html_from_view'])
+	  })
+  }
+
+});
+
+function fillName(clickedName) {
+  var t = document.getElementById(clickedName);
+  var spectra_input = t.closest(".autocomplete").querySelectorAll(".addTargetInput")[0];
+  spectra_input.value = clickedName;
+};
+
+function addTarget(groupId) {
+  var nameInput = document.getElementById("addTargetInput-"+groupId).value;
+  $.ajax({
+    url: '{% url "add-target-to-group" %}',
+    data: {'target_name': nameInput,
+	   'group_id': groupId
+      },
+    dataType: 'json',
+    success: function(response) {
+      if (response.success === 'Added') {
+	document.getElementById("targetCount-"+groupId).innerHTML = response.count;
+      }
+    }
+  });
+}
+</script>
+
+{% for group in object_list %}
+  {% for target in group.targets.all %}
+  <script>
+  $(document).ready(function() {
+      $.ajax({
+        url: '{% url "targetlist_collapse" %}',
+        data: {'target_id': {{ target.id }},
+               'user_id': {{ user.id }}
+        },
+        dataType: 'json',
+        success: function(response) {
+          var lightcurve_plot = response.lightcurve_plot;
+          $('#lightcurve-{{target.name|cut:" "}}').html(lightcurve_plot);
+          var spectra_plot = response.spectra_plot;
+          $('#spectra-{{target.name|cut:" "}}').html(spectra_plot);
+          var airmass_plot = response.airmass_plot;
+          $('#airmass-{{target.name|cut:" "}}').html(airmass_plot);
+        }
+      });
+    });
+  
+  </script>
+  {% endfor %}
+{% endfor %}
 {% endblock %}

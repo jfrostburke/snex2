@@ -18,7 +18,7 @@ from django.urls import path
 
 from django.urls import include
 
-from custom_code.views import TargetListView, CustomTargetCreateView, CustomDataProductUploadView, CustomDataProductDeleteView, target_redirect_view, add_tag_view, save_target_tag_view, targetlist_collapse_view, save_dataproduct_groups_view, change_target_known_to_view, change_interest_view
+from custom_code.views import TargetListView, CustomTargetCreateView, CustomDataProductUploadView, CustomDataProductDeleteView, target_redirect_view, add_tag_view, save_target_tag_view, targetlist_collapse_view, save_dataproduct_groups_view, change_target_known_to_view, change_interest_view, search_name_view, add_target_to_group_view
 from custom_code.api_views import CustomDataProductViewSet
 from rest_framework.routers import DefaultRouter
 from custom_code.dash_apps import lightcurve, spectra, spectra_individual
@@ -40,6 +40,8 @@ urlpatterns = [
     path('save_dataproduct_groups/', save_dataproduct_groups_view, name='save_dataproduct_groups'),
     path('change-target-known-to/', change_target_known_to_view, name='change-target-known-to'),
     path('change-interest/', change_interest_view, name='change-interest'),
+    path('name-search/', search_name_view, name='name-search'),
+    path('add-target-to-group/', add_target_to_group_view, name='add-target-to-group'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),

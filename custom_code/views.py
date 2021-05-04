@@ -596,3 +596,48 @@ def change_interest_view(request):
                          'name': user.get_full_name()
                     }
         return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+
+def search_name_view(request):
+
+    search_entry = request.GET.get('name')
+    logger.info("searching for {}".format(search_entry))
+    context = {}
+    if search_entry:
+        target_match_list = Target.objects.filter(Q(name__icontains=search_entry) | Q(aliases__name__icontains=search_entry)).distinct()
+
+    else:
+        target_match_list = Target.objects.none()
+
+    context['targets'] = target_match_list
+
+    if request.is_ajax():
+        html = render_to_string(
+            template_name='custom_code/partials/name-search-results.html',
+            context={'targets': target_match_list}
+        )
+
+        data_dict = {"html_from_view": html}
+
+        return JsonResponse(data=data_dict, safe=False)
+    return render(request, 'tom_targets/target_grouping.html', context=context)
+
+
+def add_target_to_group_view(request):
+    target_name = request.GET.get('target_name')
+    target = Target.objects.get(name=target_name)
+    
+    targetlist_id = request.GET.get('group_id')
+    targetlist = TargetList.objects.get(id=targetlist_id)
+
+    if request.user.has_perm('tom_targets.view_target', target) and target not in targetlist.targets.all():
+        targetlist.targets.add(target)
+        response_data = {'success': 'Added',
+                         'name': target.name,
+                         'count': targetlist.targets.count()
+                }
+    else:
+        response_data = {'failure': 'Not Added',
+                         'name': target.name
+                }
+    return HttpResponse(json.dumps(response_data), content_type='application/json')
