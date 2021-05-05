@@ -1106,3 +1106,37 @@ def interested_persons(target):
     return {'target': target,
             'interested_persons': interested_persons
         }
+
+
+@register.filter
+def upcoming_observing_runs(targetlist):
+    upcoming_runs = []
+    today = datetime.date.today()
+    for obj in targetlist:
+        name = obj.name
+        observing_run_datestr = name.split('_')[1]
+        year = int(observing_run_datestr[:4])
+        month = int(observing_run_datestr[4:6])
+        day = int(observing_run_datestr[6:])
+        observing_run_date = datetime.date(year, month, day)
+        if today <= observing_run_date:
+            upcoming_runs.append(obj)
+
+    return upcoming_runs
+
+
+@register.filter
+def past_observing_runs(targetlist):
+    past_runs = []
+    today = datetime.date.today()
+    for obj in targetlist:
+        name = obj.name
+        observing_run_datestr = name.split('_')[1]
+        year = int(observing_run_datestr[:4])
+        month = int(observing_run_datestr[4:6])
+        day = int(observing_run_datestr[6:])
+        observing_run_date = datetime.date(year, month, day)
+        if today > observing_run_date:
+            past_runs.append(obj)
+
+    return past_runs

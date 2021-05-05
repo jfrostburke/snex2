@@ -21,78 +21,129 @@
     </div>
 </div>
 {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
-<!--form action="{% url 'targets:list' %}" method="GET"-->
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Group</th>
-        <th>Total Targets</th>
-	<th>Add a Target</th>
-        <th>Delete Group</th>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Group</th>
+      <th>Total Targets</th>
+      <th>Add a Target</th>
+      <th>Delete Group</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for group in object_list|upcoming_observing_runs %}
+    <tr>
+      <td>
+        <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{group.name}}" aria-expanded="true">+</button>
+        <button type="submit" class="btn btn-link" name="targetlist__name" value="{{group.id}}" title="View Group">{{ group.name }}</button>
+      </td>
+      <td valign="middle"><div id="targetCount-{{ group.id }}">{{ group.targets.count }}</div></td>
+      <td>
+        <div class="autocomplete">
+          <form action="/name-search/" method="get">
+            <input class="addTargetInput" id="addTargetInput-{{ group.id }}" type="text" placeholder="Search for a target to add">
+            <input type="button" value="Add" onclick="addTarget('{{ group.id }}')">
+            <input class="hidden" style="display: none;" name="groupID" value="{{ group.id }}">
+          </form>
+          <div class="replaceableContent" id="replaceable-content-{{ group.id }}">
+          {% include 'custom_code/partials/name-search-results.html' %}
+          </div>
+        </div>
+      </td>
+      <td><a href="{% url 'targets:delete-group' group.id%}" title="Delete Group" class="btn btn-danger">Delete</a></td>
+    </tr>
+    <table>
+      <tbody>
+      {% for target in group.targets.all %}
+      <tr class="collapse" id="show-both-{{group.name}}">
+          <td colspan=5 style="border-top:none;">
+            {% with target|smart_name_list as target_names %}
+            <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target_names|join:", " }}</a>
+              {% endwith %}
+          </td>
+          <td>
+            <form>
+      	<label>Priority:</label>
+      	<div class="row">
+      	<input type="number" name="priority" style="width: 30px; margin-left: 20px;">
+      	</div>
+            </form>
+          </td>  
+          <td>
+            <div id="lightcurve-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+          </td>
+          <td>
+            <div id="spectra-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+          </td>
+          <td>
+            <div id="airmass-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+          </td>
       </tr>
-    </thead>
-    <tbody>
-      {% for group in object_list %}
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
+    <tr>
+      <td><button class="btn btn-primary" data-toggle="collapse" data-target="#div-old-runs" aria-expanded="true">Show old observing runs</button></td>
+    </tr>
+    <table class="table table-striped collapse" id="div-old-runs">
+      <thead>
+        <tr>
+          <th>Group</th>
+          <th>Total Targets</th>
+          <th>Delete Group</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for group in object_list|past_observing_runs %}
       <tr>
-        <td>
-	  <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{group.name}}" aria-expanded="true">+</button>
-	  <button type="submit" class="btn btn-link" name="targetlist__name" value="{{group.id}}" title="View Group">{{ group.name }}</button>
-	</td>
-	<td valign="middle"><div id="targetCount-{{ group.id }}">{{ group.targets.count }}</div></td>
-	<td>
-	  <div class="autocomplete">
-	    <form action="/name-search/" method="get">
-	      <input class="addTargetInput" id="addTargetInput-{{ group.id }}" type="text" placeholder="Search for a target to add">
-	      <input type="button" value="Add" onclick="addTarget('{{ group.id }}')">
-	      <input class="hidden" style="display: none;" name="groupID" value="{{ group.id }}">
-	    </form>
-	    <div class="replaceableContent" id="replaceable-content-{{ group.id }}">
-	    {% include 'custom_code/partials/name-search-results.html' %}
-	    </div>
-	  </div>
-	</td>
+        <td style="border-top:none;">
+          <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{group.name}}" aria-expanded="true">+</button>
+          <button type="submit" class="btn btn-link" name="targetlist__name" value="{{group.id}}" title="View Group">{{ group.name }}</button>
+        </td>
+        <td><div id="targetCount-{{ group.id }}">{{ group.targets.count }}</div></td>
         <td><a href="{% url 'targets:delete-group' group.id%}" title="Delete Group" class="btn btn-danger">Delete</a></td>
       </tr>
       <table>
         <tbody>
         {% for target in group.targets.all %}
-        <tr class="collapse show" id="show-both-{{group.name}}">
-            <td colspan=5 style="border-top:none;"-->
+        <tr class="collapse" id="show-both-{{group.name}}">
+            <td colspan=5 style="border-top:none;">
               {% with target|smart_name_list as target_names %}
               <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target_names|join:", " }}</a>
                 {% endwith %}
-	    </td>
-	    <td>
-	      <form>
-		<label>Priority:</label>
-		<div class="row">
-		<input type="number" name="priority" style="width: 30px; margin-left: 20px;">
-		</div>
-	      </form>
-	    </td>  
-	    <td>
+            </td>
+            <td>
+              <form>
+        	<label>Priority:</label>
+        	<div class="row">
+        	<input type="number" name="priority" style="width: 30px; margin-left: 20px;">
+        	</div>
+              </form>
+            </td>  
+            <td>
               <div id="lightcurve-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
-	    </td>
-	    <td>
+            </td>
+            <td>
               <div id="spectra-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
-	    </td>
-	    <td>
+            </td>
+            <td>
               <div id="airmass-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
-	    </td>
-	    <!--/div-->
+            </td>
         </tr>
         {% endfor %}
         </tbody>
       </table>
-      {% empty %}
-      <tr>
-        <td>No groups yet</td>
-        <td></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-<!--/form-->
+      </tbody>
+    </table>
+    {% empty %}
+    <tr>
+      <td>No groups yet</td>
+      <td></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
 <script>
 var endpoint = '/name-search/';
@@ -146,7 +197,7 @@ function addTarget(groupId) {
       }
     }
   });
-}
+};
 </script>
 
 {% for group in object_list %}
