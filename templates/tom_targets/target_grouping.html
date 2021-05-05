@@ -1,5 +1,5 @@
 {% extends 'tom_common/base.html' %}
-{% load bootstrap4 static custom_code_tags %}
+{% load bootstrap4 static targets_extras custom_code_tags %}
 {% block title %}Target Groups{% endblock %}
 {% block additional_css %}
 <link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
@@ -35,7 +35,7 @@
     <tr>
       <td>
         <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{group.name}}" aria-expanded="true">+</button>
-        <button type="submit" class="btn btn-link" name="targetlist__name" value="{{group.id}}" title="View Group">{{ group.name }}</button>
+        <a href="{% url 'targets:list' %}?targetlist__name={{ group.id }}" name="targetlist__name" title="View Group">{{ group.name }}</a>
       </td>
       <td valign="middle"><div id="targetCount-{{ group.id }}">{{ group.targets.count }}</div></td>
       <td>
@@ -52,22 +52,21 @@
       </td>
       <td><a href="{% url 'targets:delete-group' group.id%}" title="Delete Group" class="btn btn-danger">Delete</a></td>
     </tr>
-    <table>
-      <tbody>
-      {% for target in group.targets.all %}
+      {% for target in group.targets.all|order_by_priority %}
       <tr class="collapse" id="show-both-{{group.name}}">
-          <td colspan=5 style="border-top:none;">
+          <td colspan=1 style="border-top:none;">
             {% with target|smart_name_list as target_names %}
             <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target_names|join:", " }}</a>
               {% endwith %}
           </td>
           <td>
             <form>
-      	<label>Priority:</label>
-      	<div class="row">
-      	<input type="number" name="priority" style="width: 30px; margin-left: 20px;">
-      	</div>
-            </form>
+      	    <label>Priority:</label>
+      	    <div class="row">
+	    <input id="priority-{{target.id}}" type="number" name="priority" style="width: 30px; margin-left: 20px;" value={{target|target_extra_field:"observing_run_priority"}}><br>
+      	    </div>
+	    </form><br>
+	    <div class="row"><button class="btn btn-primary" name="Change Priority" onclick="changePriority('{{ group.id }}', '{{ target.id }}')">Change Priority</button></div>
           </td>  
           <td>
             <div id="lightcurve-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
@@ -78,70 +77,37 @@
           <td>
             <div id="airmass-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
           </td>
+	  <td><button class="btn btn-danger" title="Remove Target" id="remove-target-id" onclick="removeTarget('{{ group.id }}', '{{ target.id }}')">Remove Target</button></td>
       </tr>
       {% endfor %}
-      </tbody>
-    </table>
-    {% endfor %}
+      {% endfor %}
+  </tbody>
+</table>
+<button class="btn btn-primary" data-toggle="collapse" data-target="#div-old-runs" aria-expanded="true">Show old observing runs</button>
+<table class="table table-striped collapse" id="div-old-runs">
+  <thead>
     <tr>
-      <td><button class="btn btn-primary" data-toggle="collapse" data-target="#div-old-runs" aria-expanded="true">Show old observing runs</button></td>
+      <th>Group</th>
+      <th>Total Targets</th>
+      <th>Targets</th>
+      <th>Delete Group</th>
     </tr>
-    <table class="table table-striped collapse" id="div-old-runs">
-      <thead>
-        <tr>
-          <th>Group</th>
-          <th>Total Targets</th>
-          <th>Delete Group</th>
-        </tr>
-      </thead>
-      <tbody>
-      {% for group in object_list|past_observing_runs %}
-      <tr>
-        <td style="border-top:none;">
-          <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{group.name}}" aria-expanded="true">+</button>
-          <button type="submit" class="btn btn-link" name="targetlist__name" value="{{group.id}}" title="View Group">{{ group.name }}</button>
-        </td>
-        <td><div id="targetCount-{{ group.id }}">{{ group.targets.count }}</div></td>
-        <td><a href="{% url 'targets:delete-group' group.id%}" title="Delete Group" class="btn btn-danger">Delete</a></td>
-      </tr>
-      <table>
-        <tbody>
-        {% for target in group.targets.all %}
-        <tr class="collapse" id="show-both-{{group.name}}">
-            <td colspan=5 style="border-top:none;">
-              {% with target|smart_name_list as target_names %}
-              <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target_names|join:", " }}</a>
-                {% endwith %}
-            </td>
-            <td>
-              <form>
-        	<label>Priority:</label>
-        	<div class="row">
-        	<input type="number" name="priority" style="width: 30px; margin-left: 20px;">
-        	</div>
-              </form>
-            </td>  
-            <td>
-              <div id="lightcurve-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
-            </td>
-            <td>
-              <div id="spectra-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
-            </td>
-            <td>
-              <div id="airmass-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-      </tbody>
-    </table>
-    {% empty %}
-    <tr>
-      <td>No groups yet</td>
-      <td></td>
-    </tr>
+  </thead>
+  <tbody>
+  {% for group in object_list|past_observing_runs %}
+  <tr>
+    <td style="border-top:none;">
+      <a href="{% url 'targets:list' %}?targetlist__name={{ group.id }}" name="targetlist__name" title="View Group">{{ group.name }}</a>
+    </td>
+    <td><div id="targetCount-{{ group.id }}">{{ group.targets.count }}</div></td>
+    <td>
+    {% for target in group.targets.all %}
+    <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target|get_best_name }}</a><br>
     {% endfor %}
+    </td>
+    <td><a href="{% url 'targets:delete-group' group.id%}" title="Delete Group" class="btn btn-danger">Delete</a></td>
+  </tr>
+  {% endfor %}
   </tbody>
 </table>
 {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
@@ -198,6 +164,34 @@ function addTarget(groupId) {
     }
   });
 };
+
+function removeTarget(groupId, targetId) {
+  $.ajax({
+    url: '{% url "remove-target-from-group" %}',
+    data: {'target_id': targetId,
+	   'group_id': groupId
+      },
+    dataType: 'json',
+    success: function(response) {
+      if (response.success === 'Removed') {
+	document.getElementById("targetCount-"+groupId).innerHTML = response.count;
+      }
+    }
+  });
+};
+
+function changePriority(groupId, targetId) {
+  var priority = document.getElementById("priority-"+targetId).value;
+  $.ajax({
+    url: '{% url "change-observing-priority" %}',
+    data: {'target_id': targetId,
+           'group_id': groupId,
+	   'priority': priority
+      },
+    dataType: 'json'
+  });
+};
+
 </script>
 
 {% for group in object_list %}

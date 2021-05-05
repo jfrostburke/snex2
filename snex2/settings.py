@@ -269,6 +269,7 @@ EXTRA_FIELDS = [
     {'name': 'classification', 'type': 'string'},
     {'name': 'tweet', 'type': 'boolean'},
     {'name': 'reference', 'type': 'string', 'hidden': True},
+    {'name': 'observing_run_priority', 'type': 'number', 'hidden': True},
 ]
 
 # Authentication strategy can either be LOCKED (required login for all views)
