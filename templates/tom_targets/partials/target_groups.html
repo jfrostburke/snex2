@@ -1,0 +1,105 @@
+{% load custom_code_tags %}
+<h4>Upcoming Observing Runs</h4>
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Total Targets</th>
+        <th>Remove</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for group in groups|upcoming_observing_runs %}
+    <tr>
+        <td>
+            <form action="{% url 'targets:list' %}" method="GET">
+                <button type="submit" class="btn btn-link" name="targetlist__name" value="{{group.id}}" title="View Group">{{ group.name }}</button>
+            </form> 
+        </td>
+        <td valign="middle">{{ group.targets.count }}</td>        
+        <td>
+            <form action="{% url 'remove-target-from-group' %}" method="GET">
+                {% csrf_token %}
+                <button type="submit" title="Remove Target from Group" class="btn btn-danger" name="remove">Remove</button>
+                <input type="hidden" name="target_id" value="{{ target.id }}"/>
+                <input type="hidden" name="group_id" value="{{ group.id }}"/>
+            </form>
+        </td>
+        
+    </tr>
+    {% empty %}
+    <tr>
+        <td>Not in any upcoming observing runs</td>
+        <td></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<h4>Add to an Observing Run</h4>
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Total Targets</th>
+        <th>Add</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for group in groups|get_other_observing_runs %}
+    <tr>
+        <td>
+            <form action="{% url 'targets:list' %}" method="GET">
+                <button type="submit" class="btn btn-link" name="targetlist__name" value="{{group.id}}" title="View Group">{{ group.name }}</button>
+            </form> 
+        </td>
+        <td valign="middle">{{ group.targets.count }}</td>        
+        <td>
+            <form action="{% url 'add-target-to-group' %}" method="GET">
+                {% csrf_token %}
+                <button type="submit" title="Add Target to Group" class="btn" style="background-color: green; color: white;" name="add">Add</button>
+                <input type="hidden" name="target_name" value="{{ target.name }}"/>
+                <input type="hidden" name="group_id" value="{{ group.id }}"/>
+            </form>
+        </td>
+        
+    </tr>
+    {% empty %}
+    <tr>
+        <td>No unassigned upcoming observing runs</td>
+        <td></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<h4>Past Observing Runs</h4>
+<table class="table table-striped">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Total Targets</th>
+        <th>Targets</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for group in groups|past_observing_runs %}
+    <tr>
+        <td>
+            <form action="{% url 'targets:list' %}" method="GET">
+                <button type="submit" class="btn btn-link" name="targetlist__name" value="{{group.id}}" title="View Group">{{ group.name }}</button>
+            </form>
+        </td>
+        <td valign="middle">{{ group.targets.count }}</td>
+        <td>
+            {% for target in group.targets.all %}
+            <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target|get_best_name }}</a><br>
+            {% endfor %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td>Not in any past observing runs</td>
+        <td></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>

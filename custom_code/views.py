@@ -642,15 +642,7 @@ def add_target_to_group_view(request):
         
         targetlist.targets.add(target)
         
-        response_data = {'success': 'Added',
-                         'name': target.name,
-                         'count': targetlist.targets.count()
-                }
-    else:
-        response_data = {'failure': 'Not Added',
-                         'name': target.name
-                }
-    return HttpResponse(json.dumps(response_data), content_type='application/json')
+    return HttpResponseRedirect('/targets/targetgrouping/')
 
 
 def remove_target_from_group_view(request):
@@ -663,7 +655,10 @@ def remove_target_from_group_view(request):
     if request.user.has_perm('tom_targets.view_target', target) and target in targetlist.targets.all():
         targetlist.targets.remove(target)
         old_priority = TargetExtra.objects.get(target=target, key='observing_run_priority')
-        old_priority_value = int(old_priority.value)
+        try:
+            old_priority_value = int(old_priority.value)
+        except:
+            old_priority_value = int(float(old_priority.value))
  
         if len(targetlist.targets.all()) > 0:
             for t in targetlist.targets.all():
@@ -676,15 +671,7 @@ def remove_target_from_group_view(request):
         
         old_priority.delete()
         
-        response_data = {'success': 'Removed',
-                         'name': target.name,
-                         'count': targetlist.targets.count()
-                }
-    else:
-        response_data = {'failure': 'Not Removed',
-                         'name': target.name
-                }
-    return HttpResponse(json.dumps(response_data), content_type='application/json')
+    return HttpResponseRedirect('/targets/targetgrouping/')
 
 
 def change_observing_priority_view(request):
@@ -694,7 +681,10 @@ def change_observing_priority_view(request):
     targetlist_id = request.GET.get('group_id')
     targetlist = TargetList.objects.get(id=targetlist_id)
 
-    new_priority = int(request.GET.get('priority'))
+    try:
+        new_priority = int(request.GET.get('priority'))
+    except:
+        new_priority = int(float(request.GET.get('priority')))
 
     target_priority = TargetExtra.objects.get(target=target, key='observing_run_priority')
     target_priority.value = new_priority

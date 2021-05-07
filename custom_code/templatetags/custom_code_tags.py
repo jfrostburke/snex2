@@ -1144,8 +1144,30 @@ def past_observing_runs(targetlist):
                 past_runs.append(obj)
 
         return past_runs
-    except:
+    except Exception as e:
+        print(e)
         return targetlist
+
+
+@register.filter
+def get_other_observing_runs(targetlist):
+    other_runs = []
+    today = datetime.date.today()
+    try:
+        complement_targetlist = TargetList.objects.exclude(pk__in=targetlist.values_list('pk', flat=True))
+        for obj in complement_targetlist:
+            name = obj.name
+            observing_run_datestr = name.split('_')[1]
+            year = int(observing_run_datestr[:4])
+            month = int(observing_run_datestr[4:6])
+            day = int(observing_run_datestr[6:])
+            observing_run_date = datetime.date(year, month, day)
+            if today <= observing_run_date:
+                other_runs.append(obj)
+
+        return other_runs
+    except:
+        return []
 
 
 @register.filter

@@ -1,6 +1,6 @@
 {% extends 'tom_common/base.html' %}
 {% load bootstrap4 static targets_extras custom_code_tags %}
-{% block title %}Target Groups{% endblock %}
+{% block title %}Observing Runs{% endblock %}
 {% block additional_css %}
 <link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
 {% endblock %}
@@ -10,7 +10,7 @@
 </head>
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
-    <h3>Target Groupings</h3>
+    <h3>Observing Runs</h3>
   </div>
 </nav>
 <div class="row">
@@ -157,11 +157,6 @@ function addTarget(groupId) {
 	   'group_id': groupId
       },
     dataType: 'json',
-    success: function(response) {
-      if (response.success === 'Added') {
-	document.getElementById("targetCount-"+groupId).innerHTML = response.count;
-      }
-    }
   });
 };
 
@@ -172,11 +167,6 @@ function removeTarget(groupId, targetId) {
 	   'group_id': groupId
       },
     dataType: 'json',
-    success: function(response) {
-      if (response.success === 'Removed') {
-	document.getElementById("targetCount-"+groupId).innerHTML = response.count;
-      }
-    }
   });
 };
 
