@@ -905,6 +905,8 @@ def scheduling_list_with_form(context, observation):
         start = str(observation.created).split('.')[0]
         if parameter.get('end', ''):
             end = str(observation.modified).split('.')[0]
+        else:
+            end = ''
 
         observing_parameters = {
                    'instrument_type': parameter.get('instrument_type', ''),
