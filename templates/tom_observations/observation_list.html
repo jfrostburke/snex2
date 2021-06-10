@@ -28,16 +28,18 @@
     <div class="row">
       <h4>Expired Reminders</h4>
     </div>
-    {% for q in filter.qs|order_by_reminder:"expired" %}
+    {% with pagenumber=request.GET.urlencode %}
+    {% for q in filter.qs|order_by_reminder_expired:pagenumber %}
     {% scheduling_list_with_form q %}
     {% endfor %}
     <div class="row">
       <h4>Upcoming Reminders</h4>
     </div>
-    {% for q in filter.qs|order_by_reminder:"upcoming" %}
+    {% for q in filter.qs|order_by_reminder_upcoming:pagenumber %}
     {% scheduling_list_with_form q %}
     {% endfor %}
     {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
+    {% endwith %}
   </div>
 </div>
 {% endblock %}

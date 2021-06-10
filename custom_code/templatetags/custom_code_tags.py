@@ -903,10 +903,9 @@ def scheduling_list_with_form(context, observation):
         instrument = 'Floyds'
         cadence_frequency = parameter.get('cadence_frequency', '')
         start = str(observation.created).split('.')[0]
-        if parameter.get('end', ''):
+        end = str(parameter.get('reminder', '')).replace('T', ' ')
+        if not end:
             end = str(observation.modified).split('.')[0]
-        else:
-            end = ''
 
         observing_parameters = {
                    'instrument_type': parameter.get('instrument_type', ''),
@@ -945,7 +944,7 @@ def scheduling_list_with_form(context, observation):
                            'observation_type': observation_type,
                            'instrument': instrument,
                            'start': start,
-                           'end': end,
+                           'reminder': end,
                            'user_id': context['request'].user.id
                         })
 
@@ -957,18 +956,37 @@ def scheduling_list_with_form(context, observation):
 
 
 @register.filter
-def order_by_reminder(queryset, time):
-    queryset = queryset.exclude(status='CANCELED')
+def order_by_reminder_expired(queryset, pagenumber):
+    #queryset = queryset.exclude(status='CANCELED')
+    from django.core.paginator import Paginator
     queryset = queryset.annotate(reminder=KeyTextTransform('reminder', 'parameters'))
     now = datetime.datetime.now()
-    
-    if time == 'expired':
-        queryset = queryset.filter(reminder__lt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S'))
-    elif time == 'upcoming':
-        queryset = queryset.filter(reminder__gt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S'))
-    
+   
+    queryset = queryset.filter(reminder__lt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S'))
     queryset = queryset.order_by('reminder')
-    return queryset
+
+    paginator = Paginator(queryset, 25)
+    page_number = pagenumber.strip('page=')
+    page_obj = paginator.get_page(page_number)
+    return page_obj
+    #return queryset
+
+
+@register.filter
+def order_by_reminder_upcoming(queryset, pagenumber):
+    #queryset = queryset.exclude(status='CANCELED')
+    from django.core.paginator import Paginator
+    queryset = queryset.annotate(reminder=KeyTextTransform('reminder', 'parameters'))
+    now = datetime.datetime.now()
+   
+    queryset = queryset.filter(reminder__gt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')) 
+    queryset = queryset.order_by('reminder')
+
+    paginator = Paginator(queryset, 25)
+    page_number = pagenumber.strip('page=')
+    page_obj = paginator.get_page(page_number)
+    return page_obj
+    #return queryset
 
 
 @register.inclusion_tag('custom_code/dash_spectra_page.html', takes_context=True)
