@@ -957,7 +957,7 @@ def scheduling_list_with_form(context, observation):
 
 @register.filter
 def order_by_reminder_expired(queryset, pagenumber):
-    #queryset = queryset.exclude(status='CANCELED')
+    queryset = queryset.exclude(status='CANCELED')
     from django.core.paginator import Paginator
     queryset = queryset.annotate(reminder=KeyTextTransform('reminder', 'parameters'))
     now = datetime.datetime.now()
@@ -974,7 +974,7 @@ def order_by_reminder_expired(queryset, pagenumber):
 
 @register.filter
 def order_by_reminder_upcoming(queryset, pagenumber):
-    #queryset = queryset.exclude(status='CANCELED')
+    queryset = queryset.exclude(status='CANCELED')
     from django.core.paginator import Paginator
     queryset = queryset.annotate(reminder=KeyTextTransform('reminder', 'parameters'))
     now = datetime.datetime.now()
