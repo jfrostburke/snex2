@@ -5,7 +5,7 @@
 <dl class="row">
   <ul style="list-style-type: none; margin-left: -30px; margin-bottom: -10px;">
   {% for target_name in target|smart_name_list %}
-    {% if 'AT' in target_name or 'SN' in target_name %}
+    {% if 'AT ' in target_name or 'SN ' in target_name %}
     <li><a href="https://www.wis-tns.org/object/{{ target_name|slice:"3:" }}" style="color: black;" target="_blank">{{ target_name }}</a><br></li>
     {% elif 'ZTF' in target_name %}
     <li><a href="https://alerce.online/object/{{ target_name }}" style="color: black;" target="_blank">{{ target_name }}</a><br></li>
