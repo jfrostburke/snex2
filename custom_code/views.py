@@ -472,9 +472,12 @@ def scheduling_view(request):
 
         #user = User.objects.get(username=request.user)
         #token = Token.objects.get(user=user).key
+        #TODO: Rewrite the submission to follow how observation requests are submitted in TOM view
         #r = requests.post('http://127.0.0.1:8000/api/observations/', data=form_data, headers={'Authorization': 'Token ' + token}) #Should also test that this works
         #print('Observation submitted with status code {}'.format(r.status_code))
         print(form_data)
+        #TODO: Sync this with SNEx1 by creating new entries in SNEx1 obsrequests and obslog tables
+        #TODO: then rename the created observation group's name to the SNEx1 obsrequest row ID
         response_data = {'success': 'Modified',
                          'data': json.dumps(form_data)}
         return HttpResponse(json.dumps(response_data), content_type='application/json')

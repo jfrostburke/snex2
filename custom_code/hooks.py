@@ -151,3 +151,60 @@ def targetextra_post_save(targetextra, created):
         elif targetextra.key == 'redshift': # Now update the targets table with the redshift info
             db_session.query(Targets).filter(Targets__id==targetextra__target_id).update({'redshift': targetextra__float_value})
         db_session.commit()
+
+
+def sync_observation_with_snex1(snex_id, params):
+
+    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
+                       '1M0-SCICAM-SINISTRO': 'sinistro',
+                       '2M0-SCICAM-MUSCAT': 'muscat'}
+
+    with _get_session(db_address=_snex1_address) as db_session:
+        Obslog = _load_table('obslog', db_address=_snex1_address)
+        
+        filtlist = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+        if params['observation_type'] == 'IMAGING':
+            filters = ''
+            exptimes = ''
+            numexp = ''
+            for filt in filtlist:
+                filt_params = params.get(filt)
+                if filt_params and filt_params[0]:
+                    filters += filt + ','
+                    exptimes += str(filt_params[0])
+                    numexp += str(filt_params[1])
+            slit = 9999
+
+        else:
+            filters = 'floyds'
+            exptime = params['exposure_time']
+            numexp = params['exposure_count']
+            slit = 2.0
+
+        #db_session.add(
+        #        Obslog(
+        #            user=2, #TODO: Check this
+        #            targetid=params['target_id'],
+        #            triggerjd=float(str_to_mjd(params['start'])),
+        #            windowstart=float(str_to_mjd(params['start'])), #TODO: Fix the str_to_mjd
+        #            windowend=float(str_to_mjd(params['start']) + params['cadence_frequency']),
+        #            filters=filters,
+        #            exptimes=exptimes,
+        #            numexp=numexp,
+        #            proposal=params['proposal'],
+        #            site=params.get('site', 'any'), #TODO: Fix this
+        #            instrument=instrument_dict[params['instrument_type']],
+        #            sky=9999,
+        #            seeing=9999,
+        #            airmass=params['max_airmass'],
+        #            slit=slit,
+        #            priority=params['observation_mode'].lower(),
+        #            ipp=params['ipp_value'],
+        #            requestsid=snex_id
+        #        )
+        #)
+
+        #db_session.commit()
+
+    logger.info('Sync observation with SNEx1 hook: Observation for SNEx1 ID {} synced'.format(snex_id))
