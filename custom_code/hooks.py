@@ -154,7 +154,10 @@ def targetextra_post_save(targetextra, created):
 
 
 def sync_observation_with_snex1(snex_id, params):
-
+    '''
+    Hook to sync an obervation record submitted through SNEx2
+    to the obslog table in the SNEx1 database
+    '''
     _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
     instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
                        '1M0-SCICAM-SINISTRO': 'sinistro',
@@ -178,7 +181,7 @@ def sync_observation_with_snex1(snex_id, params):
 
         else:
             filters = 'floyds'
-            exptime = params['exposure_time']
+            exptimes = params['exposure_time']
             numexp = params['exposure_count']
             slit = 2.0
 
@@ -199,7 +202,7 @@ def sync_observation_with_snex1(snex_id, params):
         #            seeing=9999,
         #            airmass=params['max_airmass'],
         #            slit=slit,
-        #            priority=params['observation_mode'].lower(),
+        #            priority=params['observation_mode'].lower().replace(' ', '_'),
         #            ipp=params['ipp_value'],
         #            requestsid=snex_id
         #        )
@@ -207,4 +210,95 @@ def sync_observation_with_snex1(snex_id, params):
 
         #db_session.commit()
 
-    logger.info('Sync observation with SNEx1 hook: Observation for SNEx1 ID {} synced'.format(snex_id))
+    logger.info('Sync observation request with SNEx1 hook: Observation for SNEx1 ID {} synced'.format(snex_id))
+
+
+def sync_sequence_with_snex1(params, group_ids):
+    '''
+    Hook to sync an observation sequence submitted through SNEx2 
+    to the obsrequests table in the SNEx1 database
+    '''
+
+    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
+                       '1M0-SCICAM-SINISTRO': 'sinistro',
+                       '2M0-SCICAM-MUSCAT': 'muscat'}
+
+    with _get_session(db_address=_snex1_address) as db_session:
+        Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
+        Groups = _load_table('groups', db_address=_snex1_address)
+
+        # Get the idcodes from the groups in the group_list
+        groupidcode = 0
+        for group_name in group_names:
+            groupidcode += int(db_session.query(Groups).filter(Groups.name==group_name).first().idcode)
+
+        filtlist = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+        if params['observation_type'] == 'IMAGING':
+            filters = ''
+            exptimes = ''
+            expnums = ''
+            blocknums = ''
+            for filt in filtlist:
+                filt_params = params.get(filt)
+                if filt_params and filt_params[0]:
+                    filters += filt + ','
+                    exptimes += str(filt_params[0])
+                    numexp += str(filt_params[1])
+                    blocknums += str(filt_params[2])
+            slit = 9999
+
+        else:
+            filters = 'none'
+            exptime = params['exposure_time']
+            expnums = params['exposure_count']
+            blocknums = '1'
+            slit = 2
+
+        if params.get('cadence_strategy'):
+            cadence = float(params.get('cadence_frequency'))
+            autostop = 0
+        else:
+            cadence = 0
+            autostop = 1
+        
+        #newobsrequest = Obsrequests(
+        #            targetid=params['target_id'],
+        #            sequencestart=float(str_to_datetime(params['start'])), #TODO: Fix str_to_datetime
+        #            sequenceend='0000-00-00 00:00:00',
+        #            userstart=2, #TODO: Check this
+        #            cadence = cadence,
+        #            window = float(params.get('cadence_frequency', 0)), #TODO: Check this
+        #            filters=filters,
+        #            exptimes=exptimes,
+        #            expnums=expnums,
+        #            blocknums=blocknums,
+        #            proposalid=params['proposal'],
+        #            ipp=params['ipp_value'],
+        #            site=params.get('site', 'any'), #TODO: Fix this
+        #            instrument=instrument_dict[params['instrument_type']],
+        #            airmass=float(params['max_airmass']),
+        #            moondistlimit=float(params['min_lunar_distance']),
+        #            slit=slit,
+        #            acqradius=int(params.get('acquisition_radius', 0)),
+        #            guidermode=params.get('guider_mode', '').upper(),
+        #            guiderexptime=int(params.get('guider_exposure_time', 10)),
+        #            priority=params['observation_mode'].lower().replace(' ', '_'),
+        #            approved=1, #TODO: Check this
+        #            nextreminder=str_to_datetime(params.get('reminder', '0000-00-00 00:00:00')), #TODO: Check this
+        #            groupidcode=groupidcode,
+        #            dismissed=0,
+        #            autostop=autostop,
+        #            datecreated=str_to_datetime(params['start']),
+        #            lastmodified=str_to_datetime(params['start'])
+        #)
+        #db_session.add(newobsrequest)
+
+        #db_session.flush()
+        #snex_id = newobsrequest.id
+
+        #db_session.commit()
+
+    logger.info('Sync observation sequence with SNEx1 hook: Observation for SNEx1 ID {} synced'.format(snex_id))
+
+    return snex_id

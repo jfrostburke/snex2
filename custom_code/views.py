@@ -48,6 +48,7 @@ from guardian.shortcuts import assign_perm
 
 from tom_observations.models import ObservationRecord
 from tom_observations.facility import get_service_class
+from tom_observations.views import ObservationCreateView
 import requests
 from rest_framework.authtoken.models import Token
 
@@ -705,3 +706,81 @@ def change_observing_priority_view(request):
             t_priority.value = this_obj_priority + 1
             t_priority.save()
     return HttpResponseRedirect('/targets/targetgrouping/')
+
+
+class CustomObservationCreateView(ObservationCreateView):
+
+    def form_valid(self, form):
+        """
+        Runs after form validation. Submits the observation to the desired facility and creates an associated
+        ``ObservationRecord``, then writes this sequence and record to the SNEx1 database,
+        and finally redirects to the detail page of the target to be observed.
+        If the facility returns more than one record, a group is created and all observation
+        records from the request are added to it.
+        :param form: form containing observating request parameters
+        :type form: subclass of GenericObservationForm
+        """
+        # Submit the observation
+        facility = self.get_facility_class()
+        target = self.get_target()
+        observation_ids = facility().submit_observation(form.observation_payload())
+        records = []
+
+        for observation_id in observation_ids:
+            # Create Observation record
+            record = ObservationRecord.objects.create(
+                target=target,
+                user=self.request.user,
+                facility=facility.name,
+                parameters=form.serialize_parameters(),
+                observation_id=observation_id
+            )
+            records.append(record)
+
+        if len(records) > 1 or form.cleaned_data.get('cadence_strategy'):
+            observation_group = ObservationGroup.objects.create(name=form.cleaned_data['name'])
+            observation_group.observation_records.add(*records)
+            assign_perm('tom_observations.view_observationgroup', self.request.user, observation_group)
+            assign_perm('tom_observations.change_observationgroup', self.request.user, observation_group)
+            assign_perm('tom_observations.delete_observationgroup', self.request.user, observation_group)
+
+            if form.cleaned_data.get('cadence_strategy'):
+                cadence_parameters = {}
+                cadence_form = get_cadence_strategy(form.cleaned_data.get('cadence_strategy')).form
+                for field in cadence_form().cadence_fields:
+                    cadence_parameters[field] = form.cleaned_data.get(field)
+                DynamicCadence.objects.create(
+                    observation_group=observation_group,
+                    cadence_strategy=form.cleaned_data.get('cadence_strategy'),
+                    cadence_parameters=cadence_parameters,
+                    active=True
+                )
+
+        if not settings.TARGET_PERMISSIONS_ONLY:
+            groups = form.cleaned_data['groups']
+            for record in records:
+                assign_perm('tom_observations.view_observationrecord', groups, record)
+                assign_perm('tom_observations.change_observationrecord', groups, record)
+                assign_perm('tom_observations.delete_observationrecord', groups, record)
+        
+        ### Sync with SNEx1
+        
+        # Get the group ids to pass to SNEx1
+        #group_names = []
+        #for group in form.cleaned_data['groups']:
+        #   group_names.append(group.name)
+        # Run the hook to add the sequence to SNEx1
+        #snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names)
+        
+        # Change the name of the observation group, if one was created
+        #if len(records) > 1 or form.cleaned_data.get('cadence_strategy'):
+        #    observation_group.name = str(snex_id)
+        #    observation_group.save()
+            
+        # Now run the hook to add each observation record to SNEx1
+        #for record in records:
+        #   run_hook('sync_observation_with_snex1', record.parameters, snex_id)
+
+        return redirect(
+            reverse('tom_targets:detail', kwargs={'pk': target.id})
+        )

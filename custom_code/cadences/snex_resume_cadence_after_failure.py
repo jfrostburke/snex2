@@ -1,5 +1,6 @@
 import logging
 
+from tom_common.hooks import run_hook
 from tom_observations.cadences.resume_cadence_after_failure import ResumeCadenceAfterFailureStrategy
 from custom_code.hooks import _get_session, _load_table
 from sqlalchemy import create_engine, pool
@@ -74,12 +75,16 @@ class SnexResumeCadenceAfterFailureStrategy(ResumeCadenceAfterFailureStrategy):
             ### Sync with SNEx1
 
             # Get the ID of the sequence in the SNEx1 obsrequests table
-            snex_id = int(self.dynamic_cadence.observation_group.name) #requestsid 
-
+            try:
+                snex_id = int(self.dynamic_cadence.observation_group.name) #requestsid 
+            except:
+                logger.info('Unable to find SNEx1 ID corresponding to observation group {}'.format(self.dynamic_cadence.observation_group.name))
+                snex_id = ''
             # Get the observation details from the submitted parameters
             params = obsr.parameters
 
             # Use a hook to sync this observation request with SNEx1
+            
             #run_hook('sync_observation_with_snex1', snex_id, params)
 
         return new_observations 
