@@ -1,12 +1,15 @@
 import logging
 
 from tom_common.hooks import run_hook
+from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
 from tom_observations.cadences.resume_cadence_after_failure import ResumeCadenceAfterFailureStrategy
 from custom_code.hooks import _get_session, _load_table
+from django.conf import settings
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
 from contextlib import contextmanager
+from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +86,21 @@ class SnexResumeCadenceAfterFailureStrategy(ResumeCadenceAfterFailureStrategy):
             # Get the observation details from the submitted parameters
             params = obsr.parameters
 
+            # Get the requestsgroup ID from the LCO API using the observation ID
+            obs_id = int(obsr.observation_id)
+            LCO_SETTINGS = settings.FACILITIES['LCO']
+            PORTAL_URL = LCO_SETTINGS['portal_url']
+            portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
+    
+            query_params = urlencode({'request_id': obs_id})
+    
+            r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
+            requestgroups = r.json()
+            if requestgroups['count'] == 1:
+                requestgroup_id = int(requestgroups['results'][0]['id'])
+
             # Use a hook to sync this observation request with SNEx1
-            
-            #run_hook('sync_observation_with_snex1', snex_id, params)
+            #run_hook('sync_observation_with_snex1', snex_id, params, requestgroup_id)
 
         return new_observations 
 

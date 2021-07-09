@@ -153,7 +153,7 @@ def targetextra_post_save(targetextra, created):
         db_session.commit()
 
 
-def sync_observation_with_snex1(snex_id, params):
+def sync_observation_with_snex1(snex_id, params, requestgroup_id):
     '''
     Hook to sync an obervation record submitted through SNEx2
     to the obslog table in the SNEx1 database
@@ -204,7 +204,8 @@ def sync_observation_with_snex1(snex_id, params):
         #            slit=slit,
         #            priority=params['observation_mode'].lower().replace(' ', '_'),
         #            ipp=params['ipp_value'],
-        #            requestsid=snex_id
+        #            requestsid=snex_id,
+        #            tracknumber=requestgroup_id
         #        )
         #)
 
