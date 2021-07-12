@@ -48,7 +48,7 @@ from guardian.shortcuts import assign_perm
 
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
 from tom_observations.facility import get_service_class
-from tom_observations.views import ObservationCreateView
+from tom_observations.views import ObservationCreateView, ObservationListView
 import requests
 from rest_framework.authtoken.models import Token
 
@@ -459,8 +459,8 @@ def scheduling_view(request):
         #for group_id in group_ids:
         #    group_list.append({'id': group_id})
         #observing_parameters['groups'] = groups
-        form_data['groups'] = group_list #list(group_ids) #[str(x) for x in group_ids] 
-        print(form_data['groups'])
+        #form_data['groups'] = group_list #list(group_ids) #[str(x) for x in group_ids] 
+        #print(form_data['groups'])
 
         if request.GET['cadence_strategy']: 
             cadence = {'cadence_strategy': request.GET['cadence_strategy'],
@@ -487,10 +487,11 @@ def scheduling_view(request):
                 parameters=observing_parameters,
                 observation_id=obs.observation_id
             )
+            new_observations.append(record)
         
         if len(new_observations) > 1 or form_data.get('cadence'):
             observation_group = ObservationGroup.objects.create(name=form_data['name'])
-            observation_group.observation_records.add(*records)
+            observation_group.observation_records.add(*new_observations)
             assign_perm('tom_observations.view_observationgroup', request.user, observation_group)
             assign_perm('tom_observations.change_observationgroup', request.user, observation_group)
             assign_perm('tom_observations.delete_observationgroup', request.user, observation_group)
@@ -505,7 +506,7 @@ def scheduling_view(request):
 
         if not settings.TARGET_PERMISSIONS_ONLY:
             groups = GroupObjectPermission.objects.filter(object_pk=obs_id).distinct()
-            for record in records:
+            for record in new_observations:
                 assign_perm('tom_observations.view_observationrecord', groups, record)
                 assign_perm('tom_observations.change_observationrecord', groups, record)
                 assign_perm('tom_observations.delete_observationrecord', groups, record)
@@ -514,18 +515,19 @@ def scheduling_view(request):
         
         # Get the group ids to pass to SNEx1
         #group_names = []
-        #for group in groups:
-        #   group_names.append(group.name)
+        #if not settings.TARGET_PERMISSIONS_ONLY:
+        #   for group in groups:
+        #       group_names.append(group.name)
         # Run the hook to add the sequence to SNEx1
         #snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names)
         
         # Change the name of the observation group, if one was created
-        #if len(records) > 1 or form_data.get('cadence_strategy'):
+        #if len(new_observations) > 1 or form_data.get('cadence_strategy'):
         #    observation_group.name = str(snex_id)
         #    observation_group.save()
             
         # Now run the hook to add each observation record to SNEx1
-        #for record in records:
+        #for record in new_observations:
             # Get the requestsgroup ID from the LCO API using the observation ID
             #obs_id = int(record.observation_id)
             #LCO_SETTINGS = settings.FACILITIES['LCO']
@@ -541,13 +543,7 @@ def scheduling_view(request):
 
         #   run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id)
         
-        ### ================================= OLD =============================================
-        #user = User.objects.get(username=request.user)
-        #token = Token.objects.get(user=user).key
-        #r = requests.post('http://127.0.0.1:8000/api/observations/', data=form_data, headers={'Authorization': 'Token ' + token}) #Should also test that this works
-        #print('Observation submitted with status code {}'.format(r.status_code))
         print(form_data)
-        ### ====================================================================================
         response_data = {'success': 'Modified',
                          'data': json.dumps(form_data)}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
@@ -775,6 +771,22 @@ def change_observing_priority_view(request):
             t_priority.save()
     return HttpResponseRedirect('/targets/targetgrouping/')
 
+
+class CustomObservationListView(ObservationListView):
+
+    def get_queryset(self, *args, **kwargs):
+        """
+        Gets the most recent ObservationRecord objects associated with active
+        DynamicCadences that the user has permission to view
+        """
+        obsrecordlist = [o.observation_group.observation_records.filter(
+            id__in=get_objects_for_user(
+                self.request.user, 'tom_observations.view_observationrecord'
+            )
+        ).order_by('-created').first() for o in DynamicCadence.objects.filter(active=True)]
+        
+        obsrecordlist_ids = [o.id for o in obsrecordlist]
+        return ObservationRecord.objects.filter(id__in=obsrecordlist_ids)
 
 class CustomObservationCreateView(ObservationCreateView):
 
