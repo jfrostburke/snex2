@@ -438,29 +438,19 @@ def scheduling_view(request):
         observing_parameters['ipp_value'] = float(request.GET['ipp_value'])
         observing_parameters['max_airmass'] = float(request.GET['max_airmass'])
         observing_parameters['cadence_frequency'] = float(request.GET['cadence_frequency'])
-        #now = datetime.now()
-        observing_parameters['reminder'] = float(request.GET['reminder']) #datetime.strftime(now + timedelta(days=float(request.GET['reminder'])), '%Y-%m-%dT%H:%M:%S')
-       
+        observing_parameters['reminder'] = float(request.GET['reminder']) #datetime.strftime(now + timedelta(days=next_reminder), '%Y-%m-%dT%H:%M:%S')
+        observing_parameters['facility'] = obs.facility
+        observing_parameters['name'] = form_data['name']
+        observing_parameters['target_id'] = form_data['target_id']
+
         if request.GET['observation_type'] == 'IMAGING':
             filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
             for f in filters:
                 if f+'_0' in request.GET.keys() and float(request.GET[f+'_0'][0]) > 0.0:
-                    observing_parameters[f+'_0'] = float(request.GET[f+'_0'])
-                    observing_parameters[f+'_1'] = int(float(request.GET[f+'_1']))
-                    observing_parameters[f+'_2'] = int(float(request.GET[f+'_2']))
+                    observing_parameters[f] = [float(request.GET[f+'_0']), int(float(request.GET[f+'_1'])), int(float(request.GET[f+'_2']))]
 
         elif request.GET['observation_type'] == 'SPECTRA':
             observing_parameters['exposure_time'] = int(float(request.GET['exposure_time']))
-
-        # Get the groups with permissions for the old observation record
-        #print('Getting groups')
-        #group_ids = GroupObjectPermission.objects.filter(object_pk=obs_id).values_list('group_id', flat=True).distinct()
-        #group_list = []
-        #for group_id in group_ids:
-        #    group_list.append({'id': group_id})
-        #observing_parameters['groups'] = groups
-        #form_data['groups'] = group_list #list(group_ids) #[str(x) for x in group_ids] 
-        #print(form_data['groups'])
 
         if request.GET['cadence_strategy']: 
             cadence = {'cadence_strategy': request.GET['cadence_strategy'],
@@ -484,8 +474,8 @@ def scheduling_view(request):
             record = ObservationRecord.objects.create(
                 target=Target.objects.get(id=form_data['target_id']),
                 facility=facility.name,
-                parameters=observing_parameters,
-                observation_id=obs.observation_id
+                parameters=form.serialize_parameters(),#observing_parameters,
+                observation_id=observation_id
             )
             new_observations.append(record)
         
@@ -505,7 +495,8 @@ def scheduling_view(request):
                 )
 
         if not settings.TARGET_PERMISSIONS_ONLY:
-            groups = GroupObjectPermission.objects.filter(object_pk=obs_id).distinct()
+            group_id_list = list(GroupObjectPermission.objects.filter(object_pk=obs_id).values_list('group_id', flat=True).distinct())
+            groups = Group.objects.filter(id__in=group_id_list)
             for record in new_observations:
                 assign_perm('tom_observations.view_observationrecord', groups, record)
                 assign_perm('tom_observations.change_observationrecord', groups, record)
@@ -522,7 +513,7 @@ def scheduling_view(request):
         #snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names)
         
         # Change the name of the observation group, if one was created
-        #if len(new_observations) > 1 or form_data.get('cadence_strategy'):
+        #if len(new_observations) > 1 or form_data.get('cadence'):
         #    observation_group.name = str(snex_id)
         #    observation_group.save()
             
@@ -544,8 +535,8 @@ def scheduling_view(request):
         #   run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id)
         
         print(form_data)
-        response_data = {'success': 'Modified',
-                         'data': json.dumps(form_data)}
+        response_data = {'success': 'Modified'}
+                         #'data': json.dumps(form_data)}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
 
     elif 'continue' in request.GET['button']:

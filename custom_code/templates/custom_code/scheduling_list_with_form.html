@@ -168,16 +168,6 @@ function modify_sequence(clickedId) {
     data: $(theformstr).serialize() + "&button=" + clickedId,
     dataType: 'json',
     success: function(response) {
-      if (response.success === 'Modified') {
-        $.ajax({
-          url: '{% url "api:observations-list" %}',
-          type: "POST",
-          headers: {"X-CSRFToken": '{{ csrf_token }}'}, 
-          data: response.data,
-          contentType: "application/json",
-          dataType: "json"
-        });
-      };
       document.getElementById(clickedId).value = response.success;
     }
   });
