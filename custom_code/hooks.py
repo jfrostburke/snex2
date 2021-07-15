@@ -8,6 +8,7 @@ from tom_targets.templatetags.targets_extras import target_extra_field
 from requests_oauthlib import OAuth1
 from astropy.coordinates import SkyCoord
 from astropy import units as u
+from datetime import datetime
 
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
@@ -303,3 +304,25 @@ def sync_sequence_with_snex1(params, group_ids):
     logger.info('Sync observation sequence with SNEx1 hook: Observation for SNEx1 ID {} synced'.format(snex_id))
 
     return snex_id
+
+
+def cancel_sequence_in_snex1(snex_id):
+
+    '''
+    Hook to cancel an observation sequence in SNEx1 
+    that was canceled in SNEx2
+    '''
+
+    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    
+    #with _get_session(db_address=_snex1_address) as db_session:
+    #    Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
+
+    #    snex1_row = db_session.query(Obsrequests).filter(Obsrequests.id==snex_id).first()
+    #    snex1_row.sequenceend = datetime.now() #TODO: Check this
+
+    #    db_session.commit()
+
+    logger.info('Cancel sequence in SNEx1 hook: Sequence with SNEx1 ID {} synced'.format(snex_id))
+
+
