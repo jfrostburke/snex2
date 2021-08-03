@@ -426,6 +426,14 @@ def scheduling_view(request):
         dynamic_cadence.active = False
         dynamic_cadence.save()
 
+        ## Run hook to cancel this sequence in SNEx1
+        try:
+            snex_id = int(obs_group.name)
+            #run_hook('cancel_sequence_in_snex1', snex_id)
+        except:
+            print('This sequence was not in SNEx1 or was not canceled')
+        
+        ## Get the new observation parameters
         print('Getting form data')
         form_data = {'name': request.GET['name'],
                      'target_id': int(float(request.GET['target_id'])),

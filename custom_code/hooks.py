@@ -9,6 +9,7 @@ from requests_oauthlib import OAuth1
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from datetime import datetime
+import numpy as np
 
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
@@ -44,6 +45,22 @@ def _load_table(tablename, db_address):
     table = getattr(Base.classes, tablename)
     return(table)
  
+
+def _str_to_timestamp(datestring):
+    """
+    Converts string to a timestamp compatible with MYSQL timestamp field
+    """
+    timestamp = datetime.strptime(datestring, '%Y-%m-%dT%H:%M:%S')
+    return timestamp.strftime('%Y-%m-%d %H:%M:%S')
+
+
+def _str_to_jd(datestring):
+    """
+    Converts string to JD compatible with MYSQL double field
+    """
+    newdatestring = _str_to_timestamp(datestring)
+    return np.round(Time(newdatestring, format='iso', scale='utc').jd, 8)
+
 
 def target_post_save(target, created):
   def get(objectId):
@@ -159,7 +176,7 @@ def sync_observation_with_snex1(snex_id, params, requestgroup_id):
     Hook to sync an obervation record submitted through SNEx2
     to the obslog table in the SNEx1 database
     '''
-    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
     instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
                        '1M0-SCICAM-SINISTRO': 'sinistro',
                        '2M0-SCICAM-MUSCAT': 'muscat'}
@@ -175,9 +192,20 @@ def sync_observation_with_snex1(snex_id, params, requestgroup_id):
             for filt in filtlist:
                 filt_params = params.get(filt)
                 if filt_params and filt_params[0]:
-                    filters += filt + ','
-                    exptimes += str(filt_params[0])
-                    numexp += str(filt_params[1])
+                    if filters:
+                        filters += ',' + filt[0]
+                    else:
+                        filters += filt[0]
+                    
+                    if exptimes:
+                        exptimes += ',' + str(int(filt_params[0]))
+                    else:
+                        exptimes += str(int(filt_params[0]))
+                    
+                    if numexp:
+                        numexp += ',' + str(filt_params[1])
+                    else:
+                        numexp += str(filt_params[1])
             slit = 9999
 
         else:
@@ -185,19 +213,24 @@ def sync_observation_with_snex1(snex_id, params, requestgroup_id):
             exptimes = params['exposure_time']
             numexp = params['exposure_count']
             slit = 2.0
+        
+        if params.get('cadence_strategy'):
+            window = min(float(params.get('cadence_frequency')), 1)
+        else:
+            window = float(params.get('cadence_frequency'))
 
         #db_session.add(
         #        Obslog(
-        #            user=2, #TODO: Check this
+        #            user=67,
         #            targetid=params['target_id'],
-        #            triggerjd=float(str_to_mjd(params['start'])),
-        #            windowstart=float(str_to_mjd(params['start'])), #TODO: Fix the str_to_mjd
-        #            windowend=float(str_to_mjd(params['start']) + params['cadence_frequency']),
+        #            triggerjd=_str_to_jd(params['start']),
+        #            windowstart=_str_to_jd(params['start']),
+        #            windowend=_str_to_jd(params['start']) + window,
         #            filters=filters,
-        #            exptimes=exptimes,
+        #            exptime=exptimes,
         #            numexp=numexp,
         #            proposal=params['proposal'],
-        #            site=params.get('site', 'any'), #TODO: Fix this
+        #            site=params.get('site', 'any'),
         #            instrument=instrument_dict[params['instrument_type']],
         #            sky=9999,
         #            seeing=9999,
@@ -215,13 +248,13 @@ def sync_observation_with_snex1(snex_id, params, requestgroup_id):
     logger.info('Sync observation request with SNEx1 hook: Observation for SNEx1 ID {} synced'.format(snex_id))
 
 
-def sync_sequence_with_snex1(params, group_ids):
+def sync_sequence_with_snex1(params, group_names):
     '''
     Hook to sync an observation sequence submitted through SNEx2 
     to the obsrequests table in the SNEx1 database
     '''
 
-    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
     instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
                        '1M0-SCICAM-SINISTRO': 'sinistro',
                        '2M0-SCICAM-MUSCAT': 'muscat'}
@@ -244,10 +277,25 @@ def sync_sequence_with_snex1(params, group_ids):
             for filt in filtlist:
                 filt_params = params.get(filt)
                 if filt_params and filt_params[0]:
-                    filters += filt + ','
-                    exptimes += str(filt_params[0])
-                    numexp += str(filt_params[1])
-                    blocknums += str(filt_params[2])
+                    if filters:
+                        filters += ',' + filt[0]
+                    else:
+                        filters += filt[0]
+                    
+                    if exptimes:
+                        exptimes += ',' + str(int(filt_params[0]))
+                    else:
+                        exptimes += str(int(filt_params[0]))
+                    
+                    if expnums:
+                        expnums += ',' + str(filt_params[1])
+                    else:
+                        expnums += str(filt_params[1])
+
+                    if blocknums:
+                        blocknums += ',' + str(filt_params[2])
+                    else:
+                        blocknums += str(filt_params[2])
             slit = 9999
 
         else:
@@ -260,24 +308,31 @@ def sync_sequence_with_snex1(params, group_ids):
         if params.get('cadence_strategy'):
             cadence = float(params.get('cadence_frequency'))
             autostop = 0
+            window = min(cadence, 1)
         else:
             cadence = 0
             autostop = 1
+            window = float(params.get('cadence_frequency'))
+
+        if params.get('reminder'):
+            nextreminder = _str_to_timestamp(params.get('reminder'))
+        else:
+            nextreminder = '0000-00-00 00:00:00'
         
         #newobsrequest = Obsrequests(
         #            targetid=params['target_id'],
-        #            sequencestart=float(str_to_datetime(params['start'])), #TODO: Fix str_to_datetime
+        #            sequencestart=_str_to_timestamp(params['start']),
         #            sequenceend='0000-00-00 00:00:00',
-        #            userstart=2, #TODO: Check this
-        #            cadence = cadence,
-        #            window = float(params.get('cadence_frequency', 0)), #TODO: Check this
+        #            userstart=67,
+        #            cadence=cadence,
+        #            window=window,
         #            filters=filters,
         #            exptimes=exptimes,
         #            expnums=expnums,
         #            blocknums=blocknums,
         #            proposalid=params['proposal'],
         #            ipp=params['ipp_value'],
-        #            site=params.get('site', 'any'), #TODO: Fix this
+        #            site=params.get('site', 'any'),
         #            instrument=instrument_dict[params['instrument_type']],
         #            airmass=float(params['max_airmass']),
         #            moondistlimit=float(params['min_lunar_distance']),
@@ -286,13 +341,13 @@ def sync_sequence_with_snex1(params, group_ids):
         #            guidermode=params.get('guider_mode', '').upper(),
         #            guiderexptime=int(params.get('guider_exposure_time', 10)),
         #            priority=params['observation_mode'].lower().replace(' ', '_'),
-        #            approved=1, #TODO: Check this
-        #            nextreminder=str_to_datetime(params.get('reminder', '0000-00-00 00:00:00')), #TODO: Check this
+        #            approved=1,
+        #            nextreminder=nextreminder,
         #            groupidcode=groupidcode,
         #            dismissed=0,
         #            autostop=autostop,
-        #            datecreated=str_to_datetime(params['start']),
-        #            lastmodified=str_to_datetime(params['start'])
+        #            datecreated=_str_to_timestamp(params['start']),
+        #            lastmodified=_str_to_timestamp(params['start'])
         #)
         #db_session.add(newobsrequest)
 
@@ -302,7 +357,7 @@ def sync_sequence_with_snex1(params, group_ids):
         #db_session.commit()
 
     logger.info('Sync observation sequence with SNEx1 hook: Observation for SNEx1 ID {} synced'.format(snex_id))
-
+    
     return snex_id
 
 
@@ -319,10 +374,10 @@ def cancel_sequence_in_snex1(snex_id):
     #    Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
 
     #    snex1_row = db_session.query(Obsrequests).filter(Obsrequests.id==snex_id).first()
-    #    snex1_row.sequenceend = datetime.now() #TODO: Check this
+    #    snex1_row.sequenceend = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    #    snex1_row.userend = 67
 
     #    db_session.commit()
 
     logger.info('Cancel sequence in SNEx1 hook: Sequence with SNEx1 ID {} synced'.format(snex_id))
-
 
