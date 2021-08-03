@@ -11,7 +11,8 @@ from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from tom_targets.models import Target, TargetExtra, TargetList
 from tom_targets.forms import TargetVisibilityForm
 from tom_observations import utils, facility
-from tom_dataproducts.models import DataProduct, ReducedDatum, ObservationRecord
+from tom_dataproducts.models import DataProduct, ReducedDatum
+from tom_observations.models import ObservationRecord, ObservationGroup
 
 from astroplan import Observer, FixedTarget, AtNightConstraint, time_grid_from_range, moon_illumination
 import datetime
@@ -733,7 +734,7 @@ def custom_observation_plan(target, facility, length=1, interval=30, airmass_lim
 
 
 @register.inclusion_tag('custom_code/observation_summary.html', takes_context=True)
-def observation_summary(context, target=None):
+def observation_summary(context, target=None, time='previous'):
     """
     A modification of the observation_list templatetag 
     to display a summary of the observation records
@@ -750,8 +751,25 @@ def observation_summary(context, target=None):
     else:
         observations = ObservationRecord.objects.all().order_by('-created')
 
+    ### Get all inactive cadences
+    cadences = []
+    for o in observations:
+        obsgroup = o.observationgroup_set.first()
+        if obsgroup is not None:
+            cadence = obsgroup.dynamiccadence_set.first()
+            if time == 'previous':
+                if cadence not in cadences and not cadence.active:
+                    cadences.append(cadence)
+            else:
+                if cadence not in cadences and cadence.active:
+                    cadences.append(cadence)
+    
     parameters = []
-    for observation in observations:
+    for cadence in cadences:
+        obsgroup = ObservationGroup.objects.get(id=cadence.observation_group_id)
+        observation = obsgroup.observation_records.all().order_by('-id').first()
+
+    #for observation in observations:
 
         parameter = observation.parameters
 
@@ -802,7 +820,8 @@ def observation_summary(context, target=None):
 
     return {
         'observations': observations,
-        'parameters': parameters
+        'parameters': parameters,
+        'time': time
     }
 
 

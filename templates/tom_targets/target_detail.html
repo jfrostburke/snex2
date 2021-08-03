@@ -153,8 +153,11 @@ $(document).ready(function(){
         <hr/>
 	<button onclick="display_obs()" class="btn" style="background-color: white; color: black; font-size: 16px; border: none; outline: none; box-shadow: none;">Show Previous Observations</button>
         <!--a href="{% url 'targets:detail' pk=target.id %}?update_status=True" title="Update status of observations for target" class="btn btn-primary">Update Observations Status</a--!>
-	<div class="row" id="previous-obs" style="display: none;">
-          {% observation_summary object %}
+	<div class="row" id="previous-obs" style="display: none; color: gray;">
+          {% observation_summary object 'previous' %}
+	</div>
+	<div class="row" id="ongoing-obs" style="display: block";>
+          {% observation_summary object 'ongoing' %}
 	</div>
 	{% submit_lco_observations object %}
       </div>
