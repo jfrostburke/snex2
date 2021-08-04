@@ -211,7 +211,7 @@ class Command(BaseCommand):
                     and_(
                         obsrequests.autostop==1,
                         obsrequests.approved==1,
-                        or_(
+                        or_( #TODO: Check if specifying proposalID is necessary when doing for real
                             obsrequests.proposalid=='KEY2020B-002',
                             obsrequests.proposalid=='KEY2017AB-001'
                         ),
@@ -224,7 +224,7 @@ class Command(BaseCommand):
                     and_(
                         obsrequests.autostop==0,
                         obsrequests.approved==1,
-                        or_(
+                        or_( #TODO: And here too
                             obsrequests.proposalid=='KEY2020B-002',
                             obsrequests.proposalid=='KEY2017AB-001'
                         ),
@@ -270,11 +270,11 @@ class Command(BaseCommand):
                 facility = 'LCO'
                 created = obs.datecreated
                 modified = obs.lastmodified
-                target_id = 15 #int(obs.targetid) TODO: automate this
-                user_id = 299 #supernova TODO:change this to 69 for real SNEx2
+                target_id = 27 #int(obs.targetid) TODO: automate this
+                user_id = 299 #supernova TODO:change this to 67 for real SNEx2
                 requestsid = int(obs.id)
-                
-                if obs.sequenceend == '0000-00-00 00:00:00' or obs.sequenceend > datetime.datetime.utcnow():
+                print(requestsid) 
+                if obs.sequenceend == '0000-00-00 00:00:00' or not obs.sequenceend or obs.sequenceend > datetime.datetime.utcnow():
                     active = True
                 else:
                     active = False                

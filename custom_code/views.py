@@ -559,6 +559,15 @@ def scheduling_view(request):
         print(obs_parameters)
         obs.parameters = obs_parameters
         obs.save()
+        
+        ## Run hook to update the reminder in SNEx1
+        try:
+            obsgroup = obs.observationgroup_set.first()
+            snex_id = int(obs_group.name)
+            run_hook('update_reminder_in_snex1', snex_id, next_reminder)
+        except:
+            print('This sequence was not in SNEx1 or the reminder was not updated')
+        
         response_data = {'success': 'Continued'}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
     
