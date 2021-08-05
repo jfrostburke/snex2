@@ -111,11 +111,13 @@ def get_snex2_params(obs, repeating=True):
     instrument_dict = {'floyds': '2M0-FLOYDS-SCICAM',
                        'sinistro': '1M0-SCICAM-SINISTRO',
                        'muscat': "2M0-SCICAM-MUSCAT",
-                       'spectral': '2M0-SPECTRAL-AG'}
+                       'spectral': '2M0-SPECTRAL-AG',
+                       'sbig0m4': '0M4-SCICAM-SBIG'}
     obs_type_dict = {'floyds': 'SPECTRA',
                      'sinistro': 'IMAGING',
                      'muscat': 'IMAGING',
-                     'spectral': 'IMAGING'}
+                     'spectral': 'IMAGING',
+                     'sbig0m4': 'IMAGING'}
     filt_dict = {'g': 'gp',
                  'r': 'rp',
                  'i': 'ip',
@@ -270,10 +272,10 @@ class Command(BaseCommand):
                 facility = 'LCO'
                 created = obs.datecreated
                 modified = obs.lastmodified
-                target_id = 27 #int(obs.targetid) TODO: automate this
+                target_id = 28 #int(obs.targetid) TODO: automate this
                 user_id = 299 #supernova TODO:change this to 67 for real SNEx2
                 requestsid = int(obs.id)
-                print(requestsid) 
+                
                 if obs.sequenceend == '0000-00-00 00:00:00' or not obs.sequenceend or obs.sequenceend > datetime.datetime.utcnow():
                     active = True
                 else:
@@ -300,7 +302,7 @@ class Command(BaseCommand):
                 print('Querying API for sequence with SNEx1 ID of {}'.format(requestsid))
                 with get_session(db_address=_SNEX1_DB) as db_session:
                     # Get observation portal requestgroup id from most recent obslog entry for this observation sequence
-                    tracknumber_query = db_session.query(obslog).filter(and_(obslog.requestsid==requestsid, obslog.tracknumber>0)).order_by(obslog.id.desc())
+                    tracknumber_query = db_session.query(obslog).filter(and_(obslog.requestsid==requestsid, obslog.tracknumber>0)).order_by(obslog.id.asc())
                     tracknumber_count = tracknumber_query.count()
         
                 if tracknumber_count == 0:
@@ -320,7 +322,7 @@ class Command(BaseCommand):
                     snex2_param['start'] = Time(record.windowstart, format='jd').to_value('isot')
                     snex2_param['end'] = Time(record.windowend, format='jd').to_value('isot') 
                     
-                    print('The most recent observation request for this sequence has API id {} with status {}'.format(observation_id, status))
+                    print('This request has API id {} with status {}'.format(observation_id, status))
                     print('and with parameters {}'.format(snex2_param))
          
                     ### Add the new cadence, observation group, and observation record to the SNEx2 db

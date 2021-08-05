@@ -367,16 +367,16 @@ def cancel_sequence_in_snex1(snex_id):
     that was canceled in SNEx2
     '''
     
-    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
     
-    #with _get_session(db_address=_snex1_address) as db_session:
-    #    Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
+    with _get_session(db_address=_snex1_address) as db_session:
+        Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
 
-    #    snex1_row = db_session.query(Obsrequests).filter(Obsrequests.id==snex_id).first()
-    #    snex1_row.sequenceend = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    #    snex1_row.userend = 67
+        snex1_row = db_session.query(Obsrequests).filter(Obsrequests.id==snex_id).first()
+        snex1_row.sequenceend = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        snex1_row.userend = 67
 
-    #    db_session.commit()
+        db_session.commit()
 
     logger.info('Cancel sequence in SNEx1 hook: Sequence with SNEx1 ID {} synced'.format(snex_id))
 
@@ -387,7 +387,7 @@ def update_reminder_in_snex1(snex_id, next_reminder):
     Runs after continuing a sequence from the scheduling page.
     '''
     
-    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
     
     with _get_session(db_address=_snex1_address) as db_session:
         Obsrequests = _load_table('obsrequests', db_address=_snex1_address)

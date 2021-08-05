@@ -48,6 +48,7 @@ from guardian.shortcuts import assign_perm
 
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
 from tom_observations.facility import get_service_class
+from tom_observations.facilities.lco import FAILED_OBSERVING_STATES
 from tom_observations.views import ObservationCreateView, ObservationListView
 import requests
 from rest_framework.authtoken.models import Token
@@ -410,12 +411,14 @@ def scheduling_view(request):
         obs_id = int(float(request.GET['observation_id']))
         obs = ObservationRecord.objects.get(id=obs_id)
         facility = get_service_class(obs.facility)()
-        success = facility.cancel_observation(obs.observation_id)
         
-        if not success:
-            print('Observation not cancelled due to error')
-            response_data = {'failure': 'Error'}
-            return HttpResponse(json.dumps(response_data), content_type='application/json')
+        if obs.status not in FAILED_OBSERVING_STATES:
+            success = facility.cancel_observation(obs.observation_id)
+        
+            if not success:
+                print('Observation not cancelled due to error')
+                response_data = {'failure': 'Error'}
+                return HttpResponse(json.dumps(response_data), content_type='application/json')
         
         ## Change status of ObservationRecord and DynamicCadence
         obs.status = 'CANCELED'
@@ -446,7 +449,7 @@ def scheduling_view(request):
         observing_parameters['ipp_value'] = float(request.GET['ipp_value'])
         observing_parameters['max_airmass'] = float(request.GET['max_airmass'])
         observing_parameters['cadence_frequency'] = float(request.GET['cadence_frequency'])
-        observing_parameters['reminder'] = float(request.GET['reminder']) #datetime.strftime(now + timedelta(days=next_reminder), '%Y-%m-%dT%H:%M:%S')
+        observing_parameters['reminder'] = float(request.GET['reminder']) #Observing form turns this into timestamp
         observing_parameters['facility'] = obs.facility
         observing_parameters['name'] = form_data['name']
         observing_parameters['target_id'] = form_data['target_id']
@@ -563,7 +566,7 @@ def scheduling_view(request):
         ## Run hook to update the reminder in SNEx1
         try:
             obsgroup = obs.observationgroup_set.first()
-            snex_id = int(obs_group.name)
+            snex_id = int(obsgroup.name)
             run_hook('update_reminder_in_snex1', snex_id, next_reminder)
         except:
             print('This sequence was not in SNEx1 or the reminder was not updated')
@@ -577,15 +580,17 @@ def scheduling_view(request):
         obs_id = int(float(request.GET['observation_id']))
         obs = ObservationRecord.objects.get(id=obs_id)
         facility = get_service_class(obs.facility)()
-        success = facility.cancel_observation(obs.observation_id)
+        if obs.status not in FAILED_OBSERVING_STATES:
+            success = facility.cancel_observation(obs.observation_id)
         
-        if not success:
-            print('Observation not cancelled due to error')
-            response_data = {'failure': 'Error'}
-            return HttpResponse(json.dumps(response_data), content_type='application/json')
+            if not success:
+                print('Observation not cancelled due to error')
+                response_data = {'failure': 'Error'}
+                return HttpResponse(json.dumps(response_data), content_type='application/json')
         
         ## Change status of ObservationRecord and DynamicCadence
         obs.status = 'CANCELED'
+        obs.parameters['end'] = datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S')
         obs.save()
 
         obs_group = obs.observationgroup_set.first()
@@ -596,7 +601,7 @@ def scheduling_view(request):
         ## Run hook to cancel this sequence in SNEx1
         try:
             snex_id = int(obs_group.name)
-            #run_hook('cancel_sequence_in_snex1', snex_id)
+            run_hook('cancel_sequence_in_snex1', snex_id)
         except:
             print('This sequence was not in SNEx1 or was not canceled')
 
