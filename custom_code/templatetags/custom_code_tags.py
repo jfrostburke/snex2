@@ -1212,3 +1212,9 @@ def get_other_observing_runs(targetlist):
 @register.filter
 def order_by_priority(targetlist):
     return targetlist.filter(targetextra__key='observing_run_priority').order_by('targetextra__value')
+
+
+@register.inclusion_tag('custom_code/target_details.html', takes_context=True)
+def target_details(context, target):
+    ### Get previously saved target information here
+    return {'target': target}

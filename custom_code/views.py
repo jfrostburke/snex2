@@ -26,6 +26,7 @@ from datetime import datetime
 from datetime import timedelta
 import json
 from statistics import median
+from collections import OrderedDict
 
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
@@ -897,3 +898,80 @@ class CustomObservationCreateView(ObservationCreateView):
         return redirect(
             reverse('tom_targets:detail', kwargs={'pk': target.id})
         )
+
+
+def make_tns_request_view(request):
+    target_id = request.GET.get('target_id')
+    target = Target.objects.get(id=target_id)
+
+    names = [target.name] + [t.name for t in target.aliases.all()]
+    
+    tns_name = False
+    for name in names:
+        if 'SN' in name[:3]:
+            tns_name = name.replace(' ','').replace('SN', '')
+            break
+        elif 'AT' in name[:3]:
+            tns_name = name.replace(' ','').replace('AT', '')
+            break
+    
+    if not tns_name:
+        console.log('No TNS name found for target {}'.format(target_id))
+        response_data = {'failure': 'No TNS name for this target'}
+        return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+    api_key = os.environ['TNS_APIKEY']
+    tns_id = os.environ['TNS_APIID']
+
+    tns_url = 'https://www.wis-tns.org/api/get/object'
+    json_list = [('objname','2021vdr'), ('objid',''), ('photometry','1'), ('spectra','0')]
+    json_file = OrderedDict(json_list)
+    
+    response = requests.post(tns_url, headers={'User-Agent': 'tns_marker{"tns_id":'+str(tns_id)+', "type":"bot", "name":"SNEx_Bot1"}'}, data={'api_key': api_key, 'data': json.dumps(json_file)})
+    
+    parsed = json.loads(response.text, object_pairs_hook=OrderedDict)
+    result = json.dumps(parsed, indent=4)
+    
+    result = json.loads(result)
+    discoverydate = result['data']['reply']['discoverydate']
+    discoverymag = result['data']['reply']['discoverymag']
+    discoveryfilt = result['data']['reply']['discmagfilter']['name']
+    
+    
+    nondets = {}
+    dets = {}
+    
+    photometry = result['data']['reply']['photometry']
+    for phot in photometry:
+        remarks = phot['remarks']
+        if 'Last non detection' in remarks:
+            nondet_jd = phot['jd']
+            nondet_filt = phot['filters']['name']
+            nondet_limmag = phot['limflux']
+    
+            nondets[nondet_jd] = [nondet_filt, nondet_limmag]
+    
+        else:
+            det_jd = phot['jd']
+            det_filt = phot['filters']['name']
+            det_mag = phot['flux']
+    
+            dets[det_jd] = [det_filt, det_mag]
+    
+    
+    first_det = min(dets.keys())
+    
+    last_nondet = 0
+    for nondet, phot in nondets.items():
+        if nondet > last_nondet and nondet < first_det:
+            last_nondet = nondet
+    
+    response_data = {'success': 'Completed',
+                     'nondetection': last_nondet,
+                     'nondet_mag': nondets[last_nondet][1],
+                     'nondet_filt': nondets[last_nondet][0],
+                     'detection': first_det,
+                     'det_mag': dets[first_det][1],
+                     'det_filt': dets[first_det][0]}
+    return HttpResponse(json.dumps(response_data), content_type='application/json')
+

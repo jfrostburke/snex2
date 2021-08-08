@@ -86,7 +86,10 @@ $(document).ready(function(){
 </table>
 <ul class="nav nav-tabs" role="tablist" id="tabs">
   <li class="nav-item">
-    <a class="nav-link active" id="observe-tab" href="#observe" role="tab" data-toggle="tab" style="color: #174460;">Observe</a>
+    <a class="nav-link active" id="observe-tab" href="#observe" role="tab" data-toggle="tab" style="color: #174460;">Overview</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="detail-tab" href="#detail" role="tab" data-toggle="tab" style="color: #174460;">Details</a>
   </li>
   <li class="nav-item">
     <a class="nav-link" id="observations-tab" href="#observations" role="tab" data-toggle="tab" style="color: #174460;">Observations</a>
@@ -146,6 +149,9 @@ $(document).ready(function(){
           {% spectra_plot object %}
         </div>
         </div>
+      </div>
+      <div class="tab-pane" id="detail">
+        {% target_details object %}
       </div>
       <div class="tab-pane" id="observations">
         <h4>Schedule Observations</h4>
