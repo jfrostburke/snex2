@@ -260,6 +260,8 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
             value = rd.value
             if not value:
                 continue
+            if isinstance(value, str):
+                value = json.loads(value)
 
             ### Get subtracted or unsubtracted data
             if value.get('background_subtracted', '') == True:
