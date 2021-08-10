@@ -208,6 +208,8 @@ def lightcurve(context, target):
         value = rd.value
         if not value:  # empty
             continue
+        if isinstance(value, str):
+            value = json.loads(value)
    
         photometry_data.setdefault(value.get('filter', ''), {})
         photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
@@ -561,6 +563,8 @@ def dash_lightcurve(context, target, width, height):
     datumquery = ReducedDatum.objects.filter(target=target, data_type='photometry')
     for i in datumquery:
         datum_value = i.value
+        if isinstance(datum_value, str):
+            datum_value = json.loads(datum_value)
         if datum_value.get('background_subtracted', '') == True:
             background_subtracted = True
             break
@@ -591,6 +595,8 @@ def dash_lightcurve(context, target, width, height):
 
             datum = ReducedDatum.objects.filter(target=target, data_type='photometry', data_product_id=final_reduction_datumid)
             datum_value = datum.first().value
+            if isinstance(datum_value, str):
+                datum_value = json.loads(datum_value)
             if datum_value.get('background_subtracted', '') == True:
                 final_background_subtracted = True
     
@@ -1228,7 +1234,7 @@ def target_details(context, target):
 
 
 @register.inclusion_tag('custom_code/lightcurve_collapse.html')
-def lightcurve_fits(target, user, filt=False):
+def lightcurve_fits(target, user, filt=False, days=None):
          
     photometry_data = {}
 
@@ -1242,10 +1248,11 @@ def lightcurve_fits(target, user, filt=False):
                                         data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
 
     for rd in datums:
-    #for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
         value = rd.value
         if not value:  # empty
             continue
+        if isinstance(value, str):
+            value = json.loads(value)
    
         photometry_data.setdefault(value.get('filter', ''), {})
         photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
@@ -1266,9 +1273,34 @@ def lightcurve_fits(target, user, filt=False):
             )
         ) for filter_name, filter_values in photometry_data.items()] 
      
-    ### Fit a parabola to the lightcurve to find the max
-    if filt: # User has specified a filter to fit
+    layout = go.Layout(
+        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        margin=dict(l=30, r=10, b=100, t=40),
+        hovermode='closest',
+        plot_bgcolor='white'
+    )
+    
+    if not plot_data:
+        return {
+            'target': target,
+            'plot': 'No photometry for this target yet.',
+            'max': '',
+            'mag': '',
+        }
+    
+        ### Fit a parabola to the lightcurve to find the max
+    if filt and filt in photometry_data.keys(): # User has specified a filter to fit
         photometry_to_fit = photometry_data[filt]
+    
+    elif filt and filt not in photometry_data.keys(): # No photometry for this filter
+        return {
+            'target': target,
+            'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False),
+            'max': '',
+            'mag': '',
+        }
+    
     else:
         filtlist = list(photometry_data.keys())
         lens = []
@@ -1283,9 +1315,15 @@ def lightcurve_fits(target, user, filt=False):
     times = photometry_to_fit['time']
     mags = []
     errs = []
-    jds = []    
+    jds = []
+
+    if not days:
+        days_to_fit = 20
+    else:
+        days_to_fit = days
+
     for date in times:
-        if Time(date, scale='utc').jd < start_jd + 20:
+        if Time(date, scale='utc').jd < start_jd + days_to_fit:
             jds.append(float(Time(date, scale='utc').jd))
             mags.append(photometry_to_fit['magnitude'][times.index(date)])
             errs.append(photometry_to_fit['error'][times.index(date)])
@@ -1302,29 +1340,29 @@ def lightcurve_fits(target, user, filt=False):
                 name='n=2 fit'
             )
         )
-        maximum = abs(B/(2*A))
-    except:
+
+        max_mag = round(min(quadratic_fit), 2)
+        max_jd = fit_jds[np.argmin(quadratic_fit)]
+        max_date = Time(max_jd, format='jd', scale='utc').isot
+
+        plot_data.append(
+            go.Scatter(
+                x=[max_date],
+                y=[max_mag],
+                mode='markers',
+                marker=dict(color='gold', size=15, symbol='star', line=dict(color='black', width=2)),
+                name='Maximum'
+            )
+        )
+        maximum = round(abs(B/(2*A)), 2)
+    except Exception as e:
+        logger.info(e)
         logger.info('Quadratic light curve fit failed for target {}'.format(target.id))
         maximum = ''
 
-    layout = go.Layout(
-        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
-        yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
-        margin=dict(l=30, r=10, b=100, t=40),
-        hovermode='closest',
-        plot_bgcolor='white'
-        #height=500,
-        #width=500
-    )
-    if plot_data:
-      return {
-          'target': target,
-          'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False, config={'staticPlot': True}, include_plotlyjs='cdn'),
-          'max': maximum
-      }
-    else:
-        return {
-            'target': target,
-            'plot': 'No photometry for this target yet.',
-            'max': maximum
-        }
+    return {
+        'target': target,
+        'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False),
+        'max': maximum,
+        'mag': max_mag
+    }

@@ -15,7 +15,7 @@
 <table id="tns-tab" class="detail-tab" style="width: 100%; margin-bottom: 10px;">
   <tr>
     <th></th>
-    <th>Date</th>
+    <th>Date (JD)</th>
     <th>Magnitude</th>
     <th>Filter</th>
     <th>Source</th>
@@ -40,7 +40,7 @@
 <table id="max-tab" class="detail-tab" style="width: 100%; margin-top: 10px; margin-bottom: 10px;">
   <tr>
     <th></th>
-    <th>Date</th>
+    <th>Date (JD)</th>
     <th>Magnitude</th>
     <th>Filter</th>
     <th>Source</th>
@@ -61,16 +61,16 @@
   <table id="fit-tab" class="detail-tab" style="width: 50%; margin-bottom: 10px; margin-top: 10px;">
     <tr>
       <th>Filter? Leave blank for any</th>
-      <th>Fit Results</th>
+      <th>Fit First <i>n</i> Days of Data</th>
     </tr>
     <tr>
       <td contenteditable='true' id="fit-filt">B</td>
-      <td id="fit-max"></td>
+      <td contenteditable='true' id="fit-days">20</td>
     </tr>
   </table>
   <button class="btn" onclick="fit_lc()" style="background-color: white; color: #174460; border-color: #174460;">Fit</button>
 </div>
-<div id="lc-results" class="row">
+<div id="lc-primary" class="row">
   {% lightcurve target %}
 </div>
 <script>
@@ -112,15 +112,24 @@ function fit_lc() {
   var targetid = {{ target.id }};
   var userid = {{ user.id }};
   var filt = document.getElementById('fit-filt').innerHTML;
+  var daysToFit = document.getElementById('fit-days').innerHTML;
   $.ajax({
     url: '{% url "fit-lightcurve" %}',
     data: {'target_id': targetid,
 	   'user_id': userid,
-	   'filter': filt},
+	   'filter': filt,
+    	   'days': daysToFit},
     dataType: 'json',
     success: function(response) {
-      document.getElementById('lc-results').HTML = response.lightcurve_plot;
-      document.getElementById('fit-max').innerHTML = response.fitted_max;
+      if (response.success === 'success') {
+	document.getElementById('max-date').innerHTML = response.fitted_max;
+	document.getElementById('max-mag').innerHTML = response.max_mag;
+	document.getElementById('max-source').innerHTML = 'Fit';
+	document.getElementById('max-filt').innerHTML = filt;
+        $('#lc-primary').html(response.lightcurve_plot);
+      } else {
+	alert("Fitting to this filter failed")
+      }
     }
   })
 }

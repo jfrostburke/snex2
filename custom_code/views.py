@@ -23,7 +23,7 @@ from urllib.parse import urlencode
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from astropy.time import Time
-from datetime import datetime
+from datetime import datetime, date
 from datetime import timedelta
 import json
 from statistics import median
@@ -968,10 +968,10 @@ def make_tns_request_view(request):
             last_nondet = nondet
     
     response_data = {'success': 'Completed',
-                     'nondetection': last_nondet,
+                     'nondetection': '{} ({})'.format(date.strftime(Time(last_nondet, scale='utc', format='jd').datetime, "%m/%d/%Y"), round(last_nondet, 2)),
                      'nondet_mag': nondets[last_nondet][1],
                      'nondet_filt': nondets[last_nondet][0],
-                     'detection': first_det,
+                     'detection': '{} ({})'.format(date.strftime(Time(first_det, scale='utc', format='jd').datetime, "%m/%d/%Y"), round(first_det, 2)),
                      'det_mag': dets[first_det][1],
                      'det_filt': dets[first_det][0]}
     return HttpResponse(json.dumps(response_data), content_type='application/json')
@@ -984,14 +984,30 @@ def fit_lightcurve_view(request):
     user_id = request.GET.get('user_id', None)
     user = User.objects.get(id=user_id)
     filt = request.GET.get('filter', None)
+    days = float(request.GET.get('days', 20))
 
-    fit = lightcurve_fits(target, user, filt)
+    fit = lightcurve_fits(target, user, filt, days)
     lightcurve_plot = fit['plot']
     fitted_max = fit['max']
+    max_mag = fit['mag']
+    
+    if fitted_max:
 
-    context = {
-        'lightcurve_plot': lightcurve_plot,
-        'fitted_max': fitted_max
-    }
+        fitted_date = date.strftime(Time(fitted_max, scale='utc', format='jd').datetime, "%m/%d/%Y")
+
+        context = {
+            'success': 'success',
+            'lightcurve_plot': lightcurve_plot,
+            'fitted_max': '{} ({})'.format(fitted_date, fitted_max),
+            'max_mag': max_mag
+        }
+
+    else:
+        context = {
+            'success': 'failure',
+            'lightcurve_plot': lightcurve_plot,
+            'fitted_max': fitted_max,
+            'max_mag': max_mag
+        }
 
     return HttpResponse(json.dumps(context), content_type='application/json')
