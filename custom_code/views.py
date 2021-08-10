@@ -18,6 +18,7 @@ from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.conf import settings
 
+import os
 from urllib.parse import urlencode
 from astropy.coordinates import SkyCoord
 from astropy import units as u
@@ -36,7 +37,7 @@ from plotly import offline
 import plotly.graph_objs as go
 from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
-from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse
+from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits
 
 from .forms import CustomTargetCreateForm, CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, ReferenceStatusForm
 from tom_targets.views import TargetCreateView
@@ -916,7 +917,7 @@ def make_tns_request_view(request):
             break
     
     if not tns_name:
-        console.log('No TNS name found for target {}'.format(target_id))
+        logger.info('No TNS name found for target {}'.format(target_id))
         response_data = {'failure': 'No TNS name for this target'}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
 
@@ -924,7 +925,7 @@ def make_tns_request_view(request):
     tns_id = os.environ['TNS_APIID']
 
     tns_url = 'https://www.wis-tns.org/api/get/object'
-    json_list = [('objname','2021vdr'), ('objid',''), ('photometry','1'), ('spectra','0')]
+    json_list = [('objname',tns_name), ('objid',''), ('photometry','1'), ('spectra','0')]
     json_file = OrderedDict(json_list)
     
     response = requests.post(tns_url, headers={'User-Agent': 'tns_marker{"tns_id":'+str(tns_id)+', "type":"bot", "name":"SNEx_Bot1"}'}, data={'api_key': api_key, 'data': json.dumps(json_file)})
@@ -975,3 +976,22 @@ def make_tns_request_view(request):
                      'det_filt': dets[first_det][0]}
     return HttpResponse(json.dumps(response_data), content_type='application/json')
 
+
+def fit_lightcurve_view(request):
+
+    target_id = request.GET.get('target_id', None)
+    target = Target.objects.get(id=target_id)
+    user_id = request.GET.get('user_id', None)
+    user = User.objects.get(id=user_id)
+    filt = request.GET.get('filter', None)
+
+    fit = lightcurve_fits(target, user, filt)
+    lightcurve_plot = fit['plot']
+    fitted_max = fit['max']
+
+    context = {
+        'lightcurve_plot': lightcurve_plot,
+        'fitted_max': fitted_max
+    }
+
+    return HttpResponse(json.dumps(context), content_type='application/json')

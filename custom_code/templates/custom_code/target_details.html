@@ -1,26 +1,128 @@
-{% load bootstrap4 static %}
-<h4>Target Details</h4>
-<table style="width:100%">
+{% load bootstrap4 static custom_code_tags %}
+<style>
+.detail-tab td {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+.detail-tab th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+</style>
+<h4>Times of Last Nondetection and First Detection</h4>
+<table id="tns-tab" class="detail-tab" style="width: 100%; margin-bottom: 10px;">
   <tr>
-    <th>Property</th>
+    <th></th>
     <th>Date</th>
     <th>Magnitude</th>
     <th>Filter</th>
     <th>Source</th>
   </tr>
   <tr>
-    <td>Test Last Nondetection</td>
-    <td>24500000.5</td>
-    <td>20</td>
-    <td>g</td>
-    <td>TNS</td>
+    <td>Last Nondetection</td>
+    <td id="nondet-date">24500000.5</td>
+    <td id="nondet-mag">20</td>
+    <td id="nondet-filt">g</td>
+    <td id="nondet-source">Placeholder</td>
   </tr>
   <tr>
-    <td>Test First Detection</td>
-    <td>24500002.5</td>
-    <td>19</td>
-    <td>g</td>
-    <td>TNS</td>
+    <td>First Detection</td>
+    <td id="det-date">24500002.5</td>
+    <td id="det-mag">19</td>
+    <td id="det-filt">g</td>
+    <td id="det-source">Placeholder</td>
   </tr>
 </table>
-<div class="row"><button class="btn" style="background-color: white; color: #174460; border-color: #174460;">Refresh TNS Values</button></div>
+<div class="row"><button class="btn" onclick="update_values()" style="background-color: white; color: #174460; border-color: #174460;">Refresh TNS Values</button></div>
+<h4 style="margin-top: 10px;">Time of Maximum</h4>
+<table id="max-tab" class="detail-tab" style="width: 100%; margin-top: 10px; margin-bottom: 10px;">
+  <tr>
+    <th></th>
+    <th>Date</th>
+    <th>Magnitude</th>
+    <th>Filter</th>
+    <th>Source</th>
+  </tr>
+  <tr>
+    <td>Time of Maximum </td>
+    <td id="max-date" contenteditable='true'>2400005.5</td>
+    <td id="max-mag" contenteditable='true'>15</td>
+    <td id="max-filt" contenteditable='true'>B</td>
+    <td id="max-source" contenteditable='true'>Placeholder</td>
+  </tr>
+</table>
+<div class="row">
+  <button class="btn" onclick="display_fit_options()" style="background-color: white; color: #174460; border-color: #174460;">Fit Lightcurve</button>
+  <button class="btn" onclick="save_max()" style="background-color: white; color: #174460; border-color: #174460;">Save Values</button>
+</div>
+<div class="row" id="fit-options" style="display: none;">
+  <table id="fit-tab" class="detail-tab" style="width: 50%; margin-bottom: 10px; margin-top: 10px;">
+    <tr>
+      <th>Filter? Leave blank for any</th>
+      <th>Fit Results</th>
+    </tr>
+    <tr>
+      <td contenteditable='true' id="fit-filt">B</td>
+      <td id="fit-max"></td>
+    </tr>
+  </table>
+  <button class="btn" onclick="fit_lc()" style="background-color: white; color: #174460; border-color: #174460;">Fit</button>
+</div>
+<div id="lc-results" class="row">
+  {% lightcurve target %}
+</div>
+<script>
+function update_values() {
+  var targetid = {{ target.id }};
+  $.ajax({
+    url: '{% url "make-tns-request" %}',
+    data: {'target_id': targetid},
+    dataType: 'json',
+    success: function(response) {
+      if (response.success === 'Completed') {
+        document.getElementById('nondet-date').innerHTML = response.nondetection;
+        document.getElementById('nondet-mag').innerHTML = response.nondet_mag;
+        document.getElementById('nondet-filt').innerHTML = response.nondet_filt;
+        document.getElementById('nondet-source').innerHTML = 'TNS';
+	document.getElementById('det-date').innerHTML = response.detection;
+	document.getElementById('det-mag').innerHTML = response.det_mag;
+	document.getElementById('det-filt').innerHTML = response.det_filt;
+	document.getElementById('det-source').innerHTML = 'TNS';
+      } else {
+	alert("Querying TNS for these values failed")
+      };
+    }
+  })
+}
+function display_fit_options() {
+  var fitDiv = document.getElementById('fit-options');
+  if (fitDiv.style.display === "none") {
+    fitDiv.style.display = "block";
+  } else {
+    fitDiv.style.display = "none";
+  }
+}
+function save_max() {
+  console.log(document.getElementById('max-date').innerHTML);
+  console.log(document.getElementById('max-mag').innerHTML);
+}
+function fit_lc() {
+  var targetid = {{ target.id }};
+  var userid = {{ user.id }};
+  var filt = document.getElementById('fit-filt').innerHTML;
+  $.ajax({
+    url: '{% url "fit-lightcurve" %}',
+    data: {'target_id': targetid,
+	   'user_id': userid,
+	   'filter': filt},
+    dataType: 'json',
+    success: function(response) {
+      document.getElementById('lc-results').HTML = response.lightcurve_plot;
+      document.getElementById('fit-max').innerHTML = response.fitted_max;
+    }
+  })
+}
+</script>
+

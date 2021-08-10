@@ -29,6 +29,9 @@ from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSched
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
 from custom_code.facilities.lco_facility import SnexPhotometricSequenceForm, SnexSpectroscopicSequenceForm
+import logging
+
+logger = logging.getLogger(__name__)
 
 register = template.Library()
 
@@ -1216,5 +1219,112 @@ def order_by_priority(targetlist):
 
 @register.inclusion_tag('custom_code/target_details.html', takes_context=True)
 def target_details(context, target):
+    request = context['request']
+    user = context['user']
     ### Get previously saved target information here
-    return {'target': target}
+    return {'target': target,
+            'request': request,
+            'user': user}
+
+
+@register.inclusion_tag('custom_code/lightcurve_collapse.html')
+def lightcurve_fits(target, user, filt=False):
+         
+    photometry_data = {}
+
+    if settings.TARGET_PERMISSIONS_ONLY:
+        datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
+    else:
+        datums = get_objects_for_user(user,
+                                      'tom_dataproducts.view_reduceddatum',
+                                      klass=ReducedDatum.objects.filter(
+                                        target=target,
+                                        data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
+
+    for rd in datums:
+    #for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
+        value = rd.value
+        if not value:  # empty
+            continue
+   
+        photometry_data.setdefault(value.get('filter', ''), {})
+        photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
+        photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
+        photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))        
+
+    plot_data = [
+        go.Scatter(
+            x=filter_values['time'],
+            y=filter_values['magnitude'], mode='markers',
+            marker=dict(color=get_color(filter_name)),
+            name=filter_name,
+            error_y=dict(
+                type='data',
+                array=filter_values['error'],
+                visible=True,
+                color=get_color(filter_name)
+            )
+        ) for filter_name, filter_values in photometry_data.items()] 
+     
+    ### Fit a parabola to the lightcurve to find the max
+    if filt: # User has specified a filter to fit
+        photometry_to_fit = photometry_data[filt]
+    else:
+        filtlist = list(photometry_data.keys())
+        lens = []
+        for f in filtlist:
+            lens.append(len(photometry_data[f]['magnitude']))
+        filt = filtlist[lens.index(max(lens))]
+        photometry_to_fit = photometry_data[filt]
+
+    start_date = min(photometry_to_fit['time'])
+    start_jd = Time(start_date, scale='utc').jd
+   
+    times = photometry_to_fit['time']
+    mags = []
+    errs = []
+    jds = []    
+    for date in times:
+        if Time(date, scale='utc').jd < start_jd + 20:
+            jds.append(float(Time(date, scale='utc').jd))
+            mags.append(photometry_to_fit['magnitude'][times.index(date)])
+            errs.append(photometry_to_fit['error'][times.index(date)])
+    try:
+        A, B, C = np.polyfit(jds, mags, 2, w=1/(np.asarray(errs)))
+        fit_jds = np.linspace(jds[0], jds[-1], 100)
+        quadratic_fit = A*fit_jds**2 + B*fit_jds + C
+
+        plot_data.append(
+            go.Scatter(
+                x=Time(fit_jds, format='jd', scale='utc').isot,
+                y=quadratic_fit, mode='lines',
+                marker=dict(color='gray'),
+                name='n=2 fit'
+            )
+        )
+        maximum = abs(B/(2*A))
+    except:
+        logger.info('Quadratic light curve fit failed for target {}'.format(target.id))
+        maximum = ''
+
+    layout = go.Layout(
+        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        margin=dict(l=30, r=10, b=100, t=40),
+        hovermode='closest',
+        plot_bgcolor='white'
+        #height=500,
+        #width=500
+    )
+    if plot_data:
+      return {
+          'target': target,
+          'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False, config={'staticPlot': True}, include_plotlyjs='cdn'),
+          'max': maximum
+      }
+    else:
+        return {
+            'target': target,
+            'plot': 'No photometry for this target yet.',
+            'max': maximum
+        }
