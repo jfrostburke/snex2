@@ -219,31 +219,31 @@ def sync_observation_with_snex1(snex_id, params, requestgroup_id):
         else:
             window = float(params.get('cadence_frequency'))
 
-        #db_session.add(
-        #        Obslog(
-        #            user=67,
-        #            targetid=params['target_id'],
-        #            triggerjd=_str_to_jd(params['start']),
-        #            windowstart=_str_to_jd(params['start']),
-        #            windowend=_str_to_jd(params['start']) + window,
-        #            filters=filters,
-        #            exptime=exptimes,
-        #            numexp=numexp,
-        #            proposal=params['proposal'],
-        #            site=params.get('site', 'any'),
-        #            instrument=instrument_dict[params['instrument_type']],
-        #            sky=9999,
-        #            seeing=9999,
-        #            airmass=params['max_airmass'],
-        #            slit=slit,
-        #            priority=params['observation_mode'].lower().replace(' ', '_'),
-        #            ipp=params['ipp_value'],
-        #            requestsid=snex_id,
-        #            tracknumber=requestgroup_id
-        #        )
-        #)
+        db_session.add(
+                Obslog(
+                    user=67,
+                    targetid=params['target_id'],
+                    triggerjd=_str_to_jd(params['start']),
+                    windowstart=_str_to_jd(params['start']),
+                    windowend=_str_to_jd(params['start']) + window,
+                    filters=filters,
+                    exptime=exptimes,
+                    numexp=numexp,
+                    proposal=params['proposal'],
+                    site=params.get('site', 'any'),
+                    instrument=instrument_dict[params['instrument_type']],
+                    sky=9999,
+                    seeing=9999,
+                    airmass=params['max_airmass'],
+                    slit=slit,
+                    priority=params['observation_mode'].lower().replace(' ', '_'),
+                    ipp=params['ipp_value'],
+                    requestsid=snex_id,
+                    tracknumber=requestgroup_id
+                )
+        )
 
-        #db_session.commit()
+        db_session.commit()
 
     logger.info('Sync observation request with SNEx1 hook: Observation for SNEx1 ID {} synced'.format(snex_id))
 
@@ -319,42 +319,42 @@ def sync_sequence_with_snex1(params, group_names):
         else:
             nextreminder = '0000-00-00 00:00:00'
         
-        #newobsrequest = Obsrequests(
-        #            targetid=params['target_id'],
-        #            sequencestart=_str_to_timestamp(params['start']),
-        #            sequenceend='0000-00-00 00:00:00',
-        #            userstart=67,
-        #            cadence=cadence,
-        #            window=window,
-        #            filters=filters,
-        #            exptimes=exptimes,
-        #            expnums=expnums,
-        #            blocknums=blocknums,
-        #            proposalid=params['proposal'],
-        #            ipp=params['ipp_value'],
-        #            site=params.get('site', 'any'),
-        #            instrument=instrument_dict[params['instrument_type']],
-        #            airmass=float(params['max_airmass']),
-        #            moondistlimit=float(params['min_lunar_distance']),
-        #            slit=slit,
-        #            acqradius=int(params.get('acquisition_radius', 0)),
-        #            guidermode=params.get('guider_mode', '').upper(),
-        #            guiderexptime=int(params.get('guider_exposure_time', 10)),
-        #            priority=params['observation_mode'].lower().replace(' ', '_'),
-        #            approved=1,
-        #            nextreminder=nextreminder,
-        #            groupidcode=groupidcode,
-        #            dismissed=0,
-        #            autostop=autostop,
-        #            datecreated=_str_to_timestamp(params['start']),
-        #            lastmodified=_str_to_timestamp(params['start'])
-        #)
-        #db_session.add(newobsrequest)
+        newobsrequest = Obsrequests(
+                    targetid=params['target_id'],
+                    sequencestart=_str_to_timestamp(params['start']),
+                    sequenceend='0000-00-00 00:00:00',
+                    userstart=67,
+                    cadence=cadence,
+                    window=window,
+                    filters=filters,
+                    exptimes=exptimes,
+                    expnums=expnums,
+                    blocknums=blocknums,
+                    proposalid=params['proposal'],
+                    ipp=params['ipp_value'],
+                    site=params.get('site', 'any'),
+                    instrument=instrument_dict[params['instrument_type']],
+                    airmass=float(params['max_airmass']),
+                    moondistlimit=float(params['min_lunar_distance']),
+                    slit=slit,
+                    acqradius=int(params.get('acquisition_radius', 0)),
+                    guidermode=params.get('guider_mode', '').upper(),
+                    guiderexptime=int(params.get('guider_exposure_time', 10)),
+                    priority=params['observation_mode'].lower().replace(' ', '_'),
+                    approved=1,
+                    nextreminder=nextreminder,
+                    groupidcode=groupidcode,
+                    dismissed=0,
+                    autostop=autostop,
+                    datecreated=_str_to_timestamp(params['start']),
+                    lastmodified=_str_to_timestamp(params['start'])
+        )
+        db_session.add(newobsrequest)
 
-        #db_session.flush()
-        #snex_id = newobsrequest.id
+        db_session.flush()
+        snex_id = newobsrequest.id
 
-        #db_session.commit()
+        db_session.commit()
 
     logger.info('Sync observation sequence with SNEx1 hook: Observation for SNEx1 ID {} synced'.format(snex_id))
     

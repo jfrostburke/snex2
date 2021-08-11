@@ -247,7 +247,12 @@ class Command(BaseCommand):
         existing_repeating_obs = []
         
         # Get the observation groups already in SNEx2
-        existing_obs = [int(o.name) for o in ObservationGroup.objects.all() if isinstance(o.name, int)]
+        existing_obs = []
+        for o in ObservationGroup.objects.all():
+            try:
+                existing_obs.append(int(o.name))
+            except: # Name not a SNEx1 ID, so not in SNEx1
+                continue
             
         for o in onetime_sequence:
             if int(o.id) not in existing_obs:
@@ -272,7 +277,7 @@ class Command(BaseCommand):
                 facility = 'LCO'
                 created = obs.datecreated
                 modified = obs.lastmodified
-                target_id = 28 #int(obs.targetid) TODO: automate this
+                target_id = 29 #int(obs.targetid) TODO: automate this
                 user_id = 299 #supernova TODO:change this to 67 for real SNEx2
                 requestsid = int(obs.id)
                 

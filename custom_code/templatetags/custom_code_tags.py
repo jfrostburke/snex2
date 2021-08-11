@@ -807,7 +807,7 @@ def observation_summary(context, target=None, time='previous'):
             parameter_string += 'with IPP ' + str(parameter.get('ipp_value', ''))
             parameter_string += ' and airmass < ' + str(parameter.get('max_airmass', ''))
             parameter_string += ' starting on ' + sequence_start #str(parameter.get('start')).split('T')[0]
-            if parameter.get('end', ''):
+            if time == 'previous' and parameter.get('end', ''):
                 parameter_string += ' and ending on ' + str(parameter.get('end')).split('T')[0]
 
             parameters.append({'title': 'LCO Sequence',
