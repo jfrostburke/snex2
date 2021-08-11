@@ -47,7 +47,7 @@
   {% bootstrap_form form exclude='tweet,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err' %}
   {% else %}
   <form action="{% url "create-target" %}" method="post" class="form">
-  {% bootstrap_form form exclude='tweet,redshift,classification,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err,groups,sciencetags' %}
+  {% bootstrap_form form exclude='tweet,redshift,classification,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err,groups,sciencetags,reference,observing_run_priority' %}
   <div class="row">
     {{ form.groups.label_tag }}</br>
     <div class="column" style="width: 30%; column-count: 3;">

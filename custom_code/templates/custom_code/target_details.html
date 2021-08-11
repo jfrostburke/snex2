@@ -37,6 +37,7 @@
 </table>
 <div class="row"><button class="btn" onclick="update_values()" style="background-color: white; color: #174460; border-color: #174460;">Refresh TNS Values</button></div>
 <h4 style="margin-top: 10px;">Time of Maximum</h4>
+<div class="row" style="margin-left: 5px;">Enter a time of maximum from a source in the table below, or interactively fit the light curve:</div>
 <table id="max-tab" class="detail-tab" style="width: 100%; margin-top: 10px; margin-bottom: 10px;">
   <tr>
     <th></th>
@@ -69,10 +70,14 @@
     </tr>
   </table>
   <button class="btn" onclick="fit_lc()" style="background-color: white; color: #174460; border-color: #174460;">Fit</button>
+  <b>Warning: </b>These fits are estimates and not publication-ready
 </div>
 <div id="lc-primary" class="row">
   {% lightcurve target %}
 </div>
+<h4>Target Description / "Tagline"</h4>
+<div class="row" style="text-align: justify; margin-left: 5px;">A sentence or two describing anything that makes this target interesting or unique, <br>such as weird light curve evolution, spectral features, lots of external data, etc.</div>
+<textarea id="tagline" rows="4" cols="60" style="margin-top: 10px; margin-bottom: 10px;" placeholder="Enter a couple of descriptive sentences"></textarea>
 <script>
 function update_values() {
   var targetid = {{ target.id }};

@@ -7,7 +7,7 @@
   {{ paper.created }}<br>
   {% endfor %}
 </dl>
-<dl class="row" style="display: block;">
+<dl class="row" style="display: block; margin-right: 10px;">
   <form class="form" action="{% url 'custom_code:create-paper' %}" method="post">
     {% bootstrap_form form %}
     {% csrf_token %}
