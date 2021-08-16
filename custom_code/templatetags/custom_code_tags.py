@@ -1329,7 +1329,7 @@ def lightcurve_fits(target, user, filt=False, days=None):
             errs.append(photometry_to_fit['error'][times.index(date)])
     try:
         A, B, C = np.polyfit(jds, mags, 2, w=1/(np.asarray(errs)))
-        fit_jds = np.linspace(jds[0], jds[-1], 100)
+        fit_jds = np.linspace(min(jds), max(jds), 100)
         quadratic_fit = A*fit_jds**2 + B*fit_jds + C
 
         plot_data.append(
