@@ -189,15 +189,18 @@ def get_color(filter_name):
     return color
 
 
-@register.inclusion_tag('custom_code/lightcurve.html', takes_context=True)
-def lightcurve(context, target):
-         
+def generic_lightcurve_plot(target, user):
+    """
+    Writing a generic function to return the data to plot
+    for the different light curve applications SNEx2 uses
+    """
+    
     photometry_data = {}
 
     if settings.TARGET_PERMISSIONS_ONLY:
         datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
     else:
-        datums = get_objects_for_user(context['request'].user,
+        datums = get_objects_for_user(user,
                                       'tom_dataproducts.view_reduceddatum',
                                       klass=ReducedDatum.objects.filter(
                                         target=target,
@@ -229,7 +232,14 @@ def lightcurve(context, target):
                 color=get_color(filter_name)
             )
         ) for filter_name, filter_values in photometry_data.items()] 
-     
+
+    return plot_data
+
+
+@register.inclusion_tag('custom_code/lightcurve.html', takes_context=True)
+def lightcurve(context, target):
+    
+    plot_data = generic_lightcurve_plot(target, context['request'].user)         
 
     layout = go.Layout(
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
@@ -254,35 +264,9 @@ def lightcurve(context, target):
 
 @register.inclusion_tag('custom_code/lightcurve_collapse.html')
 def lightcurve_collapse(target, user):
-         
-    photometry_data = {}
-    if settings.TARGET_PERMISSIONS_ONLY:
-        datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
-    else:
-        datums = get_objects_for_user(user,
-                                      'tom_dataproducts.view_reduceddatum',
-                                      klass=ReducedDatum.objects.filter(
-                                        target=target,
-                                        data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
-    #for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'): 
-    for rd in datums:
-        value = rd.value
-        photometry_data.setdefault(value.get('filter', ''), {})
-        photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-        photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-        photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
-    plot_data = [
-        go.Scatter(
-            x=filter_values['time'],
-            y=filter_values['magnitude'], mode='markers',
-            marker=dict(color=get_color(filter_name)),
-            error_y=dict(
-                type='data',
-                array=filter_values['error'],
-                visible=True,
-                color=get_color(filter_name)
-            )
-        ) for filter_name, filter_values in photometry_data.items()]
+    
+    plot_data = generic_lightcurve_plot(target, user)     
+    
     layout = go.Layout(
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
@@ -1223,19 +1207,50 @@ def order_by_priority(targetlist):
     return targetlist.filter(targetextra__key='observing_run_priority').order_by('targetextra__value')
 
 
+def get_lightcurve_params(target, key):
+    query = TargetExtra.objects.filter(target=target, key=key).first()
+    if query:
+        value = json.loads(query.value)
+        date = "{} ({})".format(value['date'], value['jd'])
+        params = {'date': date,
+                  'mag': str(value['mag']),
+                  'filt': str(value['filt']),
+                  'source': str(value['source'])
+        }
+    else:
+        params = {}
+    return params
+
+
 @register.inclusion_tag('custom_code/target_details.html', takes_context=True)
 def target_details(context, target):
     request = context['request']
     user = context['user']
-    ### Get previously saved target information here
+    
+    ### Get previously saved target information
+    nondet_params = get_lightcurve_params(target, 'last_nondetection')
+    det_params = get_lightcurve_params(target, 'first_detection')
+    max_params = get_lightcurve_params(target, 'maximum')
+    
+    description_query = TargetExtra.objects.filter(target=target, key='target_description').first()
+    if description_query:
+        description = description_query.value
+    else:
+        description = ''
+    
     return {'target': target,
             'request': request,
-            'user': user}
+            'user': user,
+            'last_nondetection': nondet_params,
+            'first_detection': det_params,
+            'maximum': max_params,
+            'description': description}
 
 
 @register.inclusion_tag('custom_code/lightcurve_collapse.html')
 def lightcurve_fits(target, user, filt=False, days=None):
-         
+    
+    plot_data = generic_lightcurve_plot(target, user)     
     photometry_data = {}
 
     if settings.TARGET_PERMISSIONS_ONLY:
@@ -1287,6 +1302,7 @@ def lightcurve_fits(target, user, filt=False, days=None):
             'plot': 'No photometry for this target yet.',
             'max': '',
             'mag': '',
+            'filt': ''
         }
     
         ### Fit a parabola to the lightcurve to find the max
@@ -1299,6 +1315,7 @@ def lightcurve_fits(target, user, filt=False, days=None):
             'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False),
             'max': '',
             'mag': '',
+            'filt': ''
         }
     
     else:
@@ -1364,5 +1381,51 @@ def lightcurve_fits(target, user, filt=False, days=None):
         'target': target,
         'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False),
         'max': maximum,
-        'mag': max_mag
+        'mag': max_mag,
+        'filt': filt
     }
+
+
+@register.inclusion_tag('custom_code/lightcurve.html', takes_context=True)
+def lightcurve_with_extras(context, target):
+    
+    plot_data = generic_lightcurve_plot(target, context['request'].user)         
+
+    layout = go.Layout(
+        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        margin=dict(l=30, r=10, b=100, t=40),
+        hovermode='closest',
+        plot_bgcolor='white'
+        #height=500,
+        #width=500
+    )
+
+    ## Check for last nondetection, first detection, and max in the database
+    symbols = {'last_nondetection': 'arrow-down', 'first_detection': 'arrow-up', 'maximum': 'star'}
+    names = {'last_nondetection': 'Last non-detection', 'first_detection': 'First detection', 'maximum': 'Maximum'}
+    for key in ['last_nondetection', 'first_detection', 'maximum']:
+        query = TargetExtra.objects.filter(target=target, key=key).first()
+        if query:
+            value = json.loads(query.value)
+            jd = value.get('jd', None)
+            if jd:
+                plot_data.append(
+                    go.Scatter(
+                        x=[Time(float(jd), format='jd', scale='utc').isot],
+                        y=[float(value['mag'])], mode='markers',
+                        marker=dict(color=get_color(value['filt']), size=12, symbol=symbols[key]),
+                        name=names[key]
+                    )
+                )
+
+    if plot_data:
+      return {
+          'target': target,
+          'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)
+      }
+    else:
+        return {
+            'target': target,
+            'plot': 'No photometry for this target yet.'
+        }

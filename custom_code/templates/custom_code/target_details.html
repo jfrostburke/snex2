@@ -22,20 +22,23 @@
   </tr>
   <tr>
     <td>Last Nondetection</td>
-    <td id="nondet-date">24500000.5</td>
-    <td id="nondet-mag">20</td>
-    <td id="nondet-filt">g</td>
-    <td id="nondet-source">Placeholder</td>
+    <td id="nondet-date">{{ last_nondetection.date }}</td>
+    <td id="nondet-mag">{{ last_nondetection.mag }}</td>
+    <td id="nondet-filt">{{ last_nondetection.filt }}</td>
+    <td id="nondet-source">{{ last_nondetection.source }}</td>
   </tr>
   <tr>
     <td>First Detection</td>
-    <td id="det-date">24500002.5</td>
-    <td id="det-mag">19</td>
-    <td id="det-filt">g</td>
-    <td id="det-source">Placeholder</td>
+    <td id="det-date">{{ first_detection.date }}</td>
+    <td id="det-mag">{{ first_detection.mag }}</td>
+    <td id="det-filt">{{ first_detection.filt }}</td>
+    <td id="det-source">{{ first_detection.source }}</td>
   </tr>
 </table>
-<div class="row"><button class="btn" onclick="update_values()" style="background-color: white; color: #174460; border-color: #174460;">Refresh TNS Values</button></div>
+<div class="row">
+  <button class="btn" onclick="update_values()" style="background-color: white; color: #174460; border-color: #174460;">Refresh from TNS</button>
+  <button id="save-values-btn" class="btn" onclick="save_values()" style="background-color: white; color: #174460; border-color: #174460;">Save Values</button>
+</div>
 <h4 style="margin-top: 10px;">Time of Maximum</h4>
 <div class="row" style="margin-left: 5px;">Enter a time of maximum from a source in the table below, or interactively fit the light curve:</div>
 <table id="max-tab" class="detail-tab" style="width: 100%; margin-top: 10px; margin-bottom: 10px;">
@@ -48,15 +51,15 @@
   </tr>
   <tr>
     <td>Time of Maximum </td>
-    <td id="max-date" contenteditable='true'>2400005.5</td>
-    <td id="max-mag" contenteditable='true'>15</td>
-    <td id="max-filt" contenteditable='true'>B</td>
-    <td id="max-source" contenteditable='true'>Placeholder</td>
+    <td id="max-date" contenteditable='true'>{{ maximum.date }}</td>
+    <td id="max-mag" contenteditable='true'>{{ maximum.mag }}</td>
+    <td id="max-filt" contenteditable='true'>{{ maximum.filt }}</td>
+    <td id="max-source" contenteditable='true'>{{ maximum.source }}</td>
   </tr>
 </table>
 <div class="row">
   <button class="btn" onclick="display_fit_options()" style="background-color: white; color: #174460; border-color: #174460;">Fit Lightcurve</button>
-  <button class="btn" onclick="save_max()" style="background-color: white; color: #174460; border-color: #174460;">Save Values</button>
+  <button id="save-max-btn" class="btn" onclick="save_max()" style="background-color: white; color: #174460; border-color: #174460;">Save Values</button>
 </div>
 <div class="row" id="fit-options" style="display: none;">
   <table id="fit-tab" class="detail-tab" style="width: 50%; margin-bottom: 10px; margin-top: 10px;">
@@ -73,11 +76,14 @@
   <b>Warning: </b>These fits are estimates and not publication-ready
 </div>
 <div id="lc-primary" class="row">
-  {% lightcurve target %}
+  {% lightcurve_with_extras target %}
 </div>
 <h4>Target Description / "Tagline"</h4>
 <div class="row" style="text-align: justify; margin-left: 5px;">A sentence or two describing anything that makes this target interesting or unique, <br>such as weird light curve evolution, spectral features, lots of external data, etc.</div>
-<textarea id="tagline" rows="4" cols="60" style="margin-top: 10px; margin-bottom: 10px;" placeholder="Enter a couple of descriptive sentences"></textarea>
+<textarea id="tagline" rows="4" cols="60" style="margin-top: 10px; margin-bottom: 10px;" placeholder="Enter a couple of descriptive sentences">{{ description }}</textarea>
+<div class="row">
+  <button id="save-tagline-btn" class="btn" onclick="save_tagline()" style="background-color: white; color: #174460; border-color: #174460;">Save Tagline</button>
+</div>
 <script>
 function update_values() {
   var targetid = {{ target.id }};
@@ -109,9 +115,61 @@ function display_fit_options() {
     fitDiv.style.display = "none";
   }
 }
+function save_values() {
+  var nonDetDate = document.getElementById('nondet-date').innerHTML;
+  var nonDetMag = document.getElementById('nondet-mag').innerHTML;
+  var nonDetFilt = document.getElementById('nondet-filt').innerHTML;
+  var nonDetSource = document.getElementById('nondet-source').innerHTML;
+  $.ajax({
+    url: '{% url "save-lightcurve-params" %}',
+    data: {'target_id': {{ target.id }},
+           'key': 'last_nondetection',
+           'date': nonDetDate,
+           'mag': nonDetMag,
+           'filt': nonDetFilt,
+           'source': nonDetSource},
+    dataType: 'json'
+  })
+  var detDate = document.getElementById('det-date').innerHTML;
+  var detMag = document.getElementById('det-mag').innerHTML;
+  var detFilt = document.getElementById('det-filt').innerHTML;
+  var detSource = document.getElementById('det-source').innerHTML;
+  $.ajax({
+    url: '{% url "save-lightcurve-params" %}',
+    data: {'target_id': {{ target.id }},
+           'key': 'first_detection',
+           'date': detDate,
+           'mag': detMag,
+           'filt': detFilt,
+           'source': detSource},
+    dataType: 'json',
+    success: function(response) {
+      if (response.success === 'Saved') {
+        document.getElementById('save-values-btn').innerHTML = 'Saved';
+      }
+    }
+  })
+}
 function save_max() {
-  console.log(document.getElementById('max-date').innerHTML);
-  console.log(document.getElementById('max-mag').innerHTML);
+  var maxDate = document.getElementById('max-date').innerHTML;
+  var maxMag = document.getElementById('max-mag').innerHTML;
+  var maxFilt = document.getElementById('max-filt').innerHTML;
+  var maxSource = document.getElementById('max-source').innerHTML;
+  $.ajax({
+    url: '{% url "save-lightcurve-params" %}',
+    data: {'target_id': {{ target.id }},
+           'key': 'maximum',
+           'date': maxDate,
+           'mag': maxMag,
+           'filt': maxFilt,
+           'source': maxSource},
+    dataType: 'json',
+    success: function(response) {
+      if (response.success === 'Saved') {
+        document.getElementById('save-max-btn').innerHTML = 'Saved';
+      }
+    }
+  })
 }
 function fit_lc() {
   var targetid = {{ target.id }};
@@ -130,10 +188,25 @@ function fit_lc() {
 	document.getElementById('max-date').innerHTML = response.fitted_max;
 	document.getElementById('max-mag').innerHTML = response.max_mag;
 	document.getElementById('max-source').innerHTML = 'Fit';
-	document.getElementById('max-filt').innerHTML = filt;
+	document.getElementById('max-filt').innerHTML = response.max_filt;
         $('#lc-primary').html(response.lightcurve_plot);
       } else {
 	alert("Fitting to this filter failed")
+      }
+    }
+  })
+}
+function save_tagline() {
+  var tagline = document.getElementById('tagline').value;
+  $.ajax({
+    url: '{% url "save-lightcurve-params" %}',
+    data: {'target_id': {{ target.id }},
+           'key': 'target_description',
+           'value': tagline},
+    dataType: 'json',
+    success: function(response) {
+      if (response.success === 'Saved') {
+        document.getElementById('save-tagline-btn').innerHTML = 'Saved';
       }
     }
   })

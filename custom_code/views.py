@@ -995,6 +995,7 @@ def fit_lightcurve_view(request):
     lightcurve_plot = fit['plot']
     fitted_max = fit['max']
     max_mag = fit['mag']
+    fitted_filt = fit['filt']
     
     if fitted_max:
 
@@ -1004,7 +1005,8 @@ def fit_lightcurve_view(request):
             'success': 'success',
             'lightcurve_plot': lightcurve_plot,
             'fitted_max': '{} ({})'.format(fitted_date, fitted_max),
-            'max_mag': max_mag
+            'max_mag': max_mag,
+            'max_filt': fitted_filt
         }
 
     else:
@@ -1012,7 +1014,44 @@ def fit_lightcurve_view(request):
             'success': 'failure',
             'lightcurve_plot': lightcurve_plot,
             'fitted_max': fitted_max,
-            'max_mag': max_mag
+            'max_mag': max_mag,
+            'max_filt': fitted_filt
         }
 
     return HttpResponse(json.dumps(context), content_type='application/json')
+
+
+def save_lightcurve_params_view(request):
+
+    target_id = request.GET.get('target_id', None)
+    target = Target.objects.get(id=target_id)
+    key = request.GET.get('key', None)
+    
+    # Delete any previously saved parameters for this target and keyword
+    old_params = TargetExtra.objects.filter(target=target, key=key)
+    for old_param in old_params:
+        old_param.delete()
+
+    if key == 'target_description':
+        value = request.GET.get('value', None)
+        
+    else:
+        datestring = request.GET.get('date', None)
+        date = datestring.split()[0]
+        jd = datestring.split()[1].replace('(', '').replace(')', '')
+ 
+        value = json.dumps({'date': date,
+                 'jd': jd,
+                 'mag': request.GET.get('mag', None),
+                 'filt': request.GET.get('filt', None),
+                 'source': request.GET.get('source', None)})
+
+    te = TargetExtra(
+         target=target,
+         key=key,
+         value=value
+    )
+    te.save()
+    logger.info('Saved {} for target {}'.format(key, target_id))
+
+    return HttpResponse(json.dumps({'success': 'Saved'}), content_type='application/json')

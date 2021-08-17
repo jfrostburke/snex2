@@ -270,6 +270,10 @@ EXTRA_FIELDS = [
     {'name': 'tweet', 'type': 'boolean'},
     {'name': 'reference', 'type': 'string', 'hidden': True},
     {'name': 'observing_run_priority', 'type': 'number', 'hidden': True},
+    {'name': 'last_nondetection', 'type': 'string', 'hidden': True},
+    {'name': 'first_detection', 'type': 'string', 'hidden': True},
+    {'name': 'maximum', 'type': 'string', 'hidden': True},
+    {'name': 'target_description', 'type': 'string', 'hidden': True}
 ]
 
 # Authentication strategy can either be LOCKED (required login for all views)
