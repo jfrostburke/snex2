@@ -52,3 +52,4 @@ services:
             - GEMINI_NORTH_SERVER=${SNEX2_GEMINI_NORTH_SERVER}
             - SNEX_EMAIL_PASSWORD=${SNEX_EMAIL_PASSWORD}
             - TNS_APIKEY=${TNS_APIKEY}
+            - TNS_APIID=${TNS_APIID}
