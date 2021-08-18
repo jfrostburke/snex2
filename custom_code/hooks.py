@@ -135,40 +135,40 @@ def target_post_save(target, created):
         except:
             pass
 
-  ### Craig custom code starts here:
-  ### ----------------------------------
-    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-
-    with _get_session(db_address=_snex1_address) as db_session:
-        Targets = _load_table('targets', db_address=_snex1_address)
-        Targetnames = _load_table('targetnames', db_address=_snex1_address)
-        if created == True: 
-            # Insert into SNex 1 db
-            db_session.add(Targets(ra0=target__ra, dec0=target__dec, lastmodified=target__modified, datecreated=target__created))
-            db_session.add(Targetnames(targetid=target__id, name=target__name, datecreated=target__created, lastmodified=target__modified))
-        elif created == False:
-            # Update in SNex 1 db
-            db_session.query(Targets).filter(target__id==Targets__id).update({'ra0': target__ra, 'dec0': target__dec, 'lastmodified': target__modified, 'datecreated': target__created})
-            db_session.add(Targetnames(targetid=target__id, name=target__name, datecreated=target__created, lastmodified=target__modified))
-        db_session.commit()
+#  ### Craig custom code starts here:
+#  ### ----------------------------------
+#    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+#
+#    with _get_session(db_address=_snex1_address) as db_session:
+#        Targets = _load_table('targets', db_address=_snex1_address)
+#        Targetnames = _load_table('targetnames', db_address=_snex1_address)
+#        if created == True: 
+#            # Insert into SNex 1 db
+#            db_session.add(Targets(ra0=target__ra, dec0=target__dec, lastmodified=target__modified, datecreated=target__created))
+#            db_session.add(Targetnames(targetid=target__id, name=target__name, datecreated=target__created, lastmodified=target__modified))
+#        elif created == False:
+#            # Update in SNex 1 db
+#            db_session.query(Targets).filter(target__id==Targets__id).update({'ra0': target__ra, 'dec0': target__dec, 'lastmodified': target__modified, 'datecreated': target__created})
+#            db_session.add(Targetnames(targetid=target__id, name=target__name, datecreated=target__created, lastmodified=target__modified))
+#        db_session.commit()
 
 def targetextra_post_save(targetextra, created):
     logger.info('targetextra post save hook: %s created: %s', targetextra, created)
-    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-
-    with _get_session(db_address=_snex1_address) as db_session:
-        Targets = _load_table('targets', db_address=_snex1_address)
-        Classifications = _load_table('classifications', db_address=_snex1_address)
-
-        if targetextra.key == 'classification': # Update the classification in the targets table in the SNex 1 db
-            targetid = targetextra__target_id # Get the targetid of our saved entry
-            classification = targetextra__value # Get the new classification
-            classificationid = db_session.query(Classifications).filter(Classifications__name==classification).first().id # Get the corresponding id from the classifications table
-            db_session.query(Targets).filter(Targets__id==targetid).update({'classificationid': classificationid}) # Update the classificationid in the targets table
-
-        elif targetextra.key == 'redshift': # Now update the targets table with the redshift info
-            db_session.query(Targets).filter(Targets__id==targetextra__target_id).update({'redshift': targetextra__float_value})
-        db_session.commit()
+#    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+#
+#    with _get_session(db_address=_snex1_address) as db_session:
+#        Targets = _load_table('targets', db_address=_snex1_address)
+#        Classifications = _load_table('classifications', db_address=_snex1_address)
+#
+#        if targetextra.key == 'classification': # Update the classification in the targets table in the SNex 1 db
+#            targetid = targetextra__target_id # Get the targetid of our saved entry
+#            classification = targetextra__value # Get the new classification
+#            classificationid = db_session.query(Classifications).filter(Classifications__name==classification).first().id # Get the corresponding id from the classifications table
+#            db_session.query(Targets).filter(Targets__id==targetid).update({'classificationid': classificationid}) # Update the classificationid in the targets table
+#
+#        elif targetextra.key == 'redshift': # Now update the targets table with the redshift info
+#            db_session.query(Targets).filter(Targets__id==targetextra__target_id).update({'redshift': targetextra__float_value})
+#        db_session.commit()
 
 
 def sync_observation_with_snex1(snex_id, params, requestgroup_id):
