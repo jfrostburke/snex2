@@ -231,6 +231,11 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
     ### Get papers for this target
     papers_for_target = [p.id for p in Papers.objects.filter(target_id=target_id)]
 
+    ### If both 'Aperture' and 'PSF' are selected photometry types,
+    ### add 'Mixed' and 'Unsure' as well
+    if len(selected_photometry_type) > 1:
+        selected_photometry_type += ['Mixed', 'Unsure']
+    
     ### Get the data for the selected telescope
     if not selected_telescope:
         datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry'))

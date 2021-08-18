@@ -176,8 +176,19 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
                 Column(HTML('Block No.')),
             )
         )
+        non_muscat_filter_layout = Div(css_class='form-row', css_id='non-muscat-filt-div')
+        muscat_filter_layout = Div(css_class='form-row', css_id='muscat-filt-div')
+        w_filter_layout = Div(css_class='form-row', css_id='w-filt-div')
         for filter_name in self.filters:
-            filter_layout.append(Row(PrependedText(filter_name, filter_name)))
+            if filter_name == 'w':
+                w_filter_layout.append(Row(PrependedText(filter_name, filter_name)))
+                filter_layout.append(non_muscat_filter_layout)
+                filter_layout.append(muscat_filter_layout)
+                filter_layout.append(w_filter_layout)
+            elif filter_name not in ['gp', 'rp', 'ip', 'zs']:
+                non_muscat_filter_layout.append(Row(PrependedText(filter_name, filter_name)))
+            else:
+                muscat_filter_layout.append(Row(PrependedText(filter_name, filter_name)))
         return Div(
             Div(
                 filter_layout,

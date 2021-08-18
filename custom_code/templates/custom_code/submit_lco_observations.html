@@ -40,9 +40,13 @@ $(function () {
   $("#phot_instrument_type").change(function() {
     if(document.getElementById("phot_instrument_type").value === '2M0-SCICAM-MUSCAT') {
       document.getElementById("muscat-div").style.display = "block";
+      document.getElementById("non-muscat-filt-div").style.display = "none";
+      document.getElementById("w-filt-div").style.display = "none";
     }
     else {
       document.getElementById("muscat-div").style.display = "none";
+      document.getElementById("non-muscat-filt-div").style.display = "block";
+      document.getElementById("w-filt-div").style.display = "block";
    }
   });
 });

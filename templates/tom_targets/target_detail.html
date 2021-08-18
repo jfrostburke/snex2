@@ -142,7 +142,9 @@ $(document).ready(function(){
         <div class="col-md-6">
           <h4>Photometry</h4>
           {#% lightcurve object %#}
+          <div id="plotly-lc-div" style="position: relative; padding-bottom: 250.0% !important; height: 0; overflow: hidden;">
 	  {% dash_lightcurve object 600 360 %}
+          </div>
         </div>
         <div class="col-md-6">
           <h4>Spectroscopy</h4>
@@ -196,5 +198,10 @@ function display_obs() {
     x.style.display = "none";
   }
 }
+$(document).ready (function() {
+  var parentElt = document.getElementById("plotly-lc-div");
+  var childElt = parentElt.firstElementChild;
+  childElt.style.padding = "0% 0% 250.0% 0%";
+})
 </script>
 {% endblock %}

@@ -28,9 +28,9 @@ class TNSTargetForm(forms.Form):
             ),
             Div(
                 Div(PrependedText('disc_mag', 'Discovery mag brighter than',
-                    placeholder='19'), css_class='col-md-6'),
+                    placeholder='19', style='color: black;'), css_class='col-md-6'),
                 Div(PrependedAppendedText('lnd_jd', 'Last non-detection within the last',
-                    'days', placeholder='5'), css_class='col-md-6'),
+                    'days', placeholder='5', style='color: black;'), css_class='col-md-6'),
                 css_class='form-row'
             ),
         )
@@ -44,9 +44,9 @@ class TNSTargetFilter(django_filters.FilterSet):
         label='')    
     source_group = django_filters.CharFilter(field_name='source_group',lookup_expr='icontains',
         label='')
-    lnd_jd = django_filters.NumberFilter(field_name='lnd_jd', method='filter_lnd_jd',
+    lnd_jd = django_filters.NumberFilter(field_name='lnd_jd', initial=5, method='filter_lnd_jd',
         label='')
-    disc_mag = django_filters.NumberFilter(field_name='disc_mag', lookup_expr='lt',
+    disc_mag = django_filters.NumberFilter(field_name='disc_mag', initial=19, lookup_expr='lt',
         label='', help_text='LCO spectroscopy limit: 18.5')
     in_tess = django_filters.ChoiceFilter(field_name='TESS_sectors', method='filter_TESS',
         label='', choices=TESS_choices, empty_label='In TESS?')
