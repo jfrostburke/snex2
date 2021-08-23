@@ -750,10 +750,10 @@ def observation_summary(context, target=None, time='previous'):
         obsgroup = o.observationgroup_set.first()
         if obsgroup is not None:
             cadence = obsgroup.dynamiccadence_set.first()
-            if time == 'previous':
+            if cadence is not None and time == 'previous':
                 if cadence not in cadences and not cadence.active:
                     cadences.append(cadence)
-            else:
+            elif cadence is not None:
                 if cadence not in cadences and cadence.active:
                     cadences.append(cadence)
     
