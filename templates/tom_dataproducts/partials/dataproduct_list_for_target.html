@@ -6,6 +6,7 @@
   <thead><tr><th></th><th></th><th>Filename</th><th>Type</th><th>Update</th><th>Delete</th></tr></thead>
   <tbody>
   {% for product in products %}
+    {% if product.data %}
     <tr>
       {% if not product.featured %}
       <td><a href="{% url 'tom_dataproducts:feature' pk=product.id %}?target_id={{ target.id }}" title="Make Featured Image" class="btn btn-primary">Feature</a></td>
@@ -27,5 +28,6 @@
       <td>{% dataproduct_update product %}</td>
       <td><a href="{% url 'tom_dataproducts:delete' product.id %}" class="btn btn-danger">Delete</a></td>
     </tr>
+    {% endif %}
   {% endfor %}
 </table>

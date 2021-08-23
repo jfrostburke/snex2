@@ -1209,7 +1209,7 @@ def order_by_priority(targetlist):
 
 def get_lightcurve_params(target, key):
     query = TargetExtra.objects.filter(target=target, key=key).first()
-    if query:
+    if query and query.value:
         value = json.loads(query.value)
         date = "{} ({})".format(value['date'], value['jd'])
         params = {'date': date,
@@ -1406,7 +1406,7 @@ def lightcurve_with_extras(context, target):
     names = {'last_nondetection': 'Last non-detection', 'first_detection': 'First detection', 'maximum': 'Maximum'}
     for key in ['last_nondetection', 'first_detection', 'maximum']:
         query = TargetExtra.objects.filter(target=target, key=key).first()
-        if query:
+        if query and query.value:
             value = json.loads(query.value)
             jd = value.get('jd', None)
             if jd:
