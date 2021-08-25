@@ -15,6 +15,7 @@ from statistics import median
 from django_plotly_dash import DjangoDash
 from tom_dataproducts.models import ReducedDatum
 from tom_targets.models import Target, TargetExtra
+from custom_code.templatetags.custom_code_tags import bin_spectra
 from django.db.models import Q
 import matplotlib.pyplot as plt
 import logging
@@ -148,10 +149,13 @@ app.layout = html.Div([
     dcc.Input(id='target_redshift', type='hidden', value=0),
     dcc.Input(id='min-flux', type='hidden', value=0),
     dcc.Input(id='max-flux', type='hidden', value=0),
+    html.Div('Binning Factor: ', style={'color': 'black', 'fontSize': 18}),
+    dcc.Input(id='bin-factor', type='number', value=5, size=2),
     dcc.Checklist(
         id='line-plotting-checklist',
         options=[{'label': 'Show line plotting interface', 'value': 'display'}],
-        value=''
+        value='',
+        style={'fontSize': 18}
     ),
     html.Div(
         children=[],
@@ -181,7 +185,8 @@ app.layout = html.Div([
     dcc.Checklist(
         id='compare-spectra-checklist',
         options=[{'label': 'Compare this spectrum to another object?', 'value': 'display'}],
-        value=''
+        value='',
+        style={'fontSize': 18}
     ),
     html.Div([
         dbc.Input(id='spectra-compare-input', type='text', placeholder='Search for target', value='', style={'display': 'none'}),
@@ -191,7 +196,8 @@ app.layout = html.Div([
                     options=[{'label': target.name, 'value': target.name} for target in Target.objects.all()],
                     value='',
                     placeholder='Search for a target',
-                    id='spectra-compare-dropdown'
+                    id='spectra-compare-dropdown',
+                    style={'z-index': '10'}
                 )
             ],
             id='spectra-compare-results',
@@ -359,22 +365,22 @@ def change_redshift(z, *args, **kwargs):
      Input('spectrum_id', 'value'),
      Input('min-flux', 'value'),
      Input('max-flux', 'value'),
+     Input('bin-factor', 'value'),
      Input('spectra-compare-dropdown', 'value'),
      State('table-editing-simple-output', 'figure')])
 def display_output(selected_rows,
                    #selected_row_ids, columns, 
-                   value, min_flux, max_flux, compare_target, fig_data, *args, **kwargs):
+                   value, min_flux, max_flux, bin_factor, compare_target, fig_data, *args, **kwargs):
     # Improvements:
     #   Fix dataproducts so they're correctly serialized
     #   Correctly display message when there are no spectra
-    
     spectrum_id = value
-    graph_data = {'data': fig_data['data'],
+    graph_data = {'data': [],
                   'layout': fig_data['layout']}
 
     if compare_target:
         # Plot this spectrum and the spectrum for the selected target, normalized to the median
-        graph_data['data'] = []
+        #graph_data['data'] = []
         
         min_flux = 0
         max_flux = 0
@@ -452,43 +458,48 @@ def display_output(selected_rows,
             graph_data['data'].append(scatter_obj)
 
 
-    for d in reversed(fig_data['data']):
-        # Check if any letters are in the name, if so we want to get rid of those to replot
-        # A way of checking is to see if everything in the string is lowercase after calling 
-        # lower() on it
-        lower_name = d['name'].lower()
-        if lower_name.islower():
-            fig_data['data'].remove(d)
+    #for d in reversed(fig_data['data']):
+    #    # Check if any letters are in the name, if so we want to get rid of those to replot
+    #    # A way of checking is to see if everything in the string is lowercase after calling 
+    #    # lower() on it
+    #    lower_name = d['name'].lower()
+    #    if lower_name.islower():
+    #        fig_data['data'].remove(d)
     
     # If the page just loaded, plot all the spectra
-    if not fig_data['data']:
-        logger.info('Plotting dash spectrum for dataproduct %s', spectrum_id)
-        spectrum = ReducedDatum.objects.get(id=spectrum_id)
+    #if not fig_data['data']:
+    #graph_data['data'] = []
+    logger.info('Plotting dash spectrum for dataproduct %s', spectrum_id)
+    spectrum = ReducedDatum.objects.get(id=spectrum_id)
  
-        if not spectrum:
-            return 'No spectra yet'
-            
-        datum = spectrum.value
-        wavelength = []
-        flux = []
-        name = str(spectrum.timestamp).split(' ')[0]
-        if datum.get('photon_flux'):
-            wavelength = datum.get('wavelength')
-            flux = datum.get('photon_flux')
-        elif datum.get('flux'):
-            wavelength = datum.get('wavelength')
-            flux = datum.get('flux')
-        else:
-            for key, value in datum.items():
-                wavelength.append(value['wavelength'])
-                flux.append(float(value['flux']))
-        scatter_obj = go.Scatter(
-            x=wavelength,
-            y=flux,
-            name=name,
-            line_color='black'
-        )
-        graph_data['data'].append(scatter_obj)
+    if not spectrum:
+        return 'No spectra yet'
+        
+    datum = spectrum.value
+    wavelength = []
+    flux = []
+    name = str(spectrum.timestamp).split(' ')[0]
+    if datum.get('photon_flux'):
+        wavelength = datum.get('wavelength')
+        flux = datum.get('photon_flux')
+    elif datum.get('flux'):
+        wavelength = datum.get('wavelength')
+        flux = datum.get('flux')
+    else:
+        for key, value in datum.items():
+            wavelength.append(float(value['wavelength']))
+            flux.append(float(value['flux']))
+    
+    if not bin_factor:
+        bin_factor = 1
+    binned_wavelength, binned_flux = bin_spectra(wavelength, flux, int(bin_factor))
+    scatter_obj = go.Scatter(
+        x=binned_wavelength,
+        y=binned_flux,
+        name=name,
+        line_color='black'
+    )
+    graph_data['data'].append(scatter_obj)
 
     for row in selected_rows:
         for elem, row_extras in json.loads(row).items():

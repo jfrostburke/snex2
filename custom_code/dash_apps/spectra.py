@@ -13,6 +13,7 @@ import json
 
 from django_plotly_dash import DjangoDash
 from tom_dataproducts.models import ReducedDatum
+from custom_code.templatetags.custom_code_tags import bin_spectra
 import matplotlib.pyplot as plt
 
 external_stylesheets = [dbc.themes.BOOTSTRAP]
@@ -363,11 +364,13 @@ def display_output(selected_rows,
                 flux = datum.get('flux')
             else:
                 for key, value in datum.items():
-                    wavelength.append(value['wavelength'])
+                    wavelength.append(float(value['wavelength']))
                     flux.append(float(value['flux']))
+            
+            binned_wavelength, binned_flux = bin_spectra(wavelength, flux, 5)
             scatter_obj = go.Scatter(
-                x=wavelength,
-                y=flux,
+                x=binned_wavelength,
+                y=binned_flux,
                 name=name,
                 line_color=rgb_colors[i]
             )

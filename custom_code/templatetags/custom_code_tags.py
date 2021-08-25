@@ -335,6 +335,32 @@ def moon_vis(target):
    
     return {'plot': figure}
 
+
+def bin_spectra(waves, fluxes, b):
+    """
+    Bins spectra given list of wavelengths, fluxes, and binning factor
+    """
+    binned_waves = []
+    binned_flux = []
+    newindex = 0
+    for index in range(0, len(fluxes), b):
+        if index + b - 1 <= len(fluxes) - 1:
+            sumx = 0
+            sumy = 0
+            for binindex in range(index, index+b, 1):
+                if binindex < len(fluxes):
+                    sumx += waves[binindex]
+                    sumy += fluxes[binindex]
+
+            sumx = sumx / b
+            sumy = sumy / b
+        if sumx > 0:
+            binned_waves.append(sumx)
+            binned_flux.append(sumy)
+
+    return binned_waves, binned_flux
+
+
 @register.inclusion_tag('custom_code/spectra.html')
 def spectra_plot(target, dataproduct=None):
     spectra = []
@@ -356,7 +382,9 @@ def spectra_plot(target, dataproduct=None):
             for key, value in datum.items():
                 wavelength.append(float(value['wavelength']))
                 flux.append(float(value['flux']))
-        spectra.append((wavelength, flux, name))
+
+        binned_wavelength, binned_flux = bin_spectra(wavelength, flux, 5)
+        spectra.append((binned_wavelength, binned_flux, name))
     plot_data = [
         go.Scatter(
             x=spectrum[0],
@@ -414,7 +442,9 @@ def spectra_collapse(target):
             for key, value in datum.items():
                 wavelength.append(float(value['wavelength']))
                 flux.append(float(value['flux']))
-        spectra.append((wavelength, flux))
+        
+        binned_wavelength, binned_flux = bin_spectra(wavelength, flux, 5)
+        spectra.append((binned_wavelength, binned_flux))
     plot_data = [
         go.Scatter(
             x=spectrum[0],
@@ -462,6 +492,21 @@ def get_targetextra_id(target, keyword):
         return targetextra.id
     except:
         return json.dumps(None)
+
+
+@register.inclusion_tag('tom_targets/partials/target_data.html', takes_context=True)
+def target_data_with_user(context, target):
+    """
+    Displays the data of a target.
+    """
+    user = context['request'].user
+    extras = {k['name']: target.extra_fields.get(k['name'], '') for k in settings.EXTRA_FIELDS if not k.get('hidden')}
+    return {
+        'target': target,
+        'extras': extras,
+        'user': user
+    }
+
 
 @register.inclusion_tag('custom_code/classifications_dropdown.html')
 def classifications_dropdown(target):
@@ -1131,12 +1176,13 @@ def reference_status(target):
 
 
 @register.inclusion_tag('custom_code/interested_persons.html')
-def interested_persons(target):
+def interested_persons(target, user):
     interested_persons_query = InterestedPersons.objects.filter(target=target)
     interested_persons = [u.user.get_full_name() for u in interested_persons_query]
-
+      
     return {'target': target,
-            'interested_persons': interested_persons
+            'interested_persons': interested_persons,
+            'user': user.get_full_name()
         }
 
 
