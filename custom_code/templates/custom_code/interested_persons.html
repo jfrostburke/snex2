@@ -1,10 +1,14 @@
 {% load custom_code_tags %}
 <dl class="row" style="display: block;">
   {% for person in interested_persons %}
-    {{ person }}
+  {{ person }}<br>
   {% endfor %}
   <div id="new-interested-person" style="display: none;"></div><br>
+  {% if user in interested_persons %}
+  <button class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Not Interested</button>
+  {% else %}
   <button class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Interested</button>
+  {% endif %}
 </dl>
 <script>
   function changeInterest() {
@@ -19,6 +23,7 @@
 	  document.getElementById("new-interested-person").style.display = "block";
 	  document.getElementById("interest-button").innerHTML = "I'm Not Interested";
 	} else if (response.success === 'Uninterested') {
+          document.getElementById("new-interested-person").innerHTML = "";
 	  document.getElementById("new-interested-person").style.display = "none";
 	  document.getElementById("interest-button").innerHTML = "I'm Interested";
 	};
