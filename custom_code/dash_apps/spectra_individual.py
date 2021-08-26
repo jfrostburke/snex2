@@ -192,7 +192,7 @@ app.layout = html.Div([
     html.Div([
         dbc.Input(id='spectra-compare-input', type='text', placeholder='Search for target', value='', style={'display': 'none'}),
         html.Div(
-            children=[
+            children=[ 
                 dcc.Dropdown(
                     options=[{'label': target.name, 'value': target.name} for target in Target.objects.all()],
                     value='',
@@ -376,24 +376,115 @@ def display_output(selected_rows,
     #   Fix dataproducts so they're correctly serialized
     #   Correctly display message when there are no spectra
     spectrum_id = value
-    graph_data = {'data': [],
+    graph_data = {'data': fig_data['data'],#[],
                   'layout': fig_data['layout']}
 
     if compare_target:
-        # Plot this spectrum and the spectrum for the selected target, normalized to the median
-        #graph_data['data'] = []
+        compared = False
+        # Check if comparison spectra are already plotted
+        for d in reversed(graph_data['data']):
+            if '---' in d['name']:
+                compared = True
+                break
         
-        min_flux = 0
-        max_flux = 0
+        if not compared:
+            # Plot this spectrum and the spectrum for the selected target, normalized to the median
+            graph_data['data'] = []
+            
+            min_flux = 0
+            max_flux = 0
 
-        spectrum = ReducedDatum.objects.get(id=spectrum_id)
+            spectrum = ReducedDatum.objects.get(id=spectrum_id)
        
-        object_z_query = TargetExtra.objects.filter(target_id=spectrum.target_id,key='redshift').first()
-        if not object_z_query:
-            object_z = 0
-        else:
-            object_z = float(object_z_query.value)
+            object_z_query = TargetExtra.objects.filter(target_id=spectrum.target_id,key='redshift').first()
+            if not object_z_query:
+                object_z = 0
+            else:
+                object_z = float(object_z_query.value)
 
+            if not spectrum:
+                return 'No spectra yet'
+                
+            datum = spectrum.value
+            wavelength = []
+            flux = []
+            name = str(spectrum.timestamp).split(' ')[0]
+            if datum.get('photon_flux'):
+                wavelength = datum.get('wavelength')
+                flux = datum.get('photon_flux')
+            elif datum.get('flux'):
+                wavelength = datum.get('wavelength')
+                flux = datum.get('flux')
+            else:
+                for key, value in datum.items():
+                    wavelength.append(float(value['wavelength']))
+                    flux.append(float(value['flux']))
+                    
+            median_flux = [f / median(flux) for f in flux]
+            if max(median_flux) > max_flux: max_flux = max(median_flux)
+
+            if not bin_factor:
+                bin_factor = 1
+            binned_wavelength, binned_flux = bin_spectra(wavelength, median_flux, int(bin_factor))
+            
+            scatter_obj = go.Scatter(
+                x=binned_wavelength,
+                y=binned_flux,
+                name='This Target',
+                line_color='black'
+            )
+            graph_data['data'] = [scatter_obj]
+
+            target = Target.objects.filter(Q(name__icontains=compare_target) | Q(aliases__name__icontains=compare_target)).first()
+            
+            compare_z_query = TargetExtra.objects.filter(target_id=target.id,key='redshift').first()
+            if not compare_z_query:
+                compare_z = 0
+            else:
+                compare_z = float(compare_z_query.value)
+
+            spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy').order_by('-timestamp')
+            for spectrum in spectral_dataproducts:
+                datum = spectrum.value
+                wavelength = []
+                flux = []
+                name = target.name + ' --- ' +  str(spectrum.timestamp).split(' ')[0]
+                if datum.get('photon_flux'):
+                    wavelength = datum.get('wavelength')
+                    flux = datum.get('photon_flux')
+                elif datum.get('flux'):
+                    wavelength = datum.get('wavelength')
+                    flux = datum.get('flux')
+                else:
+                    for key, value in datum.items():
+                        wavelength.append(float(value['wavelength']))
+                        flux.append(float(value['flux']))
+                shifted_wavelength = [w * (1+object_z) / (1+compare_z) for w in wavelength]
+                median_flux = [f / median(flux) for f in flux]
+                if max(median_flux) > max_flux: max_flux = max(median_flux)
+                
+                if not bin_factor:
+                    bin_factor = 1
+                binned_wavelength, binned_flux = bin_spectra(wavelength, median_flux, int(bin_factor))
+                
+                scatter_obj = go.Scatter(
+                    x=binned_wavelength,
+                    y=binned_flux,
+                    name=name
+                )
+                graph_data['data'].append(scatter_obj)
+            return graph_data
+        
+    # Remove all the element lines so we can replot the selected ones later
+    for d in reversed(graph_data['data']):
+        if d['name'] in elements.keys():
+            graph_data['data'].remove(d)
+    
+    # If the page just loaded, plot all the spectra
+    if not graph_data['data']:
+        logger.info('Plotting dash spectrum for dataproduct %s', spectrum_id)
+        spectrum = ReducedDatum.objects.get(id=spectrum_id)
+ 
         if not spectrum:
             return 'No spectra yet'
             
@@ -409,99 +500,58 @@ def display_output(selected_rows,
             flux = datum.get('flux')
         else:
             for key, value in datum.items():
-                wavelength.append(value['wavelength'])
+                wavelength.append(float(value['wavelength']))
                 flux.append(float(value['flux']))
-                
-        median_flux = [f / median(flux) for f in flux]
-        if max(median_flux) > max_flux: max_flux = max(median_flux)
-
+        
+        if not bin_factor:
+            bin_factor = 1
+        binned_wavelength, binned_flux = bin_spectra(wavelength, flux, int(bin_factor))
         scatter_obj = go.Scatter(
-            x=wavelength,
-            y=median_flux,
-            name='This Target',
+            x=binned_wavelength,
+            y=binned_flux,
+            name=name,
             line_color='black'
         )
         graph_data['data'].append(scatter_obj)
+        return graph_data
 
-        target = Target.objects.filter(Q(name__icontains=compare_target) | Q(aliases__name__icontains=compare_target)).first()
-        
-        compare_z_query = TargetExtra.objects.filter(target_id=target.id,key='redshift').first()
-        if not compare_z_query:
-            compare_z = 0
+    if not compare_target:
+        # Replot the spectrum with correct binning
+        for d in reversed(graph_data['data']):
+            if d['name'] not in elements.keys():
+                graph_data['data'].remove(d)
+
+        spectrum = ReducedDatum.objects.get(id=spectrum_id)
+
+        if not spectrum:
+            return 'No spectra yet'
+
+        datum = spectrum.value
+        wavelength = []
+        flux = []
+        name = str(spectrum.timestamp).split(' ')[0]
+        if datum.get('photon_flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('photon_flux')
+        elif datum.get('flux'):
+            wavelength = datum.get('wavelength')
+            flux = datum.get('flux')
         else:
-            compare_z = float(compare_z_query.value)
+            for key, value in datum.items():
+                wavelength.append(float(value['wavelength']))
+                flux.append(float(value['flux']))
 
-        spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy').order_by('-timestamp')
-        spectra = []
-        for spectrum in spectral_dataproducts:
-            datum = spectrum.value
-            wavelength = []
-            flux = []
-            name = target.name + ' --- ' +  str(spectrum.timestamp).split(' ')[0]
-            if datum.get('photon_flux'):
-                wavelength = datum.get('wavelength')
-                flux = datum.get('photon_flux')
-            elif datum.get('flux'):
-                wavelength = datum.get('wavelength')
-                flux = datum.get('flux')
-            else:
-                for key, value in datum.items():
-                    wavelength.append(float(value['wavelength']))
-                    flux.append(float(value['flux']))
-            shifted_wavelength = [w * (1+object_z) / (1+compare_z) for w in wavelength]
-            median_flux = [f / median(flux) for f in flux]
-            if max(median_flux) > max_flux: max_flux = max(median_flux)
-            scatter_obj = go.Scatter(
-                x=shifted_wavelength,
-                y=median_flux,
-                name=name
-            )
-            graph_data['data'].append(scatter_obj)
-
-
-    #for d in reversed(fig_data['data']):
-    #    # Check if any letters are in the name, if so we want to get rid of those to replot
-    #    # A way of checking is to see if everything in the string is lowercase after calling 
-    #    # lower() on it
-    #    lower_name = d['name'].lower()
-    #    if lower_name.islower():
-    #        fig_data['data'].remove(d)
+        if not bin_factor:
+            bin_factor = 1
+        binned_wavelength, binned_flux = bin_spectra(wavelength, flux, int(bin_factor))
+        scatter_obj = go.Scatter(
+            x=binned_wavelength,
+            y=binned_flux,
+            name=name,
+            line_color='black'
+        )
+        graph_data['data'].append(scatter_obj)
     
-    # If the page just loaded, plot all the spectra
-    #if not fig_data['data']:
-    #graph_data['data'] = []
-    logger.info('Plotting dash spectrum for dataproduct %s', spectrum_id)
-    spectrum = ReducedDatum.objects.get(id=spectrum_id)
- 
-    if not spectrum:
-        return 'No spectra yet'
-        
-    datum = spectrum.value
-    wavelength = []
-    flux = []
-    name = str(spectrum.timestamp).split(' ')[0]
-    if datum.get('photon_flux'):
-        wavelength = datum.get('wavelength')
-        flux = datum.get('photon_flux')
-    elif datum.get('flux'):
-        wavelength = datum.get('wavelength')
-        flux = datum.get('flux')
-    else:
-        for key, value in datum.items():
-            wavelength.append(float(value['wavelength']))
-            flux.append(float(value['flux']))
-    
-    if not bin_factor:
-        bin_factor = 1
-    binned_wavelength, binned_flux = bin_spectra(wavelength, flux, int(bin_factor))
-    scatter_obj = go.Scatter(
-        x=binned_wavelength,
-        y=binned_flux,
-        name=name,
-        line_color='black'
-    )
-    graph_data['data'].append(scatter_obj)
-
     for row in selected_rows:
         for elem, row_extras in json.loads(row).items():
             z = row_extras['redshift']
@@ -514,6 +564,9 @@ def display_output(selected_rows,
         y = []
         
         lambda_rest = elements[elem]['waves']
+        if compare_target:
+            max_flux = max([max(d['y']) for d in graph_data['data'] if d['name'] not in elements.keys()])
+            min_flux = min([min(d['y']) for d in graph_data['data'] if d['name'] not in elements.keys()])
         for lambduh in lambda_rest:
 
             lambda_observed = lambduh*((1+z)-v_over_c)
@@ -521,8 +574,8 @@ def display_output(selected_rows,
             x.append(lambda_observed)
             x.append(lambda_observed)
             x.append(None)
-            y.append(min_flux*0.95)
-            y.append(max_flux*1.05)
+            y.append(min_flux)
+            y.append(max_flux)
             y.append(None)
 
         graph_data['data'].append(
