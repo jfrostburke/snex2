@@ -1,0 +1,57 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 static observation_extras dataproduct_extras custom_code_tags %}
+{% block title %} Observation Sequence {{ object.name }} {% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+<div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Track Sequence {{ object.name }}</h3>
+</div>
+</nav>
+<div class="row">
+  <div class="col-md-8" style="text-align: center;">
+    <h4>Observing log for sequence {{ object.name }}</h4>
+    {% for record in records %}
+    <div class="row">
+      <p>{{ record.parameters.start }} Observation request submitted</p>
+      <table class="table">
+        <tr>
+          <th>Cadence (days)</th>
+          <th>Filters</th>
+          <!--th>Exptimes</th>
+          <th>Exposures</th>
+          <th>Blocks</th--!>
+          <th>Site</th>
+          <th>Instrument</th>
+          <th>Proposal</th>
+          <th>IPP</th>
+          <th>Airmass Limit</th>
+        </tr>
+        <tr>
+          <td>{{ record.parameters.cadence_frequency }}</td>
+          <td>{{ record.parameters.U }}</td>
+          <td>{{ record.parameters.site }}</td>
+          <td>{{ record.parameters.instrument_type }}</td>
+          <td>{{ record.parameters.proposal }}</td>
+          <td>{{ record.parameters.ipp_value }}</td>
+          <td>{{ record.parameters.max_airmass }}</td>
+        </tr>
+      </table>
+    </div><br>
+    <div class="row">
+      {% if record.parameters.end %}
+      <p>This request ended with status {{ record.status }}</p>
+      {% else %}
+      <p>Request Pending</p>
+      {% endif %}
+    </div>
+    <div class="row">
+      <a style="background-color: white; color: gray; font-size: 16px; border: none;" href="https://observe.lco.global/requests/{{ record.observation_id }}">Show LCO Observing Block History</a>
+    </div><br>
+    <hr>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

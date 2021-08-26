@@ -841,7 +841,8 @@ def observation_summary(context, target=None, time='previous'):
 
             parameters.append({'title': 'LCO Sequence',
                                'summary': parameter_string,
-                               'observation': observation.id})
+                               'observation': observation.id,
+                               'group': obsgroup.id})
 
         # Now do Gemini observations
         elif parameter.get('facility', '') == 'Gemini':
@@ -854,7 +855,8 @@ def observation_summary(context, target=None, time='previous'):
 
             parameters.append({'title': 'Gemini Sequence',
                                'summary': parameter_string,
-                               'observation': observation.id})
+                               'observation': observation.id,
+                               'group': obsgroup.id})
 
     return {
         'observations': observations,

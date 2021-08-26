@@ -3,6 +3,7 @@ from django.shortcuts import redirect, render
 from django.db.models import Q #
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.views.generic.edit import FormView, UpdateView
+from django.views.generic.detail import DetailView
 from django.urls import reverse
 from django.template.loader import render_to_string
 
@@ -1055,3 +1056,27 @@ def save_lightcurve_params_view(request):
     logger.info('Saved {} for target {}'.format(key, target_id))
 
     return HttpResponse(json.dumps({'success': 'Saved'}), content_type='application/json')
+
+
+class ObservationGroupDetailView(DetailView):
+    """
+    View for displaying the details and records associated with
+    an ObservationGroup object
+    """
+    model = ObservationGroup
+
+    def get_queryset(self, *args, **kwargs):
+        """
+        Gets set of ObservationGroup objects associated with targets that
+        the current user is authorized to view
+        """
+        return get_objects_for_user(self.request.user, 'tom_observations.view_observationgroup')
+
+    def get_context_data(self, *args, **kwargs):
+        """
+        Adds items to context object for this view, including the associated
+        observation records in ascending order of creation date
+        """
+        context = super().get_context_data(*args, **kwargs)
+        context['records'] = self.object.observation_records.all().order_by('created')
+        return context
