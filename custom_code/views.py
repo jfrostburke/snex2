@@ -1078,5 +1078,44 @@ class ObservationGroupDetailView(DetailView):
         observation records in ascending order of creation date
         """
         context = super().get_context_data(*args, **kwargs)
+        obs_records = self.object.observation_records.all().order_by('created')
+        parameters = []
+        for obs in obs_records:
+            p = {'start': obs.parameters['start'].replace('T', ' '),
+                 'end': obs.parameters.get('end', ''),
+                 'status': obs.status,
+                 'obs_id': obs.observation_id,
+                 'cadence': obs.parameters['cadence_frequency'],
+                 'site': obs.parameters.get('site', ''),
+                 'instrument': obs.parameters['instrument_type'],
+                 'proposal': obs.parameters['proposal'],
+                 'ipp': obs.parameters['ipp_value'],
+                 'airmass': obs.parameters['max_airmass']
+            }
+            first_filt = []
+            other_filts = []
+            for f in ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']:
+                if f in obs.parameters.keys() and obs.parameters[f][0]:
+                    current_filt = obs.parameters[f]
+                    if not first_filt:
+                        first_filt = {
+                            'filt': f, 
+                            'exptime': current_filt[0], 
+                            'numexp': current_filt[1], 
+                            'blocknum': current_filt[2]
+                        }
+                    else:
+                        other_filts.append({
+                            'filt': f, 
+                            'exptime': current_filt[0], 
+                            'numexp': current_filt[1], 
+                            'blocknum': current_filt[2]
+                        })
+
+            p['first_filter'] = first_filt
+            p['other_filters'] = other_filts
+            parameters.append(p)
+
+        context['parameters'] = parameters
         context['records'] = self.object.observation_records.all().order_by('created')
         return context

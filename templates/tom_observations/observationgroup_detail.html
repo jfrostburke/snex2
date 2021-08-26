@@ -13,16 +13,16 @@
 <div class="row">
   <div class="col-md-8" style="text-align: center;">
     <h4>Observing log for sequence {{ object.name }}</h4>
-    {% for record in records %}
+    {% for parameter in parameters %}
     <div class="row">
-      <p>{{ record.parameters.start }} Observation request submitted</p>
+      <p>Observation request submitted at {{ parameter.start }}</p>
       <table class="table">
         <tr>
           <th>Cadence (days)</th>
           <th>Filters</th>
-          <!--th>Exptimes</th>
+          <th>Exptimes</th>
           <th>Exposures</th>
-          <th>Blocks</th--!>
+          <th>Blocks</th>
           <th>Site</th>
           <th>Instrument</th>
           <th>Proposal</th>
@@ -30,25 +30,42 @@
           <th>Airmass Limit</th>
         </tr>
         <tr>
-          <td>{{ record.parameters.cadence_frequency }}</td>
-          <td>{{ record.parameters.U }}</td>
-          <td>{{ record.parameters.site }}</td>
-          <td>{{ record.parameters.instrument_type }}</td>
-          <td>{{ record.parameters.proposal }}</td>
-          <td>{{ record.parameters.ipp_value }}</td>
-          <td>{{ record.parameters.max_airmass }}</td>
+          <td>{{ parameter.cadence }}</td>
+	  <td>{{ parameter.first_filter.filt }}</td>
+	  <td>{{ parameter.first_filter.exptime }}</td>
+	  <td>{{ parameter.first_filter.numexp }}</td>
+	  <td>{{ parameter.first_filter.blocknum }}</td>
+          <td>{{ parameter.site }}</td>
+          <td>{{ parameter.instrument }}</td>
+          <td>{{ parameter.proposal }}</td>
+          <td>{{ parameter.ipp }}</td>
+          <td>{{ parameter.airmass }}</td>
         </tr>
+	{% for f in parameter.other_filters %}
+	<tr>
+	  <td></td>
+          <td>{{ f.filt }}</td>
+          <td>{{ f.exptime }}</td>
+          <td>{{ f.numexp }}</td>
+          <td>{{ f.blocknum }}</td>
+	  <td></td>
+	  <td></td>
+	  <td></td>
+	  <td></td>
+	  <td></td>
+	</tr>
+	{% endfor %}
       </table>
     </div><br>
     <div class="row">
-      {% if record.parameters.end %}
-      <p>This request ended with status {{ record.status }}</p>
+      {% if parameter.end %}
+      <p>This request ended with status {{ parameter.status }}</p>
       {% else %}
       <p>Request Pending</p>
       {% endif %}
     </div>
     <div class="row">
-      <a style="background-color: white; color: gray; font-size: 16px; border: none;" href="https://observe.lco.global/requests/{{ record.observation_id }}">Show LCO Observing Block History</a>
+      <a style="background-color: white; color: gray; font-size: 16px; border: none;" href="https://observe.lco.global/requests/{{ parameter.obs_id }}">Show LCO Observing Block History</a>
     </div><br>
     <hr>
     {% endfor %}
