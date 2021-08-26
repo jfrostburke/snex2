@@ -42,6 +42,7 @@ elements = {
     'C II': {'color': '#303030', 'waves': [4267, 4745, 6580, 7234]},
     'Galaxy': {'color': '#000000', 'waves': [4341, 4861, 6563, 6548, 6583, 6300, 3727, 4959, 5007, 2798, 6717, 6731]},
     'Tellurics': {'color': '#b7b7b7', 'waves': [6867, 6884, 7594, 7621]},
+    'SN Ia': {'color': '#ff9500', 'waves': [3856, 5041, 5056, 5670, 6347, 6371, 5433, 5454, 5606, 5640, 5647, 6715, 3934, 3969, 7292, 7324, 8498, 8542, 8662]},
 }
 tooltips = [{
     'value': 'rest wavelengths: ' + str(elements[elem]['waves']),
@@ -64,7 +65,7 @@ for elem in list(elements.keys())[:9]:
         ),
         html.Td(
            dbc.Badge(
-               '__',#elem,
+               '  ',#elem,
                color=elements[elem]['color']
             )
         ),
@@ -192,25 +193,25 @@ line_plotting_input += [Input('z-'+elem.replace(' ', '-'), 'value') for elem in 
     line_plotting_input)
 def checked_boxes(h_row, he_row, he_ii_row, o_row, o_ii_row, o_iii_row, na_row, mg_row, mg_ii_row, 
                   si_ii_row, s_ii_row, ca_ii_row, fe_ii_row, fe_iii_row, c_ii_row, 
-                  galaxy_row, tellurics_row, 
+                  galaxy_row, tellurics_row, sn_ia_row, 
                   h_v, he_v, he_ii_v, o_v, o_ii_v, o_iii_v, na_v, mg_v, 
                   mg_ii_v, si_ii_v, s_ii_v, ca_ii_v, fe_ii_v, fe_iii_v, c_ii_v,
-                  galaxy_v, tellurics_v,
+                  galaxy_v, tellurics_v, sn_ia_v,
                   h_z, he_z, he_ii_z, o_z, o_ii_z, o_iii_z, na_z, mg_z, 
                   mg_ii_z, si_ii_z, s_ii_z, ca_ii_z, fe_ii_z, fe_iii_z, c_ii_z,
-                  galaxy_z, tellurics_z, *args, **kwargs):
+                  galaxy_z, tellurics_z, sn_ia_z, *args, **kwargs):
     
     all_rows = [h_row, he_row, he_ii_row, o_row, o_ii_row, o_iii_row, na_row, mg_row, 
                 mg_ii_row, si_ii_row, s_ii_row, ca_ii_row, fe_ii_row, fe_iii_row, c_ii_row,
-                galaxy_row, tellurics_row]
+                galaxy_row, tellurics_row, sn_ia_row]
 
     velocity_rows = [h_v, he_v, he_ii_v, o_v, o_ii_v, o_iii_v, na_v, mg_v, 
                   mg_ii_v, si_ii_v, s_ii_v, ca_ii_v, fe_ii_v, fe_iii_v, c_ii_v,
-                  galaxy_v, tellurics_v]
+                  galaxy_v, tellurics_v, sn_ia_v]
 
     redshift_rows = [h_z, he_z, he_ii_z, o_z, o_ii_z, o_iii_z, na_z, mg_z, 
                   mg_ii_z, si_ii_z, s_ii_z, ca_ii_z, fe_ii_z, fe_iii_z, c_ii_z,
-                  galaxy_z, tellurics_z]
+                  galaxy_z, tellurics_z, sn_ia_z]
 
     checked_rows = []
     count = 0
