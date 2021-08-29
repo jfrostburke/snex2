@@ -5,17 +5,19 @@ from astropy.time import Time, TimezoneInfo
 from tom_dataproducts.models import ReducedDatum
 import json
 from tom_targets.templatetags.targets_extras import target_extra_field
+from tom_targets.models import TargetExtra
 from custom_code.management.commands.ingest_ztf_data import get_ztf_data
 from requests_oauthlib import OAuth1
 from astropy.coordinates import SkyCoord
 from astropy import units as u
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 import numpy as np
 
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
 from contextlib import contextmanager
+from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
@@ -63,10 +65,117 @@ def _str_to_jd(datestring):
     return np.round(Time(newdatestring, format='iso', scale='utc').jd, 8)
 
 
+def _get_tns_params(target):
+
+    names = [target.name] + [t.name for t in target.aliases.all()]
+
+    tns_name = False
+    for name in names:
+        if 'SN' in name[:3]:
+            tns_name = name.replace(' ','').replace('SN', '')
+            break
+        elif 'AT' in name[:3]:
+            tns_name = name.replace(' ','').replace('AT', '')
+            break
+
+    if not tns_name:
+        return {'status': 'No TNS name'}
+
+    api_key = os.environ['TNS_APIKEY']
+    tns_id = os.environ['TNS_APIID']
+
+    tns_url = 'https://www.wis-tns.org/api/get/object'
+    json_list = [('objname',tns_name), ('objid',''), ('photometry','1'), ('spectra','0')]
+    json_file = OrderedDict(json_list)
+
+    response = requests.post(tns_url, headers={'User-Agent': 'tns_marker{"tns_id":'+str(tns_id)+', "type":"bot", "name":"SNEx_Bot1"}'}, data={'api_key': api_key, 'data': json.dumps(json_file)})
+
+    parsed = json.loads(response.text, object_pairs_hook=OrderedDict)
+    result = json.dumps(parsed, indent=4)
+
+    result = json.loads(result)
+    discoverydate = result['data']['reply']['discoverydate']
+    discoverymag = result['data']['reply']['discoverymag']
+    discoveryfilt = result['data']['reply']['discmagfilter']['name']
+
+
+    nondets = {}
+    dets = {}
+
+    photometry = result['data']['reply']['photometry']
+    for phot in photometry:
+        remarks = phot['remarks']
+        if 'Last non detection' in remarks:
+            nondet_jd = phot['jd']
+            nondet_filt = phot['filters']['name']
+            nondet_limmag = phot['limflux']
+
+            nondets[nondet_jd] = [nondet_filt, nondet_limmag]
+
+        else:
+            det_jd = phot['jd']
+            det_filt = phot['filters']['name']
+            det_mag = phot['flux']
+
+            dets[det_jd] = [det_filt, det_mag]
+
+
+    first_det = min(dets.keys())
+
+    last_nondet = 0
+    for nondet, phot in nondets.items():
+        if nondet > last_nondet and nondet < first_det:
+            last_nondet = nondet
+
+    response_data = {'success': 'Completed',
+                     'nondetection': '{} ({})'.format(date.strftime(Time(last_nondet, scale='utc', format='jd').datetime, "%m/%d/%Y"), round(last_nondet, 2)),
+                     'nondet_mag': nondets[last_nondet][1],
+                     'nondet_filt': nondets[last_nondet][0],
+                     'detection': '{} ({})'.format(date.strftime(Time(first_det, scale='utc', format='jd').datetime, "%m/%d/%Y"), round(first_det, 2)),
+                     'det_mag': dets[first_det][1],
+                     'det_filt': dets[first_det][0]}
+    return response_data
+
+
 def target_post_save(target, created):
  
     logger.info('Target post save hook: %s created: %s', target, created)
-  
+    
+    ### Add the last nondetection and first detection from TNS, if it exists
+    tns_results = _get_tns_params(target)
+    if tns_results.get('success', ''):
+        nondet_date = tns_results['nondetection'].split()[0]
+        nondet_jd = tns_results['nondetection'].split()[1].replace('(', '').replace(')', '')
+        nondet_value = json.dumps({
+            'date': nondet_date,
+            'jd': nondet_jd,
+            'mag': tns_results['nondet_mag'],
+            'filt': tns_results['nondet_filt'],
+            'source': 'TNS'
+        })
+        te = TargetExtra(
+            target=target,
+            key='last_nondetection',
+            value=nondet_value
+        )
+        te.save()
+
+        det_date = tns_results['detection'].split()[0]
+        det_jd = tns_results['detection'].split()[1].replace('(', '').replace(')', '')
+        det_value = json.dumps({
+            'date': det_date,
+            'jd': det_jd,
+            'mag': tns_results['det_mag'],
+            'filt': tns_results['det_filt'],
+            'source': 'TNS'
+        })
+        te = TargetExtra(
+            target=target,
+            key='first_detection',
+            value=nondet_value
+        )
+        te.save()
+
     ### Ingest ZTF data, if a ZTF target
     get_ztf_data(target)
   
