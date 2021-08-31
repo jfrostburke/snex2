@@ -153,6 +153,11 @@ def target_post_save(target, created):
             'filt': tns_results['nondet_filt'],
             'source': 'TNS'
         })
+        
+        old_params = TargetExtra.objects.filter(target=target, key='last_nondetection')
+        for old_param in old_params:
+            old_param.delete()
+        
         te = TargetExtra(
             target=target,
             key='last_nondetection',
@@ -169,10 +174,15 @@ def target_post_save(target, created):
             'filt': tns_results['det_filt'],
             'source': 'TNS'
         })
+        
+        old_params = TargetExtra.objects.filter(target=target, key='first_detection')
+        for old_param in old_params:
+            old_param.delete()
+        
         te = TargetExtra(
             target=target,
             key='first_detection',
-            value=nondet_value
+            value=det_value
         )
         te.save()
 
