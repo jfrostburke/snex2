@@ -2,6 +2,7 @@ from django_filters.views import FilterView
 from django.shortcuts import redirect, render
 from django.db.models import Q #
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from django.views.generic import View
 from django.views.generic.edit import FormView, UpdateView
 from django.views.generic.detail import DetailView
 from django.urls import reverse
@@ -53,7 +54,7 @@ from guardian.shortcuts import assign_perm
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
 from tom_observations.facility import get_service_class
 from tom_observations.facilities.lco import FAILED_OBSERVING_STATES, TERMINAL_OBSERVING_STATES
-from tom_observations.views import ObservationCreateView, ObservationListView
+from tom_observations.views import ObservationCreateView, ObservationListView, ObservationRecordCancelView
 import requests
 from rest_framework.authtoken.models import Token
 
@@ -409,29 +410,76 @@ class PaperCreateView(FormView):
         return HttpResponseRedirect('/targets/{}/'.format(target.id))
 
 
+def cancel_observation(obs):
+    
+    facility = get_service_class(obs.facility)()
+    
+    if obs.status not in TERMINAL_OBSERVING_STATES:
+        success = facility.cancel_observation(obs.observation_id)
+        if not success:
+            return False
+
+        obs.status = 'CANCELED'
+        obs.save()
+    
+    ## Change status of DynamicCadence
+    obs_group = obs.observationgroup_set.first()
+    dynamic_cadence = DynamicCadence.objects.get(observation_group=obs_group)
+    dynamic_cadence.active = False
+    dynamic_cadence.save()
+    return True
+
+
+def observation_sequence_cancel_view(request):
+    
+    obsr_id = int(float(request.GET['pk']))
+    obsr = ObservationRecord.objects.get(id=obsr_id)
+    canceled = cancel_observation(obsr)
+    
+    if not canceled:
+        response_data = {'failure': 'Error'}
+        return HttpResponse(json.dumps(response_data), content_type='application/json')
+    
+    ## Run hook to cancel old sequence in SNEx1
+    try:
+        obs_group = obsr.observationgroup_set.first()
+        snex_id = int(obs_group.name)
+        run_hook('cancel_sequence_in_snex1', snex_id)
+    except:
+        print('This sequence was not in SNEx1 or was not canceled')
+    
+    response_data = {'success': 'Modified'}
+    return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+
 def scheduling_view(request):
 
     if 'modify' in request.GET['button']:
         obs_id = int(float(request.GET['observation_id']))
         obs = ObservationRecord.objects.get(id=obs_id)
-        facility = get_service_class(obs.facility)()
-        
-        if obs.status not in TERMINAL_OBSERVING_STATES:
-            success = facility.cancel_observation(obs.observation_id)
-        
-            if not success:
-                print('Observation not cancelled due to error')
-                response_data = {'failure': 'Error'}
-                return HttpResponse(json.dumps(response_data), content_type='application/json')
+        canceled = cancel_observation(obs)
+        if not canceled:
+            response_data = {'failure': 'Error'}
+            return HttpResponse(json.dumps(response_data), content_type='application/json')
 
-            obs.status = 'CANCELED'
-            obs.save()
+        #facility = get_service_class(obs.facility)()
+        #
+        #if obs.status not in TERMINAL_OBSERVING_STATES:
+        #    success = facility.cancel_observation(obs.observation_id)
+        #
+        #    if not success:
+        #        print('Observation not cancelled due to error')
+        #        response_data = {'failure': 'Error'}
+        #        return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+        #    obs.status = 'CANCELED'
+        #    obs.save()
         
-        ## Change status of DynamicCadence
-        obs_group = obs.observationgroup_set.first()
-        dynamic_cadence = DynamicCadence.objects.get(observation_group=obs_group)
-        dynamic_cadence.active = False
-        dynamic_cadence.save()
+        ### Change status of DynamicCadence
+        #obs_group = obs.observationgroup_set.first()
+        #dynamic_cadence = DynamicCadence.objects.get(observation_group=obs_group)
+        #dynamic_cadence.active = False
+        #dynamic_cadence.save()
  
         ## Get the new observation parameters
         print('Getting form data')
@@ -545,6 +593,7 @@ def scheduling_view(request):
         
         ## Run hook to cancel old sequence in SNEx1
         try:
+            obs_group = obs.observationgroup_set.first()
             snex_id = int(obs_group.name)
             run_hook('cancel_sequence_in_snex1', snex_id)
         except:
@@ -585,27 +634,33 @@ def scheduling_view(request):
         ## Cancel observation request in LCO portal
         obs_id = int(float(request.GET['observation_id']))
         obs = ObservationRecord.objects.get(id=obs_id)
-        facility = get_service_class(obs.facility)()
-        if obs.status not in TERMINAL_OBSERVING_STATES:
-            success = facility.cancel_observation(obs.observation_id)
+        canceled = cancel_observation(obs)
+        if not canceled:
+            response_data = {'failure': 'Error'}
+            return HttpResponse(json.dumps(response_data), content_type='application/json')
         
-            if not success:
-                print('Observation not cancelled due to error')
-                response_data = {'failure': 'Error'}
-                return HttpResponse(json.dumps(response_data), content_type='application/json')
-        
-        ## Change status of ObservationRecord and DynamicCadence
-        obs.status = 'CANCELED'
-        obs.parameters['end'] = datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S')
-        obs.save()
+        #facility = get_service_class(obs.facility)()
+        #if obs.status not in TERMINAL_OBSERVING_STATES:
+        #    success = facility.cancel_observation(obs.observation_id)
+        #
+        #    if not success:
+        #        print('Observation not cancelled due to error')
+        #        response_data = {'failure': 'Error'}
+        #        return HttpResponse(json.dumps(response_data), content_type='application/json')
+        #
+        ### Change status of ObservationRecord and DynamicCadence
+        #obs.status = 'CANCELED'
+        #obs.parameters['end'] = datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S')
+        #obs.save()
 
-        obs_group = obs.observationgroup_set.first()
-        dynamic_cadence = DynamicCadence.objects.get(observation_group=obs_group)
-        dynamic_cadence.active = False
-        dynamic_cadence.save()
+        #obs_group = obs.observationgroup_set.first()
+        #dynamic_cadence = DynamicCadence.objects.get(observation_group=obs_group)
+        #dynamic_cadence.active = False
+        #dynamic_cadence.save()
 
         ## Run hook to cancel this sequence in SNEx1
         try:
+            obs_group = obs.observationgroup_set.first()
             snex_id = int(obs_group.name)
             run_hook('cancel_sequence_in_snex1', snex_id)
         except:
