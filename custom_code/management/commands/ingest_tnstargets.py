@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from datetime import datetime, timedelta
 import os
 import json
+import time
 from astropy.time import Time
 import requests
 import logging
@@ -21,7 +22,7 @@ class Command(BaseCommand):
         
         api_key = os.environ['TNS_APIKEY']
         tns_id = os.environ['TNS_APIID']
-        days_ago = 0.25
+        days_ago = 0.042
         search_url = "https://www.wis-tns.org/api/get/search"
         obj_url = "https://www.wis-tns.org/api/get/object"
 
@@ -36,18 +37,18 @@ class Command(BaseCommand):
             return []
 
         for obj in obj_list:
+            
+            is_target = TNSTarget.objects.filter(name=obj['objname']).first()
+            if is_target:
+                logger.info('{name} already ingested, skipping'.format(name=obj['objname']))
+                continue
+
             json_list = {'objname': obj['objname'], 'photometry': 1, 'spectra': 0}
             obj_data = requests.post(obj_url, headers={'User-Agent': 'tns_marker{"tns_id":'+str(tns_id)+', "type":"bot", "name":"SNEx_Bot1"}'}, data={'api_key': api_key, 'data': json.dumps(json_list)})
             obj_data = json.loads(obj_data.text)['data']['reply']
 
             name = obj_data['objname']
-            is_target = TNSTarget.objects.filter(name=name).first()
-
-            if is_target:
-                logger.info('{name} already ingested, skipping'.format(name=name))
-                continue
-            else:
-                logger.info('Ingesting {name} . . .'.format(name=name))
+            logger.info('Ingesting {name} . . .'.format(name=name))
 
             ### Get discovery time and time of last non-detection
             try:
@@ -108,7 +109,7 @@ class Command(BaseCommand):
             ##print(tess_response)
 
             try:
-                source_group = obj_data['source_group']['group_name']
+                source_group = obj_data['reporting_group']['group_name']
             except:
                 source_group = None
 
@@ -136,7 +137,8 @@ class Command(BaseCommand):
             )
             
             newtarget.save()
-
+            
+            time.sleep(10) # To avoid maxing out the number of TNS calls within rolling 60s window
 
         return []
 
