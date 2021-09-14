@@ -42,6 +42,7 @@ elements = {
     'C II': {'color': '#303030', 'waves': [4267, 4745, 6580, 7234]},
     'Galaxy': {'color': '#000000', 'waves': [4341, 4861, 6563, 6548, 6583, 6300, 3727, 4959, 5007, 2798, 6717, 6731]},
     'Tellurics': {'color': '#b7b7b7', 'waves': [6867, 6884, 7594, 7621]},
+    'Flash CNO': {'color': '#0064c8', 'waves': [4648, 5696, 5801, 4640, 4058, 4537, 5047, 7109, 7123, 4604, 4946, 3410, 5597, 3811, 3835]},
     'SN Ia': {'color': '#ff9500', 'waves': [3856, 5041, 5056, 5670, 6347, 6371, 5433, 5454, 5606, 5640, 5647, 6715, 3934, 3969, 7292, 7324, 8498, 8542, 8662]},
 }
 tooltips = [{
@@ -191,38 +192,21 @@ line_plotting_input += [Input('z-'+elem.replace(' ', '-'), 'value') for elem in 
 @app.callback(
     Output('checked-rows', 'children'),
     line_plotting_input)
-def checked_boxes(h_row, he_row, he_ii_row, o_row, o_ii_row, o_iii_row, na_row, mg_row, mg_ii_row, 
-                  si_ii_row, s_ii_row, ca_ii_row, fe_ii_row, fe_iii_row, c_ii_row, 
-                  galaxy_row, tellurics_row, sn_ia_row, 
-                  h_v, he_v, he_ii_v, o_v, o_ii_v, o_iii_v, na_v, mg_v, 
-                  mg_ii_v, si_ii_v, s_ii_v, ca_ii_v, fe_ii_v, fe_iii_v, c_ii_v,
-                  galaxy_v, tellurics_v, sn_ia_v,
-                  h_z, he_z, he_ii_z, o_z, o_ii_z, o_iii_z, na_z, mg_z, 
-                  mg_ii_z, si_ii_z, s_ii_z, ca_ii_z, fe_ii_z, fe_iii_z, c_ii_z,
-                  galaxy_z, tellurics_z, sn_ia_z, *args, **kwargs):
+def checked_boxes(*args, **kwargs):
     
-    all_rows = [h_row, he_row, he_ii_row, o_row, o_ii_row, o_iii_row, na_row, mg_row, 
-                mg_ii_row, si_ii_row, s_ii_row, ca_ii_row, fe_ii_row, fe_iii_row, c_ii_row,
-                galaxy_row, tellurics_row, sn_ia_row]
-
-    velocity_rows = [h_v, he_v, he_ii_v, o_v, o_ii_v, o_iii_v, na_v, mg_v, 
-                  mg_ii_v, si_ii_v, s_ii_v, ca_ii_v, fe_ii_v, fe_iii_v, c_ii_v,
-                  galaxy_v, tellurics_v, sn_ia_v]
-
-    redshift_rows = [h_z, he_z, he_ii_z, o_z, o_ii_z, o_iii_z, na_z, mg_z, 
-                  mg_ii_z, si_ii_z, s_ii_z, ca_ii_z, fe_ii_z, fe_iii_z, c_ii_z,
-                  galaxy_z, tellurics_z, sn_ia_z]
-
+    all_rows = [item for item in line_plotting_input if 'standalone-checkbox' in item.component_id]
+    velocity_rows = [item for item in line_plotting_input if 'v-' in item.component_id]
+    redshift_rows = [item for item in line_plotting_input if 'z-' in item.component_id]
+    
     checked_rows = []
-    count = 0
-    for row in all_rows:
-        if row:
-            elem = list(elements.keys())[count]
-            checked_rows.append(json.dumps({elem: {'redshift': redshift_rows[count],
-                                        'velocity': velocity_rows[count]
-                                    }
-                                }))
-        count += 1
+    for i in range(len(all_rows)):
+        if args[i]:
+            elem = list(elements.keys())[i]
+            checked_rows.append(json.dumps({elem: {'redshift': args[i+2*len(all_rows)],
+                                                   'velocity': args[i+len(all_rows)]
+                                                }
+                                            })
+                                        )
     return checked_rows
 
 @app.callback(
@@ -335,8 +319,12 @@ def display_output(selected_rows,
     #   Correctly display message when there are no spectra
     
     target_id = value
-    graph_data = {'data': fig_data['data'],
-                  'layout': fig_data['layout']}
+    if fig_data:
+        graph_data = {'data': fig_data['data'],
+                      'layout': fig_data['layout']}
+    else:
+        graph_data = {'data': [],
+                      'layout': []}
 
     # If the page just loaded, plot all the spectra
     if not fig_data['data']:
@@ -385,7 +373,11 @@ def display_output(selected_rows,
     for row in selected_rows:
         for elem, row_extras in json.loads(row).items():
             z = row_extras['redshift']
+            if not z:
+                z = 0
             v = row_extras['velocity']
+            if not v:
+                v = 0
             try:
                 v_over_c = float(v/(3e5))
             except:
