@@ -1184,7 +1184,7 @@ def interested_persons(target, user):
       
     return {'target': target,
             'interested_persons': interested_persons,
-            'user': user.get_full_name()
+            'user': user#.get_full_name()
         }
 
 
