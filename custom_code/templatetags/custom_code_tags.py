@@ -569,8 +569,8 @@ def submit_lco_observations(target):
                     'name': target.name}
     phot_form = SnexPhotometricSequenceForm(initial=phot_initial, auto_id='phot_%s')
     spec_form = SnexSpectroscopicSequenceForm(initial=spec_initial, auto_id='spec_%s')
-    phot_form.helper.form_action = reverse('tom_observations:create', kwargs={'facility': 'LCO'})
-    spec_form.helper.form_action = reverse('tom_observations:create', kwargs={'facility': 'LCO'})
+    phot_form.helper.form_action = reverse('submit-lco-obs', kwargs={'facility': 'LCO'})
+    spec_form.helper.form_action = reverse('submit-lco-obs', kwargs={'facility': 'LCO'})
     if not settings.TARGET_PERMISSIONS_ONLY:
         phot_form.fields['groups'].queryset = Group.objects.all()
         spec_form.fields['groups'].queryset = Group.objects.all()
@@ -1111,8 +1111,8 @@ def get_best_name(target):
 
     def find_name(namelist, n):
         for name in namelist:
-            if n in name.upper():
-                return name
+            if n in name[:2].upper():
+                return name[:2].upper() + ' ' + name[2:]
         return False
 
     namelist = [target.name] + [alias.name for alias in target.aliases.all()]
@@ -1181,10 +1181,14 @@ def reference_status(target):
 def interested_persons(target, user):
     interested_persons_query = InterestedPersons.objects.filter(target=target)
     interested_persons = [u.user.get_full_name() for u in interested_persons_query]
+    try:
+        current_user_name = user.get_full_name()
+    except:
+        current_user_name = user
       
     return {'target': target,
             'interested_persons': interested_persons,
-            'user': user#.get_full_name()
+            'user': current_user_name
         }
 
 

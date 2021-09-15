@@ -325,6 +325,11 @@ TOM_HARVESTER_CLASSES = [
     'tom_catalogs.harvesters.ned.NEDHarvester',
 ]
 
+TOM_CADENCE_STRATEGIES = [
+    'custom_code.cadences.snex_retry_failed_observations.SnexRetryFailedObservationsStrategy',
+    'custom_code.cadences.snex_resume_cadence_after_failure.SnexResumeCadenceAfterFailureStrategy'
+]
+
 DATA_TYPES = (
     ('SPECTROSCOPY', 'Spectroscopy'),
     ('PHOTOMETRY', 'Photometry')

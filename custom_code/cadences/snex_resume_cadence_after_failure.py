@@ -3,12 +3,7 @@ import logging
 from tom_common.hooks import run_hook
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
 from tom_observations.cadences.resume_cadence_after_failure import ResumeCadenceAfterFailureStrategy
-from custom_code.hooks import _get_session, _load_table
 from django.conf import settings
-from sqlalchemy import create_engine, pool
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.automap import automap_base
-from contextlib import contextmanager
 from urllib.parse import urlencode
 from dateutil.parser import parse
 
@@ -101,7 +96,7 @@ class SnexResumeCadenceAfterFailureStrategy(ResumeCadenceAfterFailureStrategy):
                 requestgroup_id = int(requestgroups['results'][0]['id'])
 
             # Use a hook to sync this observation request with SNEx1
-            #run_hook('sync_observation_with_snex1', snex_id, params, requestgroup_id)
+            run_hook('sync_observation_with_snex1', snex_id, params, requestgroup_id)
 
         return new_observations 
 

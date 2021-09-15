@@ -53,6 +53,7 @@ from guardian.shortcuts import assign_perm
 
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
 from tom_observations.facility import get_service_class
+from tom_observations.cadence import get_cadence_strategy
 from tom_observations.facilities.lco import FAILED_OBSERVING_STATES, TERMINAL_OBSERVING_STATES
 from tom_observations.views import ObservationCreateView, ObservationListView, ObservationRecordCancelView
 import requests
@@ -462,25 +463,6 @@ def scheduling_view(request):
             response_data = {'failure': 'Error'}
             return HttpResponse(json.dumps(response_data), content_type='application/json')
 
-        #facility = get_service_class(obs.facility)()
-        #
-        #if obs.status not in TERMINAL_OBSERVING_STATES:
-        #    success = facility.cancel_observation(obs.observation_id)
-        #
-        #    if not success:
-        #        print('Observation not cancelled due to error')
-        #        response_data = {'failure': 'Error'}
-        #        return HttpResponse(json.dumps(response_data), content_type='application/json')
-
-        #    obs.status = 'CANCELED'
-        #    obs.save()
-        
-        ### Change status of DynamicCadence
-        #obs_group = obs.observationgroup_set.first()
-        #dynamic_cadence = DynamicCadence.objects.get(observation_group=obs_group)
-        #dynamic_cadence.active = False
-        #dynamic_cadence.save()
- 
         ## Get the new observation parameters
         print('Getting form data')
         form_data = {'name': request.GET['name'],
@@ -493,7 +475,7 @@ def scheduling_view(request):
         # Append the additional info that users can change to parameters
         observing_parameters['ipp_value'] = float(request.GET['ipp_value'])
         observing_parameters['max_airmass'] = float(request.GET['max_airmass'])
-        observing_parameters['cadence_strategy'] = 'ResumeCadenceAfterFailureStrategy' #TODO: remove this
+        observing_parameters['cadence_strategy'] = request.GET.get('cadence_strategy', '')
         observing_parameters['cadence_frequency'] = float(request.GET['cadence_frequency'])
         observing_parameters['reminder'] = float(request.GET['reminder']) #Observing form turns this into timestamp
         observing_parameters['facility'] = obs.facility
@@ -510,7 +492,7 @@ def scheduling_view(request):
             observing_parameters['exposure_time'] = int(float(request.GET['exposure_time']))
 
         if request.GET['cadence_strategy']: 
-            cadence = {'cadence_strategy': 'ResumeCadenceAfterFailureStrategy',#TODO: replace with request.GET['cadence_strategy'],
+            cadence = {'cadence_strategy': request.GET['cadence_strategy'],
                        'cadence_frequency': float(request.GET['cadence_frequency'])
                 }
             form_data['cadence'] = cadence 
@@ -639,25 +621,6 @@ def scheduling_view(request):
             response_data = {'failure': 'Error'}
             return HttpResponse(json.dumps(response_data), content_type='application/json')
         
-        #facility = get_service_class(obs.facility)()
-        #if obs.status not in TERMINAL_OBSERVING_STATES:
-        #    success = facility.cancel_observation(obs.observation_id)
-        #
-        #    if not success:
-        #        print('Observation not cancelled due to error')
-        #        response_data = {'failure': 'Error'}
-        #        return HttpResponse(json.dumps(response_data), content_type='application/json')
-        #
-        ### Change status of ObservationRecord and DynamicCadence
-        #obs.status = 'CANCELED'
-        #obs.parameters['end'] = datetime.strftime(datetime.now(), '%Y-%m-%dT%H:%M:%S')
-        #obs.save()
-
-        #obs_group = obs.observationgroup_set.first()
-        #dynamic_cadence = DynamicCadence.objects.get(observation_group=obs_group)
-        #dynamic_cadence.active = False
-        #dynamic_cadence.save()
-
         ## Run hook to cancel this sequence in SNEx1
         try:
             obs_group = obs.observationgroup_set.first()
@@ -930,33 +893,34 @@ class CustomObservationCreateView(ObservationCreateView):
         ### Sync with SNEx1
         
         # Get the group ids to pass to SNEx1
-        #group_names = []
-        #for group in form.cleaned_data['groups']:
-        #   group_names.append(group.name)
+        group_names = []
+        for group in form.cleaned_data['groups']:
+           group_names.append(group.name)
+        
         # Run the hook to add the sequence to SNEx1
-        #snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names)
+        snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names)
         
         # Change the name of the observation group, if one was created
-        #if len(records) > 1 or form.cleaned_data.get('cadence_strategy'):
-        #    observation_group.name = str(snex_id)
-        #    observation_group.save()
+        if len(records) > 1 or form.cleaned_data.get('cadence_strategy'):
+            observation_group.name = str(snex_id)
+            observation_group.save()
             
         # Now run the hook to add each observation record to SNEx1
-        #for record in records:
+        for record in records:
             # Get the requestsgroup ID from the LCO API using the observation ID
-            #obs_id = int(record.observation_id)
-            #LCO_SETTINGS = settings.FACILITIES['LCO']
-            #PORTAL_URL = LCO_SETTINGS['portal_url']
-            #portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
+            obs_id = int(record.observation_id)
+            LCO_SETTINGS = settings.FACILITIES['LCO']
+            PORTAL_URL = LCO_SETTINGS['portal_url']
+            portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
 
-            #query_params = urlencode({'request_id': obs_id})
+            query_params = urlencode({'request_id': obs_id})
 
-            #r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
-            #requestgroups = r.json()
-            #if requestgroups['count'] == 1:
-            #    requestgroup_id = int(requestgroups['results'][0]['id'])
+            r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
+            requestgroups = r.json()
+            if requestgroups['count'] == 1:
+                requestgroup_id = int(requestgroups['results'][0]['id'])
 
-        #   run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id)
+            run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id)
 
         return redirect(
             reverse('tom_targets:detail', kwargs={'pk': target.id})
