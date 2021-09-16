@@ -188,7 +188,7 @@ def get_snex2_params(obs, repeating=True):
     return snex2_param
 
 
-def get_sequences_for_target(target_id, existing_obs, snex1_groups):
+def get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests, obslog):
 
     with get_session(db_address=_SNEX1_DB) as db_session:
         ### Get all the sequences
@@ -365,10 +365,10 @@ class Command(BaseCommand):
                 snex1_groups[x.name] = x.idcode 
             
         if options['target_id']:
-            get_sequences_for_target(options['target_id'], existing_obs, snex1_groups)
+            get_sequences_for_target(options['target_id'], existing_obs, snex1_groups, obsrequests, obslog)
         
         else:
             targets_in_snex2 = [int(t.id) for t in Target.objects.all()]
             for target_id in targets_in_snex2:
-                get_sequences_for_target(target_id, existing_obs, snex1_groups)
+                get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests, obslog)
 
