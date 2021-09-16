@@ -144,8 +144,14 @@ def get_snex2_params(obs, repeating=True):
     snex2_param['max_airmass'] = float(obs_dict['airmass'])
     snex2_param['target_id'] = int(obs_dict['targetid'])
     snex2_param['name'] = obs_dict['id']
-    snex2_param['min_lunar_distance'] = float(obs_dict.get('moondistlimit', 20))
-    snex2_param['observation_mode'] = obs_dict.get('priority', 'normal').upper()
+    try:
+        snex2_param['min_lunar_distance'] = float(obs_dict['moondistlimit'])
+    except:
+        snex2_param['min_lunar_distance'] = 20.0
+    try:
+        snex2_param['observation_mode'] = obs_dict['priority'].upper()
+    except:
+        snex2_param['observation_mode'] = 'NORMAL'
     snex2_param['reminder'] = obs_dict['nextreminder'].strftime('%Y-%m-%dT%H:%M:%S')
     snex2_param['proposal'] = obs_dict['proposalid']
     
