@@ -152,7 +152,10 @@ def get_snex2_params(obs, repeating=True):
         snex2_param['observation_mode'] = obs_dict['priority'].upper()
     except:
         snex2_param['observation_mode'] = 'NORMAL'
-    snex2_param['reminder'] = obs_dict['nextreminder'].strftime('%Y-%m-%dT%H:%M:%S')
+    try:
+        snex2_param['reminder'] = obs_dict['nextreminder'].strftime('%Y-%m-%dT%H:%M:%S')
+    except:
+        snex2_param['reminder'] = '0000-00-00T00:00:00'
     snex2_param['proposal'] = obs_dict['proposalid']
     
     snex2_param['instrument_type'] = instrument_dict[obs_dict['instrument']]
