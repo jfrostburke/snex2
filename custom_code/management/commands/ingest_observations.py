@@ -299,6 +299,8 @@ def get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests,
                 # Get the observation portal observation id using this tracknumber 
                 headers = {'Authorization': 'Token {}'.format(os.environ['LCO_APIKEY'])}
                 response = requests.get('https://observe.lco.global/api/requestgroups/{}'.format(tracknumber), headers=headers)
+                if not response.json().get('requests'): #SNEx doesn't have permission for these obs
+                    continue
                 result = response.json()['requests'][0]
                 observation_id = int(result['id'])
                 status = result['state']
