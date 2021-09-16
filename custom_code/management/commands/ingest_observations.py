@@ -162,9 +162,18 @@ def get_snex2_params(obs, repeating=True):
     if obs_dict['instrument'] == 'floyds':
         snex2_param['exposure_count'] = int(obs_dict['expnums'])
         snex2_param['exposure_time'] = float(obs_dict['exptimes'])
-        snex2_param['acquisition_radius'] = float(obs_dict['acqradius'])
-        snex2_param['guider_mode'] = obs_dict['guidermode'].lower()
-        snex2_param['guider_exposure_time'] = float(obs_dict['guiderexptime'])
+        try:
+            snex2_param['acquisition_radius'] = float(obs_dict['acqradius'])
+        except:
+            snex2_param['acquisition_radius'] = 0.0
+        try:
+            snex2_param['guider_mode'] = obs_dict['guidermode'].lower()
+        except:
+            snex2_param['guider_mode'] = 'on'
+        try:
+            snex2_param['guider_exposure_time'] = float(obs_dict['guiderexptime'])
+        except:
+            snex2_param['guider_exposure_time'] = 0.0
         snex2_param['filter'] = "slit_2.0as"
     
     else:
