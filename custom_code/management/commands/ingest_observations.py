@@ -247,97 +247,96 @@ def get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests,
             else:
                 existing_repeating_obs.append(o)
     
-    #print('Found {} sequences to check'.format(len(onetime_obs_to_add) + len(repeating_obs_to_add) + len(existing_onetime_obs) + len(existing_repeating_obs)))
+        #print('Found {} sequences to check'.format(len(onetime_obs_to_add) + len(repeating_obs_to_add) + len(existing_onetime_obs) + len(existing_repeating_obs)))
  
-    count = 0
-    #print('Getting parameters for new sequences')
-    for sequencelist in [onetime_obs_to_add, existing_onetime_obs, repeating_obs_to_add, existing_repeating_obs]:
-    
-        for obs in sequencelist:
+        count = 0
+        #print('Getting parameters for new sequences')
+        for sequencelist in [onetime_obs_to_add, existing_onetime_obs, repeating_obs_to_add, existing_repeating_obs]:
         
-            facility = 'LCO'
-            created = obs.datecreated
-            modified = obs.lastmodified
-            user_id = 67 #supernova user in snex1
-            requestsid = int(obs.id)
+            for obs in sequencelist:
             
-            if obs.sequenceend == '0000-00-00 00:00:00' or not obs.sequenceend or obs.sequenceend > datetime.datetime.utcnow():
-                active = True
-            else:
-                active = False                
+                facility = 'LCO'
+                created = obs.datecreated
+                modified = obs.lastmodified
+                user_id = 67 #supernova user in snex1
+                requestsid = int(obs.id)
+                
+                if obs.sequenceend == '0000-00-00 00:00:00' or not obs.sequenceend or obs.sequenceend > datetime.datetime.utcnow():
+                    active = True
+                else:
+                    active = False                
 
-            if count < 2:
-                snex2_param = get_snex2_params(obs, repeating=False)
-            else:
-                snex2_param = get_snex2_params(obs, repeating=True)
-            
-            ### Create new observation group and dynamic cadence, if it doesn't already exist
-            if count == 0 or count == 2:
-                newobsgroup = ObservationGroup(name=str(requestsid), created=created, modified=modified)
-                #newobsgroup.save() TODO
-    
-                cadence_strategy = snex2_param['cadence_strategy']
-                cadence_params = {'cadence_frequency': snex2_param['cadence_frequency']}
-                newcadence = DynamicCadence(cadence_strategy=cadence_strategy, cadence_parameters=cadence_params, active=active, created=created, modified=modified, observation_group_id=newobsgroup.id)
-                #newcadence.save() TODO
-                #print('Added cadence and observation group')
-            
-            ### Get observation id from observation portal API
-            # Query API
-            #print('Querying API for sequence with SNEx1 ID of {}'.format(requestsid))
-            with get_session(db_address=_SNEX1_DB) as db_session:
+                if count < 2:
+                    snex2_param = get_snex2_params(obs, repeating=False)
+                else:
+                    snex2_param = get_snex2_params(obs, repeating=True)
+                
+                ### Create new observation group and dynamic cadence, if it doesn't already exist
+                if count == 0 or count == 2:
+                    newobsgroup = ObservationGroup(name=str(requestsid), created=created, modified=modified)
+                    #newobsgroup.save() TODO
+        
+                    cadence_strategy = snex2_param['cadence_strategy']
+                    cadence_params = {'cadence_frequency': snex2_param['cadence_frequency']}
+                    newcadence = DynamicCadence(cadence_strategy=cadence_strategy, cadence_parameters=cadence_params, active=active, created=created, modified=modified, observation_group_id=newobsgroup.id)
+                    #newcadence.save() TODO
+                    #print('Added cadence and observation group')
+                
+                ### Get observation id from observation portal API
+                # Query API
+                #print('Querying API for sequence with SNEx1 ID of {}'.format(requestsid))
                 # Get observation portal requestgroup id from most recent obslog entry for this observation sequence
                 tracknumber_query = db_session.query(obslog).filter(and_(obslog.requestsid==requestsid, obslog.tracknumber>0)).order_by(obslog.id.asc())
                 tracknumber_count = tracknumber_query.count()
     
-            if tracknumber_count == 0:
-                continue
-            
-            for record in tracknumber_query:
-                tracknumber = int(record.tracknumber)
-    
-                # Get the observation portal observation id using this tracknumber 
-                headers = {'Authorization': 'Token {}'.format(os.environ['LCO_APIKEY'])}
-                response = requests.get('https://observe.lco.global/api/requestgroups/{}'.format(tracknumber), headers=headers)
-                if not response.json().get('requests'): #SNEx doesn't have permission for these obs
+                if tracknumber_count == 0:
                     continue
-                result = response.json()['requests'][0]
-                observation_id = int(result['id'])
-                status = result['state']
-               
-                in_snex2 = bool(ObservationRecord.objects.filter(observation_id=str(observation_id)).count())
-                snex2_param['start'] = Time(record.windowstart, format='jd').to_value('isot')
-                snex2_param['end'] = Time(record.windowend, format='jd').to_value('isot') 
                 
-                #print('This request has API id {} with status {}'.format(observation_id, status))
-                #print('and with parameters {}'.format(snex2_param))
-     
-                ### Add the new cadence, observation group, and observation record to the SNEx2 db
-                try:
-            
-                    ### Add the new observation record, if it exists in SNEx1 but not SNEx2
-                    if tracknumber_count > 0 and observation_id > 0 and not in_snex2:
-                        newobs = ObservationRecord(facility=facility, observation_id=str(observation_id), status=status,
-                                           created=created, modified=modified, target_id=target_id,
-                                           user_id=user_id, parameters=snex2_param)
-                        #newobs.save() TODO
-                    
-                        obs_groupid = int(obs.groupidcode)
-                        if obs_groupid is not None:
-                            update_permissions(int(obs_groupid), newobs, snex1_groups) #View obs record
-                    
-                        ### Add observaton record to existing observation group or the one we just made
-                        #if count == 0 or count == 2:
-                            #print('Adding to new observation group')
-                            #newobsgroup.observation_records.add(newobs)TODO
-                        #else:
-                        #    oldobsgroup = ObservationGroup.objects.filter(name=str(requestsid)).first() TODO
-                        #    oldobsgroup.observation_records.add(newobs)TODO
-                        #print('Added observation record')
-                except:
-                    raise
+                for record in tracknumber_query:
+                    tracknumber = int(record.tracknumber)
     
-        count += 1
+                    # Get the observation portal observation id using this tracknumber 
+                    headers = {'Authorization': 'Token {}'.format(os.environ['LCO_APIKEY'])}
+                    response = requests.get('https://observe.lco.global/api/requestgroups/{}'.format(tracknumber), headers=headers)
+                    if not response.json().get('requests'): #SNEx doesn't have permission for these obs
+                        continue
+                    result = response.json()['requests'][0]
+                    observation_id = int(result['id'])
+                    status = result['state']
+                   
+                    in_snex2 = bool(ObservationRecord.objects.filter(observation_id=str(observation_id)).count())
+                    snex2_param['start'] = Time(record.windowstart, format='jd').to_value('isot')
+                    snex2_param['end'] = Time(record.windowend, format='jd').to_value('isot') 
+                    
+                    #print('This request has API id {} with status {}'.format(observation_id, status))
+                    #print('and with parameters {}'.format(snex2_param))
+     
+                    ### Add the new cadence, observation group, and observation record to the SNEx2 db
+                    try:
+                
+                        ### Add the new observation record, if it exists in SNEx1 but not SNEx2
+                        if tracknumber_count > 0 and observation_id > 0 and not in_snex2:
+                            newobs = ObservationRecord(facility=facility, observation_id=str(observation_id), status=status,
+                                               created=created, modified=modified, target_id=target_id,
+                                               user_id=user_id, parameters=snex2_param)
+                            #newobs.save() TODO
+                        
+                            obs_groupid = int(obs.groupidcode)
+                            if obs_groupid is not None:
+                                update_permissions(int(obs_groupid), newobs, snex1_groups) #View obs record
+                        
+                            ### Add observaton record to existing observation group or the one we just made
+                            #if count == 0 or count == 2:
+                                #print('Adding to new observation group')
+                                #newobsgroup.observation_records.add(newobs)TODO
+                            #else:
+                            #    oldobsgroup = ObservationGroup.objects.filter(name=str(requestsid)).first() TODO
+                            #    oldobsgroup.observation_records.add(newobs)TODO
+                            #print('Added observation record')
+                    except:
+                        raise
+    
+            count += 1
 
     print('Done with target {}'.format(target_id))
 
