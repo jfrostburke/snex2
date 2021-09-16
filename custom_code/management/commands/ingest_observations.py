@@ -209,7 +209,7 @@ def get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests,
                 obsrequests.targetid==target_id
             ) 
         )
-        onetime_sequence_ids = [int(o.id) for o in onetime_sequence]
+        #onetime_sequence_ids = [int(o.id) for o in onetime_sequence] TODO: remove
         
         repeating_sequence = db_session.query(obsrequests).filter(
             and_(
@@ -222,30 +222,30 @@ def get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests,
                 obsrequests.targetid==target_id
             )
         )
-        repeating_sequence_ids = [int(o.id) for o in repeating_sequence]
+        #repeating_sequence_ids = [int(o.id) for o in repeating_sequence] TODO: remove
         
-    #print('Got active sequences')
-    
-    ### Compare the currently active sequences with the ones already in SNEx2
-    ### to see which ones need to be added and which ones need the newest obs requests
-    
-    onetime_obs_to_add = []
-    repeating_obs_to_add = []
-    
-    existing_onetime_obs = []
-    existing_repeating_obs = []
-     
-    for o in onetime_sequence:
-        if int(o.id) not in existing_obs:
-            onetime_obs_to_add.append(o)
-        else:
-            existing_onetime_obs.append(o)
-    
-    for o in repeating_sequence:
-        if int(o.id) not in existing_obs:
-            repeating_obs_to_add.append(o)
-        else:
-            existing_repeating_obs.append(o)
+        #print('Got active sequences')
+        
+        ### Compare the currently active sequences with the ones already in SNEx2
+        ### to see which ones need to be added and which ones need the newest obs requests
+        
+        onetime_obs_to_add = []
+        repeating_obs_to_add = []
+        
+        existing_onetime_obs = []
+        existing_repeating_obs = []
+         
+        for o in onetime_sequence:
+            if int(o.id) not in existing_obs:
+                onetime_obs_to_add.append(o)
+            else:
+                existing_onetime_obs.append(o)
+        
+        for o in repeating_sequence:
+            if int(o.id) not in existing_obs:
+                repeating_obs_to_add.append(o)
+            else:
+                existing_repeating_obs.append(o)
     
     #print('Found {} sequences to check'.format(len(onetime_obs_to_add) + len(repeating_obs_to_add) + len(existing_onetime_obs) + len(existing_repeating_obs)))
  
