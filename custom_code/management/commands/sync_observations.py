@@ -47,7 +47,6 @@ class Command(BaseCommand):
                 and_(
                     obsrequests.autostop==1,
                     obsrequests.approved==1,
-                    #obsrequests.proposalid=='KEY2020B-002', TODO: Check this
                     or_(
                         obsrequests.sequenceend=='0000-00-00 00:00:00', 
                         obsrequests.sequenceend>datetime.datetime.utcnow()
@@ -60,7 +59,6 @@ class Command(BaseCommand):
                 and_(
                     obsrequests.autostop==0,
                     obsrequests.approved==1,
-                    #obsrequests.proposalid=='KEY2020B-002', TODO: Check this
                     or_(
                         obsrequests.sequenceend=='0000-00-00 00:00:00', 
                         obsrequests.sequenceend>datetime.datetime.utcnow()
@@ -81,9 +79,8 @@ class Command(BaseCommand):
                 except: # Name not an integer, so not an observation group from SNEx1
                     continue
                 if snex1id not in onetime_sequence_ids and snex1id not in repeating_sequence_ids:
-                    #print('Going to cancel cadence {}'.format(cadence.id))
                     cadence.active = False
-                    #cadence.save() TODO
+                    cadence.save()
 
             #print('Canceled inactive sequences')
             
@@ -110,9 +107,7 @@ class Command(BaseCommand):
                     repeating_obs_to_add.append(o)
                 else:
                     existing_repeating_obs.append(o)
-            
-            #print('Found {} sequences to check'.format(len(onetime_obs_to_add) + len(repeating_obs_to_add)))
- 
+             
             count = 0
             #print('Getting parameters for new sequences')
             for sequencelist in [onetime_obs_to_add, existing_onetime_obs, repeating_obs_to_add, existing_repeating_obs]:
@@ -163,19 +158,19 @@ class Command(BaseCommand):
                         #print('Is this observation request in SNEx2? {}'.format(in_snex2))
                     else:
                         in_snex2 = False
-                    ### Add the new cadence, observation group, and observation record to the SNEx2 db
                     
+                    ### Add the new cadence, observation group, and observation record to the SNEx2 db
                     try:
                     
                         ### Create new observation group and dynamic cadence, if it doesn't already exist
                         if count == 0 or count == 2:
                             newobsgroup = ObservationGroup(name=str(requestsid), created=created, modified=modified)
-                            #newobsgroup.save() TODO
+                            newobsgroup.save()
         
                             cadence_strategy = snex2_param['cadence_strategy']
                             cadence_params = {'cadence_frequency': snex2_param['cadence_frequency']}
                             newcadence = DynamicCadence(cadence_strategy=cadence_strategy, cadence_parameters=cadence_params, active=True, created=created, modified=modified, observation_group_id=newobsgroup.id)
-                            #newcadence.save() TODO
+                            newcadence.save()
                             #print('Added cadence and observation group')
                             
                         ### Add the new observation record, if it exists in SNEx1 but not SNEx2
@@ -183,23 +178,21 @@ class Command(BaseCommand):
                             newobs = ObservationRecord(facility=facility, observation_id=str(observation_id), status=status,
                                                created=created, modified=modified, target_id=target_id,
                                                user_id=user_id, parameters=snex2_param)
-                            #newobs.save() TODO
+                            newobs.save()
                     
                             obs_groupid = int(obs.groupidcode)
                             if obs_groupid is not None:
                                 update_permissions(int(obs_groupid), newobs, snex1_groups) #View obs record
                         
                             ### Add observaton record to existing observation group or the one we just made
-                            #if count == 0 or count == 2: TODO
-                            #    #print('Adding to new observation group')
-                            #    newobsgroup.observation_records.add(newobs) TODO
-                            #else: TODO
-                            #    oldobsgroup = ObservationGroup.objects.filter(name=str(requestsid)).first() TODO
-                            #    oldobsgroup.observation_records.add(newobs) TODO
+                            if count == 0 or count == 2:
+                                #print('Adding to new observation group')
+                                newobsgroup.observation_records.add(newobs)
+                            else:
+                                oldobsgroup = ObservationGroup.objects.filter(name=str(requestsid)).first()
+                                oldobsgroup.observation_records.add(newobs)
                             #print('Added observation record')
                     except:
                         raise
 
-                print('Done with count {}'.format(count))
-        
                 count += 1

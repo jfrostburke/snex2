@@ -101,7 +101,7 @@ def update_permissions(groupid, obs, snex1_groups):
     for g_name, g_id in snex1_groups.items():
         if g_id in target_groups:
             snex2_group = Group.objects.filter(name=g_name).first()
-            #assign_perm('view_observationrecord', snex2_group, obs) #TODO
+            assign_perm('view_observationrecord', snex2_group, obs)
 
 
 def get_snex2_params(obs, repeating=True):
@@ -214,27 +214,17 @@ def get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests,
             and_(
                 obsrequests.autostop==1,
                 obsrequests.approved==1,
-                #or_( #TODO: Check if specifying proposalID is necessary when doing for real
-                #    obsrequests.proposalid=='KEY2020B-002',
-                #    obsrequests.proposalid=='KEY2017AB-001'
-                #),
                 obsrequests.targetid==target_id
             ) 
         )
-        #onetime_sequence_ids = [int(o.id) for o in onetime_sequence] TODO: remove
         
         repeating_sequence = db_session.query(obsrequests).filter(
             and_(
                 obsrequests.autostop==0,
                 obsrequests.approved==1,
-                #or_( #TODO: And here too
-                #    obsrequests.proposalid=='KEY2020B-002',
-                #    obsrequests.proposalid=='KEY2017AB-001'
-                #),
                 obsrequests.targetid==target_id
             )
         )
-        #repeating_sequence_ids = [int(o.id) for o in repeating_sequence] TODO: remove
         
         #print('Got active sequences')
         
@@ -286,12 +276,12 @@ def get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests,
                 ### Create new observation group and dynamic cadence, if it doesn't already exist
                 if count == 0 or count == 2:
                     newobsgroup = ObservationGroup(name=str(requestsid), created=created, modified=modified)
-                    #newobsgroup.save() TODO
+                    newobsgroup.save()
         
                     cadence_strategy = snex2_param['cadence_strategy']
                     cadence_params = {'cadence_frequency': snex2_param['cadence_frequency']}
                     newcadence = DynamicCadence(cadence_strategy=cadence_strategy, cadence_parameters=cadence_params, active=active, created=created, modified=modified, observation_group_id=newobsgroup.id)
-                    #newcadence.save() TODO
+                    newcadence.save()
                     #print('Added cadence and observation group')
                 
                 ### Get observation id from observation portal API
@@ -331,19 +321,19 @@ def get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests,
                             newobs = ObservationRecord(facility=facility, observation_id=str(observation_id), status=status,
                                                created=created, modified=modified, target_id=target_id,
                                                user_id=user_id, parameters=snex2_param)
-                            #newobs.save() TODO
+                            newobs.save()
                         
                             obs_groupid = int(obs.groupidcode)
                             if obs_groupid is not None:
                                 update_permissions(int(obs_groupid), newobs, snex1_groups) #View obs record
                         
                             ### Add observaton record to existing observation group or the one we just made
-                            #if count == 0 or count == 2:
+                            if count == 0 or count == 2:
                                 #print('Adding to new observation group')
-                                #newobsgroup.observation_records.add(newobs)TODO
-                            #else:
-                            #    oldobsgroup = ObservationGroup.objects.filter(name=str(requestsid)).first() TODO
-                            #    oldobsgroup.observation_records.add(newobs)TODO
+                                newobsgroup.observation_records.add(newobs)
+                            else:
+                                oldobsgroup = ObservationGroup.objects.filter(name=str(requestsid)).first()
+                                oldobsgroup.observation_records.add(newobs)
                             #print('Added observation record')
                     except:
                         raise
