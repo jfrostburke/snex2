@@ -260,7 +260,7 @@ def get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests,
                 facility = 'LCO'
                 created = obs.datecreated
                 modified = obs.lastmodified
-                user_id = 67 #supernova user in snex1
+                user_id = 2 #supernova user in snex2
                 requestsid = int(obs.id)
                 
                 if obs.sequenceend == '0000-00-00 00:00:00' or not obs.sequenceend or obs.sequenceend > datetime.datetime.utcnow():

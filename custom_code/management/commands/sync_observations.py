@@ -118,7 +118,7 @@ class Command(BaseCommand):
                     created = obs.datecreated
                     modified = obs.lastmodified
                     target_id = int(obs.targetid)
-                    user_id = 67 #supernova
+                    user_id = 2 #supernova
              
                     ### Get observation id from observation portal API
                     # Query API
