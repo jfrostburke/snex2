@@ -10,6 +10,7 @@ import os
 import datetime
 import requests
 from decimal import Decimal
+from astropy.time import Time
 
 from django.core.management.base import BaseCommand
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
@@ -137,6 +138,8 @@ class Command(BaseCommand):
         
                     if tracknumber_count > 0:
                         tracknumber = int(tracknumber_query.first().tracknumber)
+                        windowstart = Time(tracknumber_query.first().windowstart, format='jd').to_value('isot')
+                        windowend = Time(tracknumber_query.first().windowend, format='jd').to_value('isot')
         
                         # Get the observation portal observation id using this tracknumber 
                         headers = {'Authorization': 'Token {}'.format(os.environ['LCO_APIKEY'])}
@@ -181,6 +184,10 @@ class Command(BaseCommand):
                             
                         ### Add the new observation record, if it exists in SNEx1 but not SNEx2
                         if tracknumber_count > 0 and observation_id > 0 and not in_snex2:
+                            
+                            snex2_param['start'] = windowstart
+                            snex2_param['end'] = windowend
+
                             newobs = ObservationRecord(facility=facility, observation_id=str(observation_id), status=status,
                                                created=created, modified=modified, target_id=target_id,
                                                user_id=user_id, parameters=snex2_param)
