@@ -209,6 +209,7 @@ class Command(BaseCommand):
                         if in_snex2: #Update the status and start and end times
                             oldobs = ObservationRecord.objects.filter(observation_id=str(observation_id)).order_by('-id').first()
                             oldobs.status = status
+                            oldobs.parameters['reminder'] = snex2_param['reminder']
                             oldobs.save()
 
                     except:
