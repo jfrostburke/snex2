@@ -94,7 +94,13 @@ class Command(BaseCommand):
             existing_repeating_obs = []
             
             # Get the observation groups already in SNEx2
-            existing_obs = [int(o.name) for o in ObservationGroup.objects.all() if isinstance(o.name, int)]
+            existing_obs = []
+            for o in ObservationGroup.objects.all():
+                try:
+                    existing_obs.append(int(o.name))
+                except: # Name not a SNEx1 ID, so not in SNEx1
+                    continue
+            #existing_obs = [int(o.name) for o in ObservationGroup.objects.all() if isinstance(o.name, int)]
                 
             for o in onetime_sequence:
                 if int(o.id) not in existing_obs:
@@ -192,6 +198,12 @@ class Command(BaseCommand):
                                 oldobsgroup = ObservationGroup.objects.filter(name=str(requestsid)).first()
                                 oldobsgroup.observation_records.add(newobs)
                             #print('Added observation record')
+
+                        if in_snex2: #Update the status and start and end times
+                            oldobs = ObservationRecord.objects.filter(observation_id=str(observation_id)).order_by('-id').first()
+                            oldobs.status = status
+                            oldobs.save()
+
                     except:
                         raise
 
