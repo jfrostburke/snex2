@@ -14,6 +14,7 @@ from astropy.time import Time
 
 from django.core.management.base import BaseCommand
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
+from tom_targets.models import Target
 from custom_code.management.commands.ingest_observations import get_session, load_table, update_permissions, get_snex2_params
 from django.contrib.auth.models import Group
 from guardian.shortcuts import assign_perm
@@ -126,6 +127,12 @@ class Command(BaseCommand):
                     modified = obs.lastmodified
                     target_id = int(obs.targetid)
                     user_id = 2 #supernova
+
+                    ### Make sure target is in SNEx2 (to avoid ingesting obs for standards)
+                    target_query = Target.objects.filter(id=target_id)
+                    if not target_query.exists():
+                        print('Observation not ingested because target {} does not exist'.format(target_id))
+                        continue
              
                     ### Get observation id from observation portal API
                     # Query API
