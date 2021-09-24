@@ -837,6 +837,21 @@ class CustomObservationListView(ObservationListView):
 
 class CustomObservationCreateView(ObservationCreateView):
 
+    def get_form(self):
+        """
+        Gets an instance of the form appropriate for the request.
+        :returns: observation form
+        :rtype: subclass of GenericObservationForm
+        """
+        form = super().get_form()
+        if not settings.TARGET_PERMISSIONS_ONLY:
+            form.fields['groups'].queryset = Group.objects.all()
+        form.helper.form_action = reverse(
+            'submit-lco-obs', kwargs={'facility': 'LCO'}
+        )
+        return form
+    
+    
     def form_valid(self, form):
         """
         Runs after form validation. Submits the observation to the desired facility and creates an associated
