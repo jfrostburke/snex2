@@ -87,8 +87,12 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
             required=False,
             label=''
         )
-        for field_name in ['exposure_time', 'exposure_count', 'start', 'end', 'filter']:
+        for field_name in ['exposure_time', 'exposure_count', 'filter']: #'start', 'end', 'filter']:
             self.fields.pop(field_name)
+        
+        for field_name in ['start', 'end']:
+            self.fields[field_name].widget = forms.HiddenInput()
+            self.fields[field_name].required = False
         
         if not settings.TARGET_PERMISSIONS_ONLY:
             self.fields['groups'] = forms.ModelMultipleChoiceField(
@@ -349,12 +353,17 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
             if 'Global Supernova Project' in choice[1]:
                 initial_proposal = choice
         self.fields['proposal'] = forms.ChoiceField(choices=proposal_choices, initial=initial_proposal)
+        #NOTE: I believe the below is not needed
+        ## Remove start and end because those are determined by the cadence
+        #for field_name in ['start', 'end']:
+        #    if self.fields.get(field_name):
+        #        #TODO: Figure out why start and end aren't fields sometimes, test reminder
+        #        self.fields.pop(field_name)
 
-        # Remove start and end because those are determined by the cadence
         for field_name in ['start', 'end']:
-            if self.fields.get(field_name):
-                #TODO: Figure out why start and end aren't fields sometimes, test reminder
-                self.fields.pop(field_name)
+            self.fields[field_name].widget = forms.HiddenInput()
+            self.fields[field_name].required = False
+
         if self.fields.get('groups'):
             self.fields['groups'].label = 'Data granted to'
             self.fields['groups'].initial = Group.objects.filter(name__in=settings.DEFAULT_GROUPS)
