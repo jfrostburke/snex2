@@ -25,8 +25,7 @@ from urllib.parse import urlencode
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 from astropy.time import Time
-from datetime import datetime, date
-from datetime import timedelta
+from datetime import datetime, date, timedelta
 import json
 from statistics import median
 from collections import OrderedDict
@@ -483,7 +482,7 @@ def scheduling_view(request):
         
         now = datetime.utcnow()
         observing_parameters['start'] = datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
-        observing_parameters['end'] = datetime.strftime(now + datetime.timedelta(hours=float(request.GET['cadence_frequency'])*24), '%Y-%m-%dT%H:%M:%S')
+        observing_parameters['end'] = datetime.strftime(now + timedelta(hours=float(request.GET['cadence_frequency'])*24), '%Y-%m-%dT%H:%M:%S')
 
         if request.GET['observation_type'] == 'IMAGING':
             filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
