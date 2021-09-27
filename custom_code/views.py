@@ -447,7 +447,7 @@ def observation_sequence_cancel_view(request):
         snex_id = int(obs_group.name)
         run_hook('cancel_sequence_in_snex1', snex_id)
     except:
-        print('This sequence was not in SNEx1 or was not canceled')
+        logger.error('This sequence was not in SNEx1 or was not canceled')
     
     response_data = {'success': 'Modified'}
     return HttpResponse(json.dumps(response_data), content_type='application/json')
@@ -464,7 +464,6 @@ def scheduling_view(request):
             return HttpResponse(json.dumps(response_data), content_type='application/json')
 
         ## Get the new observation parameters
-        print('Getting form data')
         form_data = {'name': request.GET['name'],
                      'target_id': int(float(request.GET['target_id'])),
                      'facility': request.GET['facility'],
@@ -499,6 +498,7 @@ def scheduling_view(request):
         form_data['observing_parameters'] = observing_parameters
 
         # Submission follows how observation requests are submitted in TOM view
+        facility = get_service_class(obs.facility)()
         form = facility.get_form(form_data['observation_type'])(observing_parameters)
         if form.is_valid():
             observation_ids = facility.submit_observation(form.observation_payload())
@@ -579,16 +579,15 @@ def scheduling_view(request):
             snex_id = int(obs_group.name)
             run_hook('cancel_sequence_in_snex1', snex_id)
         except:
-            print('This sequence was not in SNEx1 or was not canceled')
+            logger.info('This sequence was not in SNEx1 or was not canceled')
         
         
-        print(form_data)
         response_data = {'success': 'Modified'}
                          #'data': json.dumps(form_data)}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
 
     elif 'continue' in request.GET['button']:
-        print('Continuing Sequence as-is')
+        logger.info('Continuing Sequence as-is')
         ## Only update the reminder parameter in ObservationRecord
         observation_id = int(float(request.GET['observation_id']))
         obs = ObservationRecord.objects.get(id=observation_id)
@@ -596,7 +595,6 @@ def scheduling_view(request):
         obs_parameters = obs.parameters
         now = datetime.now()
         obs_parameters['reminder'] = datetime.strftime(now + timedelta(days=next_reminder), '%Y-%m-%dT%H:%M:%S')
-        print(obs_parameters)
         obs.parameters = obs_parameters
         obs.save()
         
@@ -606,13 +604,13 @@ def scheduling_view(request):
             snex_id = int(obsgroup.name)
             run_hook('update_reminder_in_snex1', snex_id, next_reminder)
         except:
-            print('This sequence was not in SNEx1 or the reminder was not updated')
+            logger.error('This sequence was not in SNEx1 or the reminder was not updated')
         
         response_data = {'success': 'Continued'}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
     
     elif 'stop' in request.GET['button']:
-        print('Stopping Sequence')
+        logger.info('Stopping Sequence')
         ## Cancel observation request in LCO portal
         obs_id = int(float(request.GET['observation_id']))
         obs = ObservationRecord.objects.get(id=obs_id)
@@ -627,7 +625,7 @@ def scheduling_view(request):
             snex_id = int(obs_group.name)
             run_hook('cancel_sequence_in_snex1', snex_id)
         except:
-            print('This sequence was not in SNEx1 or was not canceled')
+            logger.error('This sequence was not in SNEx1 or was not canceled')
 
         response_data = {'success': 'Stopped'}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
