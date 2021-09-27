@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 
 from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons
-from custom_code.filters import TNSTargetFilter, CustomTargetFilter #
+from custom_code.filters import TNSTargetFilter, CustomTargetFilter, BrokerTargetFilter
 from tom_targets.models import TargetList
 
 from tom_targets.models import Target, TargetExtra
@@ -1091,4 +1091,28 @@ class ObservationGroupDetailView(DetailView):
 
         context['parameters'] = parameters
         context['records'] = self.object.observation_records.all().order_by('created')
+        return context
+
+
+
+class BrokerTargetView(FilterView):
+ 
+    template_name = 'custom_code/broker_query_targets.html'
+    model = BrokerTarget
+    paginate_by = 10
+    context_object_name = 'brokertargets'
+    strict = False
+    filterset_class = BrokerTargetFilter
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        #jd_now = Time(datetime.utcnow()).jd
+        #TNS_URL = "https://www.wis-tns.org/object/"
+        #for target in context['object_list']:
+        #    logger.info('Getting context data for TNS Target %s', target)
+        #    target.coords = make_coords(target.ra, target.dec)
+        #    target.mag_lnd = make_lnd(target.lnd_maglim,
+        #        target.lnd_filter, target.lnd_jd, jd_now)
+        #    target.mag_recent = make_magrecent(target.all_phot, jd_now)
+        #    target.link = TNS_URL + target.name
         return context

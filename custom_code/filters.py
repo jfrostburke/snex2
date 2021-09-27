@@ -91,3 +91,43 @@ class CustomTargetFilter(TargetFilter):
     class Meta:
         model = Target
         fields = ['name', 'cone_search', 'targetlist__name', 'sciencetags']
+
+
+class BrokerTargetForm(forms.Form): 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.add_input(Submit('submit', 'Filter'))
+        self.helper.layout = Layout(
+            Div(
+                Div(PrependedText('name', 'Name like'), css_class='col-md-4'),
+                Div(PrependedText('stream_name', 'Name of Stream'), css_class='col-md-4'),
+                Div(PrependedText('status', 'Status'), css_class='col-md-4'),
+                css_class='form-row'
+            ),
+        )
+
+class BrokerTargetFilter(django_filters.FilterSet):
+    
+    status_choices = [
+        ('new', 'New'),
+        ('interesting', 'Interesting'),
+        ('uninteresting', 'Uninteresting')
+    ]
+    
+    name = django_filters.CharFilter(field_name='name', lookup_expr='icontains', label='')
+    stream_name = django_filters.CharFilter(field_name='stream_name', lookup_expr='icontains',
+        label=''
+    )
+    status = django_filters.ChoiceField(field_name='status', method='filter_status',
+        label='', choices=status_choices, empty_label='Status?')
+
+    def filter_status(self, queryset, name, status):
+        if not status:
+            status = ''
+        return queryset.filter(status=status)
+    
+    class Meta:
+        model = BrokerTarget
+        fields = []
+        form = BrokerTargetForm
