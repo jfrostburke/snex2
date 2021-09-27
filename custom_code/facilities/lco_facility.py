@@ -78,6 +78,8 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
             if 'Global Supernova Project' in choice[1]:
                 initial_proposal = choice
         self.fields['proposal'] = forms.ChoiceField(choices=proposal_choices, initial=initial_proposal)
+        self.fields['start'] = forms.CharField(widget=forms.TextInput(attrs={'type': 'date'}))
+        self.fields['end'] = forms.CharField(widget=forms.TextInput(attrs={'type': 'date'}))
     
         # Massage cadence form to be SNEx-styled
         self.fields['name'].label = ''
@@ -324,7 +326,7 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
                                      widget=forms.TextInput(attrs={'placeholder': 'Seconds'}),
                                      initial=1800)
     reminder = forms.FloatField(required=True, min_value=0.0, initial=6.7, label='Reminder in')
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -346,6 +348,8 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
                                                            initial='2M0-FLOYDS-SCICAM',
                                                            widget=forms.HiddenInput())
 
+        self.fields['start'] = forms.CharField(widget=forms.TextInput(attrs={'type': 'date'}))
+        self.fields['end'] = forms.CharField(widget=forms.TextInput(attrs={'type': 'date'}))
         # Set default proposal to GSP
         proposal_choices = self.proposal_choices()
         initial_proposal = ''
