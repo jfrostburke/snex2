@@ -480,6 +480,10 @@ def scheduling_view(request):
         observing_parameters['facility'] = obs.facility
         observing_parameters['name'] = form_data['name']
         observing_parameters['target_id'] = form_data['target_id']
+        
+        now = datetime.utcnow()
+        observing_parameters['start'] = datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
+        observing_parameters['end'] = datetime.strftime(now + datetime.timedelta(hours=float(request.GET['cadence_frequency'])*24), '%Y-%m-%dT%H:%M:%S')
 
         if request.GET['observation_type'] == 'IMAGING':
             filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']

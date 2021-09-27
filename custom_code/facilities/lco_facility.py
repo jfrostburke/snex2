@@ -155,10 +155,9 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
         #TODO: Make sure that my conversion from days to hours works, reminders work,
         #      and look into implementing a "delay start by" option like in SNEx
         cleaned_data = super().clean()
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
-        cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24),
-                                                '%Y-%m-%dT%H:%M:%S')
+        cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24), '%Y-%m-%dT%H:%M:%S')
         cleaned_data['reminder'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['reminder']), '%Y-%m-%dT%H:%M:%S')
         return cleaned_data
 
@@ -375,10 +374,9 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
     def clean(self):
         cleaned_data = super().clean()
         self.cleaned_data['instrument_type'] = '2M0-FLOYDS-SCICAM'  # SNEx only submits spectra to FLOYDS
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
-        cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24),
-                                                '%Y-%m-%dT%H:%M:%S')
+        cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24), '%Y-%m-%dT%H:%M:%S')
         cleaned_data['reminder'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['reminder']), '%Y-%m-%dT%H:%M:%S')
 
         return cleaned_data
