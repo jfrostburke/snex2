@@ -558,6 +558,10 @@ def scheduling_view(request):
         if len(new_observations) > 1 or form_data.get('cadence'):
             observation_group.name = str(snex_id)
             observation_group.save()
+
+            for record in new_observations:
+                record.parameters['name'] = str(snex_id)
+                record.save()
             
         # Now run the hook to add each observation record to SNEx1
         for record in new_observations:
@@ -920,6 +924,10 @@ class CustomObservationCreateView(ObservationCreateView):
         if len(records) > 1 or form.cleaned_data.get('cadence_strategy'):
             observation_group.name = str(snex_id)
             observation_group.save()
+
+            for record in records:
+                record.parameters['name'] = str(snex_id)
+                record.save()
             
         # Now run the hook to add each observation record to SNEx1
         for record in records:
