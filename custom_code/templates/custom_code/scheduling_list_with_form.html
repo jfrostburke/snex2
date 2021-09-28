@@ -173,7 +173,7 @@ function modify_sequence(clickedId) {
   });
 }
 
-$("#id_cadence_frequency").keyup(function() {
+$(".cadence-input").keyup(function() {
   var t = this;
   var table = t.closest(".table");
   var newreminder = 2*parseFloat(t.value) + 0.7;

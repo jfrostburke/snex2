@@ -253,6 +253,8 @@ class PhotSchedulingForm(forms.Form):
             if f in kwargs.get('initial', ''):
                 self.fields[f] = FilterField(label=f[0], required=False)
 
+        self.fields['cadence_frequency'].widget.attrs['class'] = 'cadence-input'
+
 
 class SpecSchedulingForm(forms.Form):
 
@@ -272,6 +274,7 @@ class SpecSchedulingForm(forms.Form):
     
     def __init__(self, *args, **kwargs):
         super(SpecSchedulingForm, self).__init__(*args, **kwargs)
+        self.fields['cadence_frequency'].widget.attrs['class'] = 'cadence-input'
 
 
 class ReferenceStatusForm(forms.Form):
