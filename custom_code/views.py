@@ -1077,7 +1077,9 @@ class ObservationGroupDetailView(DetailView):
             first_filt = []
             other_filts = []
             for f in ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']:
-                if f in obs.parameters.keys() and obs.parameters[f][0]:
+                if f in obs.parameters.keys() and not obs.parameters[f]:
+                    continue
+                elif f in obs.parameters.keys() and obs.parameters[f][0]:
                     current_filt = obs.parameters[f]
                     if not first_filt:
                         first_filt = {
