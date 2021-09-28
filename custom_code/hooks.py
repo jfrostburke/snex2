@@ -385,7 +385,7 @@ def sync_sequence_with_snex1(params, group_names):
 
         else:
             filters = 'none'
-            exptime = params['exposure_time']
+            exptimes = params['exposure_time']
             expnums = params['exposure_count']
             blocknums = '1'
             slit = 2
