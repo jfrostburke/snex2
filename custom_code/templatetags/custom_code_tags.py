@@ -896,7 +896,7 @@ def scheduling_list_with_form(context, observation):
     observation_id = observation.id
     
     obsgroup = observation.observationgroup_set.first()
-    obsset = obsgroup.observationrecord_set.all()
+    obsset = obsgroup.observation_records.all()
     obsset = obsset.annotate(start=KeyTextTransform('start', 'parameters'))
     obsset = obsset.order_by('start')
     
