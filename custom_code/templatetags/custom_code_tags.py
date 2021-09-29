@@ -787,7 +787,10 @@ def observation_summary(context, target=None, time='previous'):
                                 'tom_observations.view_observationrecord',
                                 ).filter(target=target)
     else:
-        observations = ObservationRecord.objects.all().order_by('created')
+        observations = ObservationRecord.objects.all()
+
+    observations = observations.annotate(start=KeyTextTransform('start', 'parameters'))
+    observations = observations.order_by('start')
 
     ### Get all inactive cadences
     cadences = []
@@ -891,7 +894,12 @@ def scheduling_list_with_form(context, observation):
                 'parameters': ''}
         
     observation_id = observation.id
+    
     obsgroup = observation.observationgroup_set.first()
+    obsset = obsgroup.observationrecord_set.all()
+    obsset = obsset.annotate(start=KeyTextTransform('start', 'parameters'))
+    obsset = obsset.order_by('start')
+    
     target = observation.target
     target_names = observation.target.names
 
@@ -907,7 +915,7 @@ def scheduling_list_with_form(context, observation):
             instrument = 'SBIG'
 
         cadence_frequency = parameter.get('cadence_frequency', '')
-        start = str(obsgroup.created).split('.')[0]
+        start = str(obsset.first().parameters['start']).split('.')[0]
         end = str(parameter.get('reminder', '')).replace('T', ' ')
         if not end:
             end = str(observation.modified).split('.')[0]
@@ -962,7 +970,8 @@ def scheduling_list_with_form(context, observation):
         observation_type = 'Spec'
         instrument = 'Floyds'
         cadence_frequency = parameter.get('cadence_frequency', '')
-        start = str(obsgroup.created).split('.')[0]
+        #start = str(obsgroup.created).split('.')[0]
+        start = str(obsset.first().parameters['start']).split('.')[0]
         end = str(parameter.get('reminder', '')).replace('T', ' ')
         if not end:
             end = str(observation.modified).split('.')[0]
