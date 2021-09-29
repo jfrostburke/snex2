@@ -560,7 +560,7 @@ def scheduling_view(request):
             observation_group.save()
 
             for record in new_observations:
-                record.parameters['name'] = str(snex_id)
+                record.parameters['name'] = snex_id
                 record.save()
             
         # Now run the hook to add each observation record to SNEx1
@@ -926,7 +926,7 @@ class CustomObservationCreateView(ObservationCreateView):
             observation_group.save()
 
             for record in records:
-                record.parameters['name'] = str(snex_id)
+                record.parameters['name'] = snex_id
                 record.save()
             
         # Now run the hook to add each observation record to SNEx1
