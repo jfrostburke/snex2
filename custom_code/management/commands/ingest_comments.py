@@ -110,5 +110,6 @@ class Command(BaseCommand):
             get_comments(options['targetid'], options['tablename'], notes, users)
 
         else:
-            for targetid in [t.id for T in Target.objects.all()]:
+            targetids = [t.id for t in Target.objects.all()]
+            for targetid in targetids:
                 get_comments(targetid, options['tablename'], notes, users)
