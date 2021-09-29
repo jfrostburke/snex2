@@ -915,7 +915,7 @@ def scheduling_list_with_form(context, observation):
             instrument = 'SBIG'
 
         cadence_frequency = parameter.get('cadence_frequency', '')
-        start = str(obsset.first().parameters['start']).split('.')[0]
+        start = str(obsset.first().parameters['start']).replace('T', ' ')
         end = str(parameter.get('reminder', '')).replace('T', ' ')
         if not end:
             end = str(observation.modified).split('.')[0]
@@ -971,7 +971,7 @@ def scheduling_list_with_form(context, observation):
         instrument = 'Floyds'
         cadence_frequency = parameter.get('cadence_frequency', '')
         #start = str(obsgroup.created).split('.')[0]
-        start = str(obsset.first().parameters['start']).split('.')[0]
+        start = str(obsset.first().parameters['start']).replace('T', ' ')
         end = str(parameter.get('reminder', '')).replace('T', ' ')
         if not end:
             end = str(observation.modified).split('.')[0]
