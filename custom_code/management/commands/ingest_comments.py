@@ -67,7 +67,7 @@ def get_comments(targetid, tablename, notes, users):
                             user_id=snex2_user.id
                         )
                     print(newcomment)
-                    #newcomment.save()
+                    newcomment.save()
 
             elif tablename == 'spec':
                 # Need to get reduceddatum id from the reduceddatumextra table

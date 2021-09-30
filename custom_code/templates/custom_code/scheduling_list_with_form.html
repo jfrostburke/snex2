@@ -159,7 +159,7 @@
 function modify_sequence(clickedId) {
   var thenum = clickedId.replace( /^\D+/g, '');
   var theformstr = '#scheduling-form-' + thenum;
-  if (clickedId.includes('cancel')) {
+  if (clickedId.includes('stop')) {
     var cancelComment = prompt('Reason for stopping observations:', '');
     var commentObj = {'cancel':cancelComment};
   } else if (clickedId.includes('modify')) {

@@ -16,7 +16,8 @@ from django.core.management.base import BaseCommand
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
 from tom_targets.models import Target
 from custom_code.management.commands.ingest_observations import get_session, load_table, update_permissions, get_snex2_params
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
+from django_comments.models import Comment
 from guardian.shortcuts import assign_perm
 
 
@@ -35,6 +36,8 @@ class Command(BaseCommand):
         obsrequests = load_table('obsrequests', db_address=_SNEX1_DB)
         obslog = load_table('obslog', db_address=_SNEX1_DB)
         Groups = load_table('groups', db_address=_SNEX1_DB)
+        users = load_table('users', db_address=_SNEX1_DB)
+        notes = load_table('notes', db_address=_SNEX1_DB)
         
         #print('Made tables')
         
@@ -187,7 +190,28 @@ class Command(BaseCommand):
                             cadence_params = {'cadence_frequency': snex2_param['cadence_frequency']}
                             newcadence = DynamicCadence(cadence_strategy=cadence_strategy, cadence_parameters=cadence_params, active=True, created=created, modified=modified, observation_group_id=newobsgroup.id)
                             newcadence.save()
-                            #print('Added cadence and observation group')
+
+                            ### Check if there are any SNEx1 comments associated with this
+                            ### observation request, and if so, save them in SNEx2
+                            comment = db_session.query(notes).filter(and_(notes.tablename=='obsrequests', notes.tableid==requestsid)).first()
+
+                            if comment:
+                                usr = db_session.query(users).filter(users.id==comment.userid).first()
+                                snex2_user = User.objects.get(username=usr.name)
+                                
+                                newcomment = Comment(
+                                        object_pk=newobsgroup.id,
+                                        user_name=snex2_user.username,
+                                        user_email=snex2_user.email,
+                                        comment=comment.note,
+                                        submit_date=comment.posttime,
+                                        is_public=True,
+                                        is_removed=False,
+                                        content_type_id=24,
+                                        site_id=2,
+                                        user_id=snex2_user.id
+                                    )
+                                newcomment.save()
                             
                         ### Add the new observation record, if it exists in SNEx1 but not SNEx2
                         if tracknumber_count > 0 and observation_id > 0 and not in_snex2:
