@@ -24,8 +24,8 @@ engine1 = create_engine(_SNEX1_DB)
 def get_comments(targetid, tablename, notes, users):
     
     content_dict = {'targets': 12,
-                    'obsrequests': 24, #TODO: Change if not associating comments with obsgroups
-                    'spec': 20}
+                    'obsrequests': 22, #TODO: Change if not associating comments with obsgroups
+                    'spec': 19}
     
     with get_session(db_address=_SNEX1_DB) as db_session:
         comments = db_session.query(notes).filter(and_(notes.targetid==targetid, notes.tablename==tablename))

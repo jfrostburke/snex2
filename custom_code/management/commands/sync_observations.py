@@ -207,7 +207,7 @@ class Command(BaseCommand):
                                         submit_date=comment.posttime,
                                         is_public=True,
                                         is_removed=False,
-                                        content_type_id=24,
+                                        content_type_id=22,
                                         site_id=2,
                                         user_id=snex2_user.id
                                     )

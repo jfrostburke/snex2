@@ -463,7 +463,7 @@ def save_comments(comment, obsgroup_id, user):
         submit_date=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
         is_public=True,
         is_removed=False,
-        content_type_id=24, #NOTE: Change if not associating comments with obsgroups 
+        content_type_id=22, #NOTE: Change if not associating comments with obsgroups 
         site_id=2,
         user_id=user.id
     )
