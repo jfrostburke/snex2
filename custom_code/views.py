@@ -7,6 +7,7 @@ from django.views.generic.edit import FormView, UpdateView
 from django.views.generic.detail import DetailView
 from django.urls import reverse
 from django.template.loader import render_to_string
+from django_comments.models import Comment
 
 from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter#, BrokerTargetFilter
@@ -452,6 +453,23 @@ def observation_sequence_cancel_view(request):
     return HttpResponse(json.dumps(response_data), content_type='application/json')
 
 
+def save_comments(comment, obsgroup_id, user):
+
+    newcomment = Comment(
+        object_pk=obsgroup_id,
+        user_name=user.username,
+        user_email=user.email,
+        comment=comment,
+        submit_date=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
+        is_public=True,
+        is_removed=False,
+        content_type_id=24, #NOTE: Change if not associating comments with obsgroups 
+        site_id=2,
+        user_id=user.id
+    )
+    newcomment.save()
+
+
 def scheduling_view(request):
 
     if 'modify' in request.GET['button']:
@@ -551,8 +569,20 @@ def scheduling_view(request):
         if not settings.TARGET_PERMISSIONS_ONLY:
            for group in groups:
                group_names.append(group.name)
+        
         # Run the hook to add the sequence to SNEx1
-        snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names)
+        # Get comments, if any
+        comments = json.loads(request.GET['comment'])
+        if comments.get('begin', '') and (len(new_observations) > 1 or form_data.get('cadence')):
+            save_comments(comments['begin'], observation_group.id, request.user)
+            run_hook('sync_sequence_with_snex1', 
+                     form.serialize_parameters(),
+                     group_names,
+                     comment=comments['begin'],
+                     userid=67, #TODO: automate this
+                     targetid=int(float(request.GET['target_id'])))
+        else:
+            snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names)
         
         # Change the name of the observation group, if one was created
         if len(new_observations) > 1 or form_data.get('cadence'):
@@ -584,11 +614,22 @@ def scheduling_view(request):
         try:
             obs_group = obs.observationgroup_set.first()
             snex_id = int(obs_group.name)
-            run_hook('cancel_sequence_in_snex1', snex_id)
+            
+            # Get comments, if any
+            comments = json.loads(request.GET['comment'])
+            if comments.get('cancel', ''):
+                save_comments(comments['cancel'], obs_group.id, request.user)
+                run_hook('cancel_sequence_in_snex1', 
+                         snex_id, 
+                         comment=comments['cancel'],
+                         tableid=snex_id,
+                         userid=67, #TODO: automate this
+                         targetid=obs.target_id)
+            else:
+                run_hook('cancel_sequence_in_snex1', snex_id) 
         except:
             logger.info('This sequence was not in SNEx1 or was not canceled')
-        
-        
+ 
         response_data = {'success': 'Modified'}
                          #'data': json.dumps(form_data)}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
@@ -625,12 +666,24 @@ def scheduling_view(request):
         if not canceled:
             response_data = {'failure': 'Error'}
             return HttpResponse(json.dumps(response_data), content_type='application/json')
-        
+         
         ## Run hook to cancel this sequence in SNEx1
         try:
             obs_group = obs.observationgroup_set.first()
             snex_id = int(obs_group.name)
-            run_hook('cancel_sequence_in_snex1', snex_id)
+
+            # Get comments, if any
+            comments = json.loads(request.GET['comment'])
+            if comments.get('cancel', ''):
+                save_comments(comments['cancel'], obs_group.id, request.user)
+                run_hook('cancel_sequence_in_snex1', 
+                         snex_id, 
+                         comment=comments['cancel'],
+                         tableid=snex_id,
+                         userid=67, #TODO: automate this
+                         targetid=obs.target_id)
+            else:
+                run_hook('cancel_sequence_in_snex1', snex_id)
         except:
             logger.error('This sequence was not in SNEx1 or was not canceled')
 

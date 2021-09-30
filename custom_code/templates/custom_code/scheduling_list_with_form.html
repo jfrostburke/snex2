@@ -159,13 +159,20 @@
 function modify_sequence(clickedId) {
   var thenum = clickedId.replace( /^\D+/g, '');
   var theformstr = '#scheduling-form-' + thenum;
-  //var theformdata = $(theformstr).serializeArray().reduce(function(obj, item) {
-  //  obj[item.name] = item.value;
-  //  return obj;
-  //});
+  if (clickedId.includes('cancel')) {
+    var cancelComment = prompt('Reason for stopping observations:', '');
+    var commentObj = {'cancel':cancelComment};
+  } else if (clickedId.includes('modify')) {
+    var cancelComment = prompt('Reason for stopping observations:', '');
+    var beginComment = prompt('Any comment for this sequence:', '');
+    var commentObj = {'cancel':cancelComment, 'begin':beginComment};
+  } else {
+    commentObj = {'none': ''};
+  }
+  var commentJSON = JSON.stringify(commentObj);
   $.ajax({
     url: '{% url "custom_code:scheduling" %}',
-    data: $(theformstr).serialize() + "&button=" + clickedId,
+    data: $(theformstr).serialize() + "&button=" + clickedId + "&comment=" + commentJSON,
     dataType: 'json',
     success: function(response) {
       document.getElementById(clickedId).value = response.success;

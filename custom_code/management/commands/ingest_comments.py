@@ -52,43 +52,46 @@ def get_comments(targetid, tablename, notes, users):
             
             elif tablename == 'obsrequests':
                 # Need to get the observationgroup id given its name
-                obsgroup = ObservationGroup.objects.get(name=str(comment.tableid))
-                newcomment = Comment(
-                        object_pk=obsgroup.id,
-                        user_name=snex2_user.username,
-                        user_email=snex2_user.email,
-                        comment=comment.note,
-                        submit_date=comment.posttime,
-                        is_public=True,
-                        is_removed=False,
-                        content_type_id=content_dict[tablename],
-                        site_id=2, #TODO: Why?
-                        user_id=snex2_user.id
-                    )
-                print(newcomment)
-                #newcomment.save()
+                obsgroup = ObservationGroup.objects.filter(name=str(comment.tableid)) #TODO: Check if should be str or int
+                if obsgroup.count() > 0:
+                    newcomment = Comment(
+                            object_pk=obsgroup.first().id,
+                            user_name=snex2_user.username,
+                            user_email=snex2_user.email,
+                            comment=comment.note,
+                            submit_date=comment.posttime,
+                            is_public=True,
+                            is_removed=False,
+                            content_type_id=content_dict[tablename],
+                            site_id=2, #TODO: Why?
+                            user_id=snex2_user.id
+                        )
+                    print(newcomment)
+                    #newcomment.save()
 
             elif tablename == 'spec':
                 # Need to get reduceddatum id from the reduceddatumextra table
                 rdes = ReducedDatumExtra.objects.filter(data_type='spectroscopy', target_id=int(comment.targetid))
+                snex2_id = False
                 for rde in rdes:
                     if int(comment.tableid) == json.loads(rde.value)['snex_id']:
                         snex2_id = json.loads(rde.value)['snex2_id']
                         break
-                newcomment = Comment(
-                        object_pk=snex2_id,
-                        user_name=snex2_user.username,
-                        user_email=snex2_user.email,
-                        comment=comment.note,
-                        submit_date=comment.posttime,
-                        is_public=True,
-                        is_removed=False,
-                        content_type_id=content_dict[tablename],
-                        site_id=2, #TODO: Why?
-                        user_id=snex2_user.id
-                    )
-                print(newcomment)
-                #newcomment.save()
+                if snex2_id:
+                    newcomment = Comment(
+                            object_pk=snex2_id,
+                            user_name=snex2_user.username,
+                            user_email=snex2_user.email,
+                            comment=comment.note,
+                            submit_date=comment.posttime,
+                            is_public=True,
+                            is_removed=False,
+                            content_type_id=content_dict[tablename],
+                            site_id=2, #TODO: Why?
+                            user_id=snex2_user.id
+                        )
+                    print(newcomment)
+                    #newcomment.save()
    
     print('Done ingesting comments for target {} and table {}'.format(targetid, tablename))
 
