@@ -639,7 +639,7 @@ def scheduling_view(request):
                          snex_id, 
                          comment=comments['cancel'],
                          tableid=snex_id,
-                         userid=request.user.id
+                         userid=request.user.id,
                          targetid=obs.target_id)
             else:
                 run_hook('cancel_sequence_in_snex1', snex_id, userid=request.user.id) 
