@@ -87,6 +87,32 @@ class Command(BaseCommand):
                     cadence.active = False
                     cadence.save()
 
+                    ### Look for comments associated with cancellation by
+                    ### checking the number of comments in SNEx2 vs SNEx1
+                    snex2_comment_count = Comment.objects.filter(object_pk=obsgroupid, content_type_id=22).count()
+                    snex1_comment_query = db_session.query(notes).filter(and_(notes.tableid==snex1id, notes.tablename=='obsrequests')).order_by(notes.id.desc())
+                    snex1_comment_count = snex1_comment_query.count()
+
+                    if snex2_comment_count < snex1_comment_count:
+                        cancel_comment = snex1_comment_query.first()
+                        usr = db_session.query(users).filter(users.id==cancel_comment.userid).first()
+                        snex2_user = User.objects.get(username=usr.name)
+                        
+                        # Ingest most recent snex1 comment
+                        newcomment = Comment(
+                            object_pk=obsgroupid,
+                            user_name=snex2_user.username,
+                            user_email=snex2_user.email,
+                            comment=cancel_comment.note,
+                            submit_date=cancel_comment.posttime,
+                            is_public=True,
+                            is_removed=False,
+                            content_type_id=22,
+                            site_id=2,
+                            user_id=snex2_user.id
+                        )
+                        newcomment.save()
+
             #print('Canceled inactive sequences')
             
             ### Compare the currently active sequences with the ones already in SNEx2
