@@ -12,6 +12,7 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 from datetime import datetime, date, timedelta
 import numpy as np
+from django.contrib.auth.models import User
 
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
@@ -333,7 +334,7 @@ def sync_observation_with_snex1(snex_id, params, requestgroup_id):
     logger.info('Sync observation request with SNEx1 hook: Observation for SNEx1 ID {} synced'.format(snex_id))
 
 
-def sync_sequence_with_snex1(params, group_names, comment=False, userid=None, targetid=None):
+def sync_sequence_with_snex1(params, group_names, userid=67, comment=False, targetid=None):
     '''
     Hook to sync an observation sequence submitted through SNEx2 
     to the obsrequests table in the SNEx1 database
@@ -348,6 +349,7 @@ def sync_sequence_with_snex1(params, group_names, comment=False, userid=None, ta
         Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
         Groups = _load_table('groups', db_address=_snex1_address)
         Notes = _load_table('notes', db_address=_snex1_address)
+        Users = _load_table('users', db_address=_snex1_address)
 
         # Get the idcodes from the groups in the group_list
         groupidcode = 0
@@ -404,12 +406,23 @@ def sync_sequence_with_snex1(params, group_names, comment=False, userid=None, ta
             nextreminder = _str_to_timestamp(params.get('reminder'))
         else:
             nextreminder = '0000-00-00 00:00:00'
+
+        if userid != 67:
+            try:
+                # Get SNEx1 id corresponding to this user
+                snex2_user = User.objects.get(id=userid)
+                snex1_user = db_session.query(Users).filter(Users.name==snex2_user.username).first()
+                snex1_userid = snex1_user.id
+            except:
+                snex1_userid = 67
+        else:
+            snex1_userid = 67
         
         newobsrequest = Obsrequests(
                     targetid=params['target_id'],
                     sequencestart=_str_to_timestamp(params['start']),
                     sequenceend='0000-00-00 00:00:00',
-                    userstart=67,
+                    userstart=snex1_userid,
                     cadence=cadence,
                     window=window,
                     filters=filters,
@@ -440,14 +453,14 @@ def sync_sequence_with_snex1(params, group_names, comment=False, userid=None, ta
         db_session.flush()
         snex_id = newobsrequest.id
         
-        if comment and userid and targetid:
+        if comment and targetid:
             newcomment = Notes(
                     targetid=targetid,
                     note=comment,
                     tablename='obsrequests',
                     tableid=snex_id,
                     posttime=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
-                    userid=userid,
+                    userid=snex1_userid,
                     datecreated=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
             )
             db_session.add(newcomment)
@@ -459,7 +472,7 @@ def sync_sequence_with_snex1(params, group_names, comment=False, userid=None, ta
     return snex_id
 
 
-def cancel_sequence_in_snex1(snex_id, comment=False, tableid=None, userid=None, targetid=None):
+def cancel_sequence_in_snex1(snex_id, comment=False, tableid=None, userid=67, targetid=None):
     '''
     Hook to cancel an observation sequence in SNEx1 
     that was canceled in SNEx2
@@ -470,19 +483,31 @@ def cancel_sequence_in_snex1(snex_id, comment=False, tableid=None, userid=None, 
     with _get_session(db_address=_snex1_address) as db_session:
         Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
         Notes = _load_table('notes', db_address=_snex1_address)
+        Users = _load_table('users', db_address=_snex1_address)
 
+        if userid != 67:
+            try:
+                # Get SNEx1 id corresponding to this user
+                snex2_user = User.objects.get(id=userid)
+                snex1_user = db_session.query(Users).filter(Users.name==snex2_user.username).first()
+                snex1_userid = snex1_user.id
+            except:
+                snex1_userid = 67
+        else:
+            snex1_userid = 67
+        
         snex1_row = db_session.query(Obsrequests).filter(Obsrequests.id==snex_id).first()
         snex1_row.sequenceend = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        snex1_row.userend = 67
+        snex1_row.userend = snex1_userid
 
-        if comment and tableid and userid and targetid:
+        if comment and tableid and targetid:
             newcomment = Notes(
                     targetid=targetid,
                     note=comment,
                     tablename='obsrequests',
                     tableid=tableid,
                     posttime=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
-                    userid=userid,
+                    userid=snex1_userid,
                     datecreated=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
             )
             db_session.add(newcomment)

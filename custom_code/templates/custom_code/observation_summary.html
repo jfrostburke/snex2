@@ -14,9 +14,13 @@
 <br>
 <script>
 function stopSequence(observationId) {
+  var cancelComment=prompt('Reason for stopping observations:', '');
+  var comment = {'cancel': cancelComment};
+  var commentJSON = JSON.stringify(comment);
   $.ajax({
     url: '{% url "custom_code:observation-sequence-cancel" %}',
-    data: {'pk': observationId},
+    data: {'pk': observationId,
+           'comment': commentJSON},
     dataType: 'json',
     success: function(response) {
       if (response.success === 'Modified') {

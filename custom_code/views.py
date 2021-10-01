@@ -411,6 +411,23 @@ class PaperCreateView(FormView):
         return HttpResponseRedirect('/targets/{}/'.format(target.id))
 
 
+def save_comments(comment, obsgroup_id, user):
+
+    newcomment = Comment(
+        object_pk=obsgroup_id,
+        user_name=user.username,
+        user_email=user.email,
+        comment=comment,
+        submit_date=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
+        is_public=True,
+        is_removed=False,
+        content_type_id=22, #NOTE: Change if not associating comments with obsgroups 
+        site_id=2,
+        user_id=user.id
+    )
+    newcomment.save()
+
+
 def cancel_observation(obs):
     
     facility = get_service_class(obs.facility)()
@@ -445,29 +462,23 @@ def observation_sequence_cancel_view(request):
     try:
         obs_group = obsr.observationgroup_set.first()
         snex_id = int(obs_group.name)
-        run_hook('cancel_sequence_in_snex1', snex_id)
+        # Get comments, if any
+        comments = json.loads(request.GET['comment'])
+        if comments.get('cancel', ''):
+            save_comments(comments['cancel'], obs_group.id, request.user)
+            run_hook('cancel_sequence_in_snex1', 
+                     snex_id, 
+                     comment=comments['cancel'],
+                     tableid=snex_id,
+                     userid=request.user.id,
+                     targetid=obsr.target_id)
+        else:
+            run_hook('cancel_sequence_in_snex1', snex_id, userid=request.user.id)
     except:
         logger.error('This sequence was not in SNEx1 or was not canceled')
     
     response_data = {'success': 'Modified'}
     return HttpResponse(json.dumps(response_data), content_type='application/json')
-
-
-def save_comments(comment, obsgroup_id, user):
-
-    newcomment = Comment(
-        object_pk=obsgroup_id,
-        user_name=user.username,
-        user_email=user.email,
-        comment=comment,
-        submit_date=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
-        is_public=True,
-        is_removed=False,
-        content_type_id=22, #NOTE: Change if not associating comments with obsgroups 
-        site_id=2,
-        user_id=user.id
-    )
-    newcomment.save()
 
 
 def scheduling_view(request):
@@ -575,14 +586,19 @@ def scheduling_view(request):
         comments = json.loads(request.GET['comment'])
         if comments.get('begin', '') and (len(new_observations) > 1 or form_data.get('cadence')):
             save_comments(comments['begin'], observation_group.id, request.user)
-            run_hook('sync_sequence_with_snex1', 
-                     form.serialize_parameters(),
-                     group_names,
-                     comment=comments['begin'],
-                     userid=67, #TODO: automate this
-                     targetid=int(float(request.GET['target_id'])))
+            snex_id = run_hook(
+                        'sync_sequence_with_snex1', 
+                        form.serialize_parameters(),
+                        group_names,
+                        userid=request.user.id,
+                        comment=comments['begin'],
+                        targetid=int(float(request.GET['target_id'])))
         else:
-            snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names)
+            snex_id = run_hook(
+                    'sync_sequence_with_snex1', 
+                    form.serialize_parameters(), 
+                    group_names, 
+                    userid=request.user.id)
         
         # Change the name of the observation group, if one was created
         if len(new_observations) > 1 or form_data.get('cadence'):
@@ -623,10 +639,10 @@ def scheduling_view(request):
                          snex_id, 
                          comment=comments['cancel'],
                          tableid=snex_id,
-                         userid=67, #TODO: automate this
+                         userid=request.user.id
                          targetid=obs.target_id)
             else:
-                run_hook('cancel_sequence_in_snex1', snex_id) 
+                run_hook('cancel_sequence_in_snex1', snex_id, userid=request.user.id) 
         except:
             logger.info('This sequence was not in SNEx1 or was not canceled')
  
@@ -680,10 +696,10 @@ def scheduling_view(request):
                          snex_id, 
                          comment=comments['cancel'],
                          tableid=snex_id,
-                         userid=67, #TODO: automate this
+                         userid=request.user.id,
                          targetid=obs.target_id)
             else:
-                run_hook('cancel_sequence_in_snex1', snex_id)
+                run_hook('cancel_sequence_in_snex1', snex_id, userid=request.user.id)
         except:
             logger.error('This sequence was not in SNEx1 or was not canceled')
 
@@ -971,7 +987,7 @@ class CustomObservationCreateView(ObservationCreateView):
            group_names.append(group.name)
         
         # Run the hook to add the sequence to SNEx1
-        snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names)
+        snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names, userid=self.request.user.id)
         
         # Change the name of the observation group, if one was created
         if len(records) > 1 or form.cleaned_data.get('cadence_strategy'):
