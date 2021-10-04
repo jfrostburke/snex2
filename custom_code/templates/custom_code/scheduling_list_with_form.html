@@ -98,7 +98,10 @@
 	</td>
       </form>
       {% endif %}
-      <td>{{ parameter.start }}</td>
+      <td>
+	<div class="row">{{ parameter.start }}</div>
+	<div class="row">{{ parameter.comment }}</div>
+      </td>
       <td>{{ parameter.reminder }}</td>
       <td>
       {% with parameter.target as target %}

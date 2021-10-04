@@ -7,6 +7,8 @@ from django.shortcuts import reverse
 from guardian.shortcuts import get_objects_for_user, get_perms, get_groups_with_perms
 from django.contrib.auth.models import User, Group
 from django.contrib.postgres.fields.jsonb import KeyTextTransform
+from django_comments.models import Comment
+from django.contrib.contenttypes.models import ContentType
 
 from tom_targets.models import Target, TargetExtra, TargetList
 from tom_targets.forms import TargetVisibilityForm
@@ -842,8 +844,14 @@ def observation_summary(context, target=None, time='previous'):
             if time == 'previous' and parameter.get('end', ''):
                 parameter_string += ' and ending on ' + str(parameter.get('end')).split('T')[0]
 
+            ### Get any comments associated with this observation group
+            content_type_id = ContentType.objects.get(model='observationgroup').id
+            comments = Comment.objects.filter(object_pk=obsgroup.id, content_type_id=content_type_id).order_by('id')
+            comment_list = ['{}: {}'.format(User.objects.get(username=comment.user_name).first_name, comment.comment) for comment in comments]
+
             parameters.append({'title': 'LCO Sequence',
                                'summary': parameter_string,
+                               'comments': comment_list,
                                'observation': observation.id,
                                'group': obsgroup.id})
 
@@ -858,6 +866,7 @@ def observation_summary(context, target=None, time='previous'):
 
             parameters.append({'title': 'Gemini Sequence',
                                'summary': parameter_string,
+                               'comments': [''], #No comment functionality for Gemini yet
                                'observation': observation.id,
                                'group': obsgroup.id})
 
@@ -903,6 +912,13 @@ def scheduling_list_with_form(context, observation):
     target = observation.target
     target_names = observation.target.names
 
+    content_type_id = ContentType.objects.get(model='observationgroup').id
+    comment = Comment.objects.filter(object_pk=obsgroup.id, content_type_id=content_type_id).order_by('id').first()
+    if not comment:
+        comment_str = ''
+    else:
+        comment_str = '{}: {}'.format(User.objects.get(username=comment.user_name).first_name, comment.comment)
+    
     parameter = observation.parameters
     if parameter.get('observation_type', '') == 'IMAGING':
 
@@ -962,6 +978,7 @@ def scheduling_list_with_form(context, observation):
                            'observation_type': observation_type,
                            'instrument': instrument,
                            'start': start,
+                           'comment': comment_str,
                            'reminder': end,
                            'user_id': context['request'].user.id
                         })
@@ -1013,6 +1030,7 @@ def scheduling_list_with_form(context, observation):
                            'observation_type': observation_type,
                            'instrument': instrument,
                            'start': start,
+                           'comment': comment_str,
                            'reminder': end,
                            'user_id': context['request'].user.id
                         })
