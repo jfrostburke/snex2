@@ -19,6 +19,7 @@ from custom_code.management.commands.ingest_observations import get_session, loa
 from django.contrib.auth.models import Group, User
 from django_comments.models import Comment
 from guardian.shortcuts import assign_perm
+from django.contrib.contenttypes.models import ContentType
 
 
 _SNEX1_DB = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ.get('SNEX1_DB_USER'), os.environ.get('SNEX1_DB_PASSWORD'))
@@ -89,7 +90,8 @@ class Command(BaseCommand):
 
                     ### Look for comments associated with cancellation by
                     ### checking the number of comments in SNEx2 vs SNEx1
-                    snex2_comment_count = Comment.objects.filter(object_pk=obsgroupid, content_type_id=22).count()
+                    content_type_id = ContentType.objects.get(model='observationgroup').id
+                    snex2_comment_count = Comment.objects.filter(object_pk=obsgroupid, content_type_id=content_type_id).count()
                     snex1_comment_query = db_session.query(notes).filter(and_(notes.tableid==snex1id, notes.tablename=='obsrequests')).order_by(notes.id.desc())
                     snex1_comment_count = snex1_comment_query.count()
 
@@ -107,7 +109,7 @@ class Command(BaseCommand):
                             submit_date=cancel_comment.posttime,
                             is_public=True,
                             is_removed=False,
-                            content_type_id=22,
+                            content_type_id=content_type_id,
                             site_id=2,
                             user_id=snex2_user.id
                         )
@@ -224,6 +226,7 @@ class Command(BaseCommand):
                             if comment:
                                 usr = db_session.query(users).filter(users.id==comment.userid).first()
                                 snex2_user = User.objects.get(username=usr.name)
+                                content_type_id = ContentType.objects.get(model='observationgroup').id
                                 
                                 newcomment = Comment(
                                         object_pk=newobsgroup.id,
@@ -233,7 +236,7 @@ class Command(BaseCommand):
                                         submit_date=comment.posttime,
                                         is_public=True,
                                         is_removed=False,
-                                        content_type_id=22,
+                                        content_type_id=content_type_id,
                                         site_id=2,
                                         user_id=snex2_user.id
                                     )

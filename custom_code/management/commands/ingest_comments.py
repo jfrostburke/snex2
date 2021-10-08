@@ -14,6 +14,7 @@ from tom_targets.models import Target
 from django_comments.models import Comment
 from custom_code.management.commands.ingest_observations import get_session, load_table, update_permissions, get_snex2_params
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from guardian.shortcuts import assign_perm
 from custom_code.models import ReducedDatumExtra
 
@@ -23,9 +24,9 @@ engine1 = create_engine(_SNEX1_DB)
 
 def get_comments(targetid, tablename, notes, users):
     
-    content_dict = {'targets': 12,
-                    'obsrequests': 22, #TODO: Change if not associating comments with obsgroups
-                    'spec': 19}
+    content_dict = {'targets': ContentType.objects.get(model='target').id,
+                    'obsrequests': ContentType.objects.get(model='observationgroup').id,
+                    'spec': ContentType.objects.get(model='reduceddatum').id}
     
     with get_session(db_address=_SNEX1_DB) as db_session:
         comments = db_session.query(notes).filter(and_(notes.targetid==targetid, notes.tablename==tablename))

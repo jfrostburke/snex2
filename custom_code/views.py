@@ -18,6 +18,7 @@ from guardian.mixins import PermissionListMixin
 from guardian.models import GroupObjectPermission
 from guardian.shortcuts import get_objects_for_user, assign_perm, remove_perm
 from django.contrib.auth.models import User, Group
+from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.conf import settings
 
@@ -413,6 +414,8 @@ class PaperCreateView(FormView):
 
 def save_comments(comment, obsgroup_id, user):
 
+    content_type_id = ContentType.objects.get(model='observationgroup').id
+
     newcomment = Comment(
         object_pk=obsgroup_id,
         user_name=user.username,
@@ -421,7 +424,7 @@ def save_comments(comment, obsgroup_id, user):
         submit_date=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
         is_public=True,
         is_removed=False,
-        content_type_id=22, #NOTE: Change if not associating comments with obsgroups 
+        content_type_id=content_type_id,
         site_id=2,
         user_id=user.id
     )
