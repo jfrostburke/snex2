@@ -1124,7 +1124,10 @@ class ObservationGroupDetailView(DetailView):
         Gets set of ObservationGroup objects associated with targets that
         the current user is authorized to view
         """
-        return get_objects_for_user(self.request.user, 'tom_observations.view_observationgroup')
+        #return get_objects_for_user(self.request.user, 'tom_observations.view_observationgroup')
+        obsgroupids = get_objects_for_user(self.request.user, 'tom_observations.view_observationrecord').order_by('observationgroup').values_list('observationgroup', flat=True).distinct()
+
+        return ObservationGroup.objects.filter(id__in=obsgroupids)
 
     def get_context_data(self, *args, **kwargs):
         """
