@@ -1164,8 +1164,12 @@ def smart_name_list(target):
             new_name = name.replace(name[:3], name[:3].upper())
             if new_name not in good_names:
                 good_names.append(new_name)
-        elif ('sn' in name[:2] or 'at' in name[:2] or 'SN' in name[:2] or 'AT' in name[:2]) and name not in good_names and ('las' not in name[:4] and 'LAS' not in name):
+        elif ('sn' in name[:2] or 'at' in name[:2] or 'SN' in name[:2] or 'AT' in name[:2]) and name not in good_names and ('las' not in name[:5] and 'LAS' not in name):
             new_name = name[:2].upper() + ' ' + name[2:]
+            if new_name not in good_names:
+                good_names.append(new_name)
+        elif ('atlas' in name[:5] or 'ATLAS' in name[:5]):
+            new_name = name.replace(name[:5], name[:5].upper())
             if new_name not in good_names:
                 good_names.append(new_name)
         elif 'dlt' in name[:4]:
