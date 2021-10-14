@@ -1139,7 +1139,7 @@ def get_best_name(target):
 
     def find_name(namelist, n):
         for name in namelist:
-            if n in name[:2].upper():
+            if n in name[:2].upper() and 'LAS' not in name[:5].upper():
                 return name[:2].upper() + ' ' + name[2:]
         return False
 
