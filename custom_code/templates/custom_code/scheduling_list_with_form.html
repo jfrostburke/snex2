@@ -21,7 +21,7 @@
     <tr>
       <th>View</th>
       <th>Target</th>
-      <th>Facility</th>
+      <th>Facility and Proposal</th>
       <th>Observation Type</th>
       <th>Instrument</th>
       <th>Cadence</th>
@@ -38,9 +38,12 @@
   <tbody>
     {% for parameter in parameters %}
     <tr>
-      <td><a class="btn btn-success" href="{% url 'tom_observations:detail' parameter.observation_id %}">Details</a></td>
+      <td><a class="btn btn-success" href="{% url 'custom_code:observationgroup-detail' parameter.obsgroup_id %}">Details</a></td>
       <td><a href="{% url 'tom_targets:detail' parameter.target.id %}" title="{{ parameter.target.id }}">{{ parameter.target.names|join:", " }}</a></td>
-      <td>{{ parameter.facility }}</td>
+      <td>
+	<div class="row">{{ parameter.facility }}</div>
+	<div class="row">{{ parameter.proposal }}</div>
+      </td>
       <td>{{ parameter.observation_type }}</td>
       <td>{{ parameter.instrument }}</td>
       {% if parameter.observation_type == "Phot" %}

@@ -973,8 +973,10 @@ def scheduling_list_with_form(context, observation):
         form = PhotSchedulingForm(initial=initial)
 
         parameters.append({'observation_id': observation_id,
+                           'obsgroup_id': obsgroup.id,
                            'target': target,
                            'facility': facility,
+                           'proposal': parameter.get('proposal', ''),
                            'observation_type': observation_type,
                            'instrument': instrument,
                            'start': start,
@@ -1025,8 +1027,10 @@ def scheduling_list_with_form(context, observation):
         form = SpecSchedulingForm(initial=initial)
 
         parameters.append({'observation_id': observation_id,
+                           'obsgroup_id': obsgroup.id,
                            'target': target,
                            'facility': facility,
+                           'proposal':  parameter.get('proposal', ''),
                            'observation_type': observation_type,
                            'instrument': instrument,
                            'start': start,
