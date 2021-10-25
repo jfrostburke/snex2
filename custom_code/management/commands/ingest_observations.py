@@ -206,6 +206,58 @@ def get_snex2_params(obs, repeating=True):
     return snex2_param
 
 
+def make_templates_for_target(target_id, existing_obs, snex1_groups, obsrequests, obslog, users):
+
+    with get_session(db_address=_SNEX1_DB) as db_session:
+        ### Get all the sequences
+        
+        all_sequences = db_session.query(obsrequests).filter(
+            and_(
+                obsrequests.approved==1,
+                obsrequests.targetid==target_id
+            )
+        )
+        
+        #print('Got active sequences')
+        
+        ### Compare the currently active sequences with the ones already in SNEx2
+        obs_to_add = []
+        for o in all_sequences:
+            if int(o.id) in existing_obs:
+                obs_to_add.append(o)
+        
+        #print('Found {} sequences to check'.format(len(obs_to_add)))
+ 
+        for obs in obs_to_add:
+
+            facility = 'LCO'
+            created = obs.datecreated
+            modified = obs.lastmodified
+            user_id = 2 #supernova user in snex2
+            requestsid = int(obs.id)
+            
+            snex2_param = get_snex2_params(obs, repeating=False)
+            
+            ### Find existing ObservationGroup in SNEx2
+            obsgroup = ObservationGroup.objects.filter(name=str(requestsid)).first()
+            if obsgroup:
+                # Check for template record, and create one if one doesn't exist
+                template_record = obsgroup.observation_records.filter(observation_id='template').first()
+                if not template_record:
+                    snex2_param['sequence_start'] = str(obs.sequencestart).replace(' ', 'T')
+                    snex2_param['sequence_end'] = str(obs.sequenceend).replace(' ', 'T')
+                    snex2_param['start_user'] = db_session.query(users).filter(users.id==obs.userstart).firstname
+
+                    template = ObservationRecord(facility='LCO', observation_id='template',
+                                status='', created=created, modified=modified,
+                                target_id=target_id, user_id=user_id, parameters=snex2_param)
+                    #template.save()
+                    #obsgroup.observation_records.add(template)
+                    print('Created template record')
+        
+        print('Done with templates for target {}'.format(target_id))
+
+
 def get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests, obslog):
 
     with get_session(db_address=_SNEX1_DB) as db_session:
@@ -349,6 +401,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument('--target_id', help='Ingest data for this SNEx1 target ID')
+        parser.add_argument('--template', action='store_true', help='Create template observation records?')
 
     def handle(self, *args, **options):
 
@@ -356,6 +409,7 @@ class Command(BaseCommand):
         obsrequests = load_table('obsrequests', db_address=_SNEX1_DB)
         obslog = load_table('obslog', db_address=_SNEX1_DB)
         Groups = load_table('groups', db_address=_SNEX1_DB)
+        users = load_table('users', db_address=_SNEX1_DB)
         
         print('Made tables')
     
@@ -372,8 +426,14 @@ class Command(BaseCommand):
             snex1_groups = {}
             for x in db_session.query(Groups):
                 snex1_groups[x.name] = x.idcode 
-            
-        if options['target_id']:
+        if options['template'] and options['target_id']:
+            make_templates_for_target(options['target_id'], existing_obs, snex1_groups, obsrequests, obslog, users)
+        elif options['template']:
+            targets_in_snex2 = [int(t.id) for t in Target.objects.all()]
+            for target_id in targets_in_snex2:
+                make_templates_for_target(target_id, existing_obs, snex1_groups, obsrequests, obslog, users)
+
+        elif options['target_id']:
             get_sequences_for_target(options['target_id'], existing_obs, snex1_groups, obsrequests, obslog)
         
         else:
