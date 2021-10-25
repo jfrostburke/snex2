@@ -246,7 +246,7 @@ def make_templates_for_target(target_id, existing_obs, snex1_groups, obsrequests
                 if not template_record:
                     snex2_param['sequence_start'] = str(obs.sequencestart).replace(' ', 'T')
                     snex2_param['sequence_end'] = str(obs.sequenceend).replace(' ', 'T')
-                    snex2_param['start_user'] = db_session.query(users).filter(users.id==obs.userstart).firstname
+                    snex2_param['start_user'] = db_session.query(users).filter(users.id==obs.userstart).first().firstname
 
                     template = ObservationRecord(facility='LCO', observation_id='template',
                                 status='', created=created, modified=modified,
