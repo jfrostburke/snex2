@@ -924,7 +924,7 @@ def scheduling_list_with_form(context, observation):
         start = str(obsset.first().parameters['start']).replace('T', ' ')
         requested_str = ''
     else:
-        start = str(template_observation.parameters['sequence_start'])
+        start = str(template_observation.parameters['sequence_start']).replace('T', ' ')
         requested_str = str(template_observation.parameters.get('start_user', ''))
     
     target = observation.target
@@ -997,7 +997,7 @@ def scheduling_list_with_form(context, observation):
                            'proposal': parameter.get('proposal', ''),
                            'observation_type': observation_type,
                            'instrument': instrument,
-                           'start': start,
+                           'start': start + ' by ' + requested_str,
                            'comment': comment_str,
                            'reminder': end,
                            'user_id': context['request'].user.id
@@ -1050,7 +1050,7 @@ def scheduling_list_with_form(context, observation):
                            'proposal':  parameter.get('proposal', ''),
                            'observation_type': observation_type,
                            'instrument': instrument,
-                           'start': start,
+                           'start': start + ' by ' + requested_str,
                            'comment': comment_str,
                            'reminder': end,
                            'user_id': context['request'].user.id
