@@ -115,6 +115,12 @@ class Command(BaseCommand):
                         )
                         newcomment.save()
 
+                    ### Add the sequence end time to the template observationrecord
+                    templaterecord = currentobsgroup.observation_records.filter(observation_id='template').first()
+                    if templaterecord:
+                       templaterecord.parameters['sequence_end'] = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S') 
+                       templaterecord.save()
+
             #print('Canceled inactive sequences')
             
             ### Compare the currently active sequences with the ones already in SNEx2
@@ -241,6 +247,16 @@ class Command(BaseCommand):
                                         user_id=snex2_user.id
                                     )
                                 newcomment.save()
+
+                            ### Add "template" record
+                            snex2_param['sequence_start'] = str(obs.sequencestart).replace(' ', 'T')
+                            snex2_param['sequence_end'] = str(obs.sequenceend).replace(' ', 'T')
+                            snex2_param['start_user'] = db_session.query(users).filter(users.id==obs.userstart).first().firstname
+                            template = ObservationRecord(facility='LCO', observation_id='template',
+                                               status='', created=created, modified=modified,
+                                               target_id=target_id, user_id=user_id, parameters=snex2_param)
+                            template.save()
+                            newobsgroup.observation_records.add(template)
                             
                         ### Add the new observation record, if it exists in SNEx1 but not SNEx2
                         if tracknumber_count > 0 and observation_id > 0 and not in_snex2:

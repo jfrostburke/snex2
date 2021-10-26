@@ -810,9 +810,15 @@ def observation_summary(context, target=None, time='previous'):
     parameters = []
     for cadence in cadences:
         obsgroup = ObservationGroup.objects.get(id=cadence.observation_group_id)
-        observation = obsgroup.observation_records.all().order_by('-id').first()
-        first_observation = obsgroup.observation_records.all().order_by('id').first()
-        sequence_start = str(first_observation.parameters.get('start')).split('T')[0]
+        observation = obsgroup.observation_records.all().filter(observation_id='template').first()
+        if not observation:
+            observation = obsgroup.observation_records.all().order_by('-id').first()
+            first_observation = obsgroup.observation_records.all().order_by('id').first()
+            sequence_start = str(first_observation.parameters.get('start')).split('T')[0]
+            requested_str = ''
+        else:
+            sequence_start = str(observation.parameters.get('sequence_start', '')).split('T')[0]
+            requested_str = ', requested by {}'.format(str(observation.parameters.get('start_user', '')))
 
         parameter = observation.parameters
 
@@ -841,8 +847,13 @@ def observation_summary(context, target=None, time='previous'):
             parameter_string += 'with IPP ' + str(parameter.get('ipp_value', ''))
             parameter_string += ' and airmass < ' + str(parameter.get('max_airmass', ''))
             parameter_string += ' starting on ' + sequence_start #str(parameter.get('start')).split('T')[0]
-            if time == 'previous' and parameter.get('end', ''):
-                parameter_string += ' and ending on ' + str(parameter.get('end')).split('T')[0]
+            endtime = parameter.get('sequence_end', '')
+            if not endtime:
+                endtime = parameter.get('end', '')
+
+            if time == 'previous' and endtime:
+                parameter_string += ' and ending on ' + str(endtime).split('T')[0]
+            parameter_string += requested_str
 
             ### Get any comments associated with this observation group
             content_type_id = ContentType.objects.get(model='observationgroup').id
@@ -905,9 +916,16 @@ def scheduling_list_with_form(context, observation):
     observation_id = observation.id
     
     obsgroup = observation.observationgroup_set.first()
-    obsset = obsgroup.observation_records.all()
-    obsset = obsset.annotate(start=KeyTextTransform('start', 'parameters'))
-    obsset = obsset.order_by('start')
+    template_observation = obsgroup.observation_records.all().filter(observation_id='template').first()
+    if not template_observation:
+        obsset = obsgroup.observation_records.all()
+        obsset = obsset.annotate(start=KeyTextTransform('start', 'parameters'))
+        obsset = obsset.order_by('start')
+        start = str(obsset.first().parameters['start']).replace('T', ' ')
+        requested_str = ''
+    else:
+        start = str(template_observation.parameters['sequence_start'])
+        requested_str = str(template_observation.parameters.get('start_user', ''))
     
     target = observation.target
     target_names = observation.target.names
@@ -931,7 +949,7 @@ def scheduling_list_with_form(context, observation):
             instrument = 'SBIG'
 
         cadence_frequency = parameter.get('cadence_frequency', '')
-        start = str(obsset.first().parameters['start']).replace('T', ' ')
+        #start = str(obsset.first().parameters['start']).replace('T', ' ')
         end = str(parameter.get('reminder', '')).replace('T', ' ')
         if not end:
             end = str(observation.modified).split('.')[0]
@@ -989,8 +1007,7 @@ def scheduling_list_with_form(context, observation):
         observation_type = 'Spec'
         instrument = 'Floyds'
         cadence_frequency = parameter.get('cadence_frequency', '')
-        #start = str(obsgroup.created).split('.')[0]
-        start = str(obsset.first().parameters['start']).replace('T', ' ')
+        #start = str(obsset.first().parameters['start']).replace('T', ' ')
         end = str(parameter.get('reminder', '')).replace('T', ' ')
         if not end:
             end = str(observation.modified).split('.')[0]

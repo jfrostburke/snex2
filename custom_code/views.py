@@ -448,6 +448,13 @@ def cancel_observation(obs):
     dynamic_cadence = DynamicCadence.objects.get(observation_group=obs_group)
     dynamic_cadence.active = False
     dynamic_cadence.save()
+
+    ## Update sequence end time in template record
+    template = obs_group.observation_records.filter(observation_id='template').first()
+    if template:
+        template.parameters['sequence_end'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+        template.save()
+    
     return True
 
 

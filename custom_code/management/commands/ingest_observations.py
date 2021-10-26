@@ -251,9 +251,9 @@ def make_templates_for_target(target_id, existing_obs, snex1_groups, obsrequests
                     template = ObservationRecord(facility='LCO', observation_id='template',
                                 status='', created=created, modified=modified,
                                 target_id=target_id, user_id=user_id, parameters=snex2_param)
-                    #template.save()
-                    #obsgroup.observation_records.add(template)
-                    print('Created template record')
+                    template.save()
+                    obsgroup.observation_records.add(template)
+                    #print('Created template record')
         
         print('Done with templates for target {}'.format(target_id))
 
