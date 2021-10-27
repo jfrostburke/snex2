@@ -273,6 +273,7 @@ class Command(BaseCommand):
                snex2_param['sequence_start'] = str(obs.sequencestart).replace(' ', 'T')
                snex2_param['sequence_end'] = str(obs.sequenceend).replace(' ', 'T')
                snex2_param['start_user'] = db_session.query(users).filter(users.id==obs.userstart).first().firstname
+               rmndr = snex2_param.pop('reminder')
                template = ObservationRecord(facility='LCO', observation_id='template pending',
                                   status='', created=created, modified=modified,
                                   target_id=target_id, user_id=2, parameters=snex2_param)
@@ -379,6 +380,7 @@ class Command(BaseCommand):
                             snex2_param['sequence_start'] = str(obs.sequencestart).replace(' ', 'T')
                             snex2_param['sequence_end'] = str(obs.sequenceend).replace(' ', 'T')
                             snex2_param['start_user'] = db_session.query(users).filter(users.id==obs.userstart).first().firstname
+                            rmndr = snex2_param.pop('reminder')
                             template = ObservationRecord(facility='LCO', observation_id='template',
                                                status='', created=created, modified=modified,
                                                target_id=target_id, user_id=user_id, parameters=snex2_param)
