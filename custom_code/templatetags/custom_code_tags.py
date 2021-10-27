@@ -902,7 +902,37 @@ def papers_list(target):
             'papers': papers,
             'form': paper_form}
 
+
+@register.filter
+def smart_name_list(target):
+
+    namelist = [target.name] + [alias.name for alias in target.aliases.all()]
+    good_names = []
+    for name in namelist:
+        if ('SN ' in name or 'AT ' in name or 'ZTF' in name) and name not in good_names:
+            good_names.append(name)
+        elif 'sn ' in name[:4] or 'at ' in name[:4] or 'ztf' in name[:4]:
+            new_name = name.replace(name[:3], name[:3].upper())
+            if new_name not in good_names:
+                good_names.append(new_name)
+        elif ('sn' in name[:2] or 'at' in name[:2] or 'SN' in name[:2] or 'AT' in name[:2]) and name not in good_names and ('las' not in name[:5] and 'LAS' not in name):
+            new_name = name[:2].upper() + ' ' + name[2:]
+            if new_name not in good_names:
+                good_names.append(new_name)
+        elif ('atlas' in name[:5] or 'ATLAS' in name[:5]):
+            new_name = name.replace(name[:5], name[:5].upper())
+            if new_name not in good_names:
+                good_names.append(new_name)
+        elif 'dlt' in name[:4]:
+            new_name = name.replace(name[:3], name[:3].upper())
+            if new_name not in good_names:
+                good_names.append(new_name)
+        elif name not in good_names:
+            good_names.append(name)
     
+    return good_names
+    
+
 @register.inclusion_tag('custom_code/scheduling_list_with_form.html', takes_context=True)
 def scheduling_list_with_form(context, observation):
     parameters = []
@@ -928,7 +958,7 @@ def scheduling_list_with_form(context, observation):
         requested_str = str(template_observation.parameters.get('start_user', ''))
     
     target = observation.target
-    target_names = observation.target.names
+    target_names = smart_name_list(observation.target)
 
     content_type_id = ContentType.objects.get(model='observationgroup').id
     comment = Comment.objects.filter(object_pk=obsgroup.id, content_type_id=content_type_id).order_by('id').first()
@@ -993,6 +1023,7 @@ def scheduling_list_with_form(context, observation):
         parameters.append({'observation_id': observation_id,
                            'obsgroup_id': obsgroup.id,
                            'target': target,
+                           'names': target_names,
                            'facility': facility,
                            'proposal': parameter.get('proposal', ''),
                            'observation_type': observation_type,
@@ -1046,6 +1077,7 @@ def scheduling_list_with_form(context, observation):
         parameters.append({'observation_id': observation_id,
                            'obsgroup_id': obsgroup.id,
                            'target': target,
+                           'names': target_names,
                            'facility': facility,
                            'proposal':  parameter.get('proposal', ''),
                            'observation_type': observation_type,
@@ -1173,34 +1205,6 @@ def get_best_name(target):
     
     return bestname
 
-@register.filter
-def smart_name_list(target):
-
-    namelist = [target.name] + [alias.name for alias in target.aliases.all()]
-    good_names = []
-    for name in namelist:
-        if ('SN ' in name or 'AT ' in name or 'ZTF' in name) and name not in good_names:
-            good_names.append(name)
-        elif 'sn ' in name[:4] or 'at ' in name[:4] or 'ztf' in name[:4]:
-            new_name = name.replace(name[:3], name[:3].upper())
-            if new_name not in good_names:
-                good_names.append(new_name)
-        elif ('sn' in name[:2] or 'at' in name[:2] or 'SN' in name[:2] or 'AT' in name[:2]) and name not in good_names and ('las' not in name[:5] and 'LAS' not in name):
-            new_name = name[:2].upper() + ' ' + name[2:]
-            if new_name not in good_names:
-                good_names.append(new_name)
-        elif ('atlas' in name[:5] or 'ATLAS' in name[:5]):
-            new_name = name.replace(name[:5], name[:5].upper())
-            if new_name not in good_names:
-                good_names.append(new_name)
-        elif 'dlt' in name[:4]:
-            new_name = name.replace(name[:3], name[:3].upper())
-            if new_name not in good_names:
-                good_names.append(new_name)
-        elif name not in good_names:
-            good_names.append(name)
-    
-    return good_names
 
 @register.inclusion_tag('custom_code/display_group_list.html')
 def display_group_list(target):

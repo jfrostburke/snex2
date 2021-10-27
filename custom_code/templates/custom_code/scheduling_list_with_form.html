@@ -39,7 +39,7 @@
     {% for parameter in parameters %}
     <tr>
       <td><a class="btn btn-success" href="{% url 'custom_code:observationgroup-detail' parameter.obsgroup_id %}">Details</a></td>
-      <td><a href="{% url 'tom_targets:detail' parameter.target.id %}" title="{{ parameter.target.id }}">{{ parameter.target.names|join:", " }}</a></td>
+      <td><a href="{% url 'tom_targets:detail' parameter.target.id %}" title="{{ parameter.target.id }}">{{ parameter.names|join:", " }}</a></td>
       <td>
 	<div class="row">{{ parameter.facility }}</div>
 	<div class="row">{{ parameter.proposal }}</div>
