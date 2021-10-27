@@ -260,7 +260,7 @@ class Command(BaseCommand):
                target_query = Target.objects.filter(id=target_id)
                if not target_query.exists():
                     print('Observation not ingested because target {} does not exist'.format(target_id))
-                   continue
+                    continue
                requestsid = int(obs.id)
                if obs.autostop == 0:
                    snex2_param = get_snex2_params(obs, repeating=True)
