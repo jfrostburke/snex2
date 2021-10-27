@@ -27,6 +27,42 @@ _SNEX1_DB = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=u
 engine1 = create_engine(_SNEX1_DB)
 
 
+def create_new_sequence(requestsid, created, modified, snex2_param, users, notes, active=True):
+
+    newobsgroup = ObservationGroup(name=str(requestsid), created=created, modified=modified)
+    newobsgroup.save()
+    
+    cadence_strategy = snex2_param['cadence_strategy']
+    cadence_params = {'cadence_frequency': snex2_param['cadence_frequency']}
+    newcadence = DynamicCadence(cadence_strategy=cadence_strategy, cadence_parameters=cadence_params, active=active, created=created, modified=modified, observation_group_id=newobsgroup.id)
+    newcadence.save()
+
+    ### Check if there are any SNEx1 comments associated with this
+    ### observation request, and if so, save them in SNEx2
+    comment = db_session.query(notes).filter(and_(notes.tablename=='obsrequests', notes.tableid==requestsid)).first()
+
+    if comment:
+        usr = db_session.query(users).filter(users.id==comment.userid).first()
+        snex2_user = User.objects.get(username=usr.name)
+        content_type_id = ContentType.objects.get(model='observationgroup').id
+        
+        newcomment = Comment(
+                object_pk=newobsgroup.id,
+                user_name=snex2_user.username,
+                user_email=snex2_user.email,
+                comment=comment.note,
+                submit_date=comment.posttime,
+                is_public=True,
+                is_removed=False,
+                content_type_id=content_type_id,
+                site_id=2,
+                user_id=snex2_user.id
+            )
+        newcomment.save()
+
+    return newobsgroup
+
+
 class Command(BaseCommand):
 
     help = 'Syncs active observation sequences and records from SNEx1 to SNEx2'
@@ -72,7 +108,18 @@ class Command(BaseCommand):
                 )
             )
             repeating_sequence_ids = [int(o.id) for o in repeating_sequence]
-        
+            
+            ### Get pending sequence ids
+            pending_sequence = db_session.query(obsrequests).filter(
+                and_(
+                    obsrequests.approved==0,
+                    or_(
+                        obsrequests.sequenceend=='0000-00-00 00:00:00',
+                        obsrequests.sequenceend>datetime.datetime.utcnow()
+                    )
+                )
+            )
+            pending_sequence_ids = [int(o.id) for o in pending_sequence]
             #print('Got active sequences')
             
             ### Cancel the SNEx2 sequences that are no longer active in SNEx1
@@ -122,6 +169,53 @@ class Command(BaseCommand):
                        templaterecord.save()
 
             #print('Canceled inactive sequences')
+
+            #### Check if any of the pending requests in SNEx2 are no longer pending in SNEx1
+            snex2_pending_cadences = ObservationRecord.objects.filter(observation_id='template pending')
+            for pendingobs in snex2_pending_cadences:
+                currentobsgroup = pendingobs.observationgroup_set.first()
+                try:
+                    snex1id = int(currentobsgroup.name)
+                except: # Name not an integer, so not an observation group from SNEx1
+                    continue
+                if snex1id not in pending_sequence_ids: #Was either accepted or rejected
+                    pendingobs.observation_id = 'template'
+                    pendingobs.save()
+                   
+                    # Figure out if the pending sequence was accepted or rejected
+                    obsgroupid = currentobsgroup.id
+                    if snex1id in onetime_sequence_ids or snex1id in repeating_sequence_ids:
+                        cadence = DynamicCadence.objects.get(observation_group_id=obsgroupid)
+                        cadence.active = True
+                        cadence.save()
+
+                    else:
+                        ### Look for comments associated with cancellation by
+                        ### checking the number of comments in SNEx2 vs SNEx1
+                        content_type_id = ContentType.objects.get(model='observationgroup').id
+                        snex2_comment_count = Comment.objects.filter(object_pk=obsgroupid, content_type_id=content_type_id).count()
+                        snex1_comment_query = db_session.query(notes).filter(and_(notes.tableid==snex1id, notes.tablename=='obsrequests')).order_by(notes.id.desc())
+                        snex1_comment_count = snex1_comment_query.count()
+
+                        if snex2_comment_count < snex1_comment_count:
+                            cancel_comment = snex1_comment_query.first()
+                            usr = db_session.query(users).filter(users.id==cancel_comment.userid).first()
+                            snex2_user = User.objects.get(username=usr.name)
+                            
+                            # Ingest most recent snex1 comment
+                            newcomment = Comment(
+                                object_pk=obsgroupid,
+                                user_name=snex2_user.username,
+                                user_email=snex2_user.email,
+                                comment=cancel_comment.note,
+                                submit_date=cancel_comment.posttime,
+                                is_public=True,
+                                is_removed=False,
+                                content_type_id=content_type_id,
+                                site_id=2,
+                                user_id=snex2_user.id
+                            )
+                            newcomment.save()
             
             ### Compare the currently active sequences with the ones already in SNEx2
             ### to see which ones need to be added and which ones need the newest obs requests
@@ -131,6 +225,8 @@ class Command(BaseCommand):
             
             existing_onetime_obs = []
             existing_repeating_obs = []
+
+            pending_obs_to_add = []
             
             # Get the observation groups already in SNEx2
             existing_obs = []
@@ -139,7 +235,6 @@ class Command(BaseCommand):
                     existing_obs.append(int(o.name))
                 except: # Name not a SNEx1 ID, so not in SNEx1
                     continue
-            #existing_obs = [int(o.name) for o in ObservationGroup.objects.all() if isinstance(o.name, int)]
                 
             for o in onetime_sequence:
                 if int(o.id) not in existing_obs:
@@ -152,6 +247,37 @@ class Command(BaseCommand):
                     repeating_obs_to_add.append(o)
                 else:
                     existing_repeating_obs.append(o)
+
+            for o in pending_sequence:
+                if int(o.id) not in existing_obs:
+                    pending_obs_to_add = []
+
+            ### Add the pending observations not in SNEx2
+            for obs in pending_obs_to_add:
+               created = obs.datecreated
+               modified = obs.lastmodified
+               target_id = int(obs.targetid)
+               target_query = Target.objects.filter(id=target_id)
+               if not target_query.exists():
+                    print('Observation not ingested because target {} does not exist'.format(target_id))
+                   continue
+               requestsid = int(obs.id)
+               if obs.autostop == 0:
+                   snex2_param = get_snex2_params(obs, repeating=True)
+               else:
+                   snex2_param = get_snex2_params(obs, repeating=False)
+            
+               newobsgroup = create_new_sequence(requestsid, created, modified, snex2_param, users, notes, active=False)
+            
+               ### Add "template" record
+               snex2_param['sequence_start'] = str(obs.sequencestart).replace(' ', 'T')
+               snex2_param['sequence_end'] = str(obs.sequenceend).replace(' ', 'T')
+               snex2_param['start_user'] = db_session.query(users).filter(users.id==obs.userstart).first().firstname
+               template = ObservationRecord(facility='LCO', observation_id='template pending',
+                                  status='', created=created, modified=modified,
+                                  target_id=target_id, user_id=2, parameters=snex2_param)
+               template.save()
+               newobsgroup.observation_records.add(template)
              
             count = 0
             #print('Getting parameters for new sequences')
@@ -217,36 +343,37 @@ class Command(BaseCommand):
                     
                         ### Create new observation group and dynamic cadence, if it doesn't already exist
                         if count == 0 or count == 2:
-                            newobsgroup = ObservationGroup(name=str(requestsid), created=created, modified=modified)
-                            newobsgroup.save()
+                            newobsgroup = create_new_sequence(requestsid, created, modified, snex2_param, users, notes, active=True)
+                            #newobsgroup = ObservationGroup(name=str(requestsid), created=created, modified=modified)
+                            #newobsgroup.save()
         
-                            cadence_strategy = snex2_param['cadence_strategy']
-                            cadence_params = {'cadence_frequency': snex2_param['cadence_frequency']}
-                            newcadence = DynamicCadence(cadence_strategy=cadence_strategy, cadence_parameters=cadence_params, active=True, created=created, modified=modified, observation_group_id=newobsgroup.id)
-                            newcadence.save()
+                            #cadence_strategy = snex2_param['cadence_strategy']
+                            #cadence_params = {'cadence_frequency': snex2_param['cadence_frequency']}
+                            #newcadence = DynamicCadence(cadence_strategy=cadence_strategy, cadence_parameters=cadence_params, active=True, created=created, modified=modified, observation_group_id=newobsgroup.id)
+                            #newcadence.save()
 
-                            ### Check if there are any SNEx1 comments associated with this
-                            ### observation request, and if so, save them in SNEx2
-                            comment = db_session.query(notes).filter(and_(notes.tablename=='obsrequests', notes.tableid==requestsid)).first()
+                            #### Check if there are any SNEx1 comments associated with this
+                            #### observation request, and if so, save them in SNEx2
+                            #comment = db_session.query(notes).filter(and_(notes.tablename=='obsrequests', notes.tableid==requestsid)).first()
 
-                            if comment:
-                                usr = db_session.query(users).filter(users.id==comment.userid).first()
-                                snex2_user = User.objects.get(username=usr.name)
-                                content_type_id = ContentType.objects.get(model='observationgroup').id
-                                
-                                newcomment = Comment(
-                                        object_pk=newobsgroup.id,
-                                        user_name=snex2_user.username,
-                                        user_email=snex2_user.email,
-                                        comment=comment.note,
-                                        submit_date=comment.posttime,
-                                        is_public=True,
-                                        is_removed=False,
-                                        content_type_id=content_type_id,
-                                        site_id=2,
-                                        user_id=snex2_user.id
-                                    )
-                                newcomment.save()
+                            #if comment:
+                            #    usr = db_session.query(users).filter(users.id==comment.userid).first()
+                            #    snex2_user = User.objects.get(username=usr.name)
+                            #    content_type_id = ContentType.objects.get(model='observationgroup').id
+                            #    
+                            #    newcomment = Comment(
+                            #            object_pk=newobsgroup.id,
+                            #            user_name=snex2_user.username,
+                            #            user_email=snex2_user.email,
+                            #            comment=comment.note,
+                            #            submit_date=comment.posttime,
+                            #            is_public=True,
+                            #            is_removed=False,
+                            #            content_type_id=content_type_id,
+                            #            site_id=2,
+                            #            user_id=snex2_user.id
+                            #        )
+                            #    newcomment.save()
 
                             ### Add "template" record
                             snex2_param['sequence_start'] = str(obs.sequencestart).replace(' ', 'T')
