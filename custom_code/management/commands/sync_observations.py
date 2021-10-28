@@ -250,7 +250,7 @@ class Command(BaseCommand):
 
             for o in pending_sequence:
                 if int(o.id) not in existing_obs:
-                    pending_obs_to_add = []
+                    pending_obs_to_add.append(o)
 
             ### Add the pending observations not in SNEx2
             for obs in pending_obs_to_add:
