@@ -812,7 +812,7 @@ def observation_summary(context, target=None, time='previous'):
         obsgroup = ObservationGroup.objects.get(id=cadence.observation_group_id)
         #Check if the request is pending, and if so skip it
         pending_obs = obsgroup.observation_records.all().filter(observation_id='template pending').first()
-        if pending_obs and time != 'pending':
+        if not pending_obs and time == 'pending':
             continue
         
         if time == 'pending':
