@@ -800,7 +800,7 @@ def observation_summary(context, target=None, time='previous'):
         obsgroup = o.observationgroup_set.first()
         if obsgroup is not None:
             cadence = obsgroup.dynamiccadence_set.first()
-            if cadence is not None and time == 'previous':
+            if cadence is not None and time != 'ongoing':
                 if cadence not in cadences and not cadence.active:
                     cadences.append(cadence)
             elif cadence is not None:
@@ -810,7 +810,15 @@ def observation_summary(context, target=None, time='previous'):
     parameters = []
     for cadence in cadences:
         obsgroup = ObservationGroup.objects.get(id=cadence.observation_group_id)
-        observation = obsgroup.observation_records.all().filter(observation_id='template').first()
+        #Check if the request is pending, and if so skip it
+        pending_obs = obsgroup.observation_records.all().filter(observation_id='template pending').first()
+        if pending_obs and time != 'pending':
+            continue
+        
+        if time == 'pending':
+            observation = pending_obs
+        else:
+            observation = obsgroup.observation_records.all().filter(observation_id='template').first()
         if not observation:
             observation = obsgroup.observation_records.all().order_by('-id').first()
             first_observation = obsgroup.observation_records.all().order_by('id').first()

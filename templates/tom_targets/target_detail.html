@@ -167,6 +167,9 @@ $(document).ready(function(){
 	<div class="row" id="ongoing-obs" style="display: block";>
           {% observation_summary object 'ongoing' %}
 	</div>
+	<div class="row" id="pending-obs" style="display: block; color: orange;";>
+          {% observation_summary object 'pending' %}
+	</div>
 	{% submit_lco_observations object %}
       </div>
       <div class="tab-pane" id="manage-data">
