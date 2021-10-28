@@ -296,7 +296,8 @@ HOOKS = {
     'sync_observation_with_snex1': 'custom_code.hooks.sync_observation_with_snex1',
     'sync_sequence_with_snex1': 'custom_code.hooks.sync_sequence_with_snex1',
     'cancel_sequence_in_snex1': 'custom_code.hooks.cancel_sequence_in_snex1',
-    'update_reminder_in_snex1': 'custom_code.hooks.update_reminder_in_snex1'
+    'update_reminder_in_snex1': 'custom_code.hooks.update_reminder_in_snex1',
+    'approve_sequence_in_snex1': 'custom_code.hooks.approve_sequence_in_snex1'
 }
 
 BROKERS = {

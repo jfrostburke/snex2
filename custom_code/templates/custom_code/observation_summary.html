@@ -8,8 +8,8 @@
 {% if time == 'ongoing' %}
 <a id='cancel-btn-{{ parameter.observation }}' class="button" style="background-color: white; color: gray; font-size: 12px; border: none; outline: none; box-shadow: none;" onclick='stopSequence({{ parameter.observation }})'>Stop Sequence</a><br>
 {% elif time == 'pending' %}
-<a id='approve-btn-{{ parameter.observation }}' class="button" style="background-color: white; color: gray; font-size: 12px; border: none; outline: none; box-shadow: none;" onclick='approveSequence({{ parameter.observation }})'>Approve Sequence</a><br>
-<a id='reject-btn-{{ parameter.observation }}' class="button" style="background-color: white; color: gray; font-size: 12px; border: none; outline: none; box-shadow: none;" onclick='rejectSequence({{ parameter.observation }})'>Reject Sequence</a><br>
+<a id='approve-btn-{{ parameter.observation }}' class="button" style="background-color: white; color: gray; font-size: 12px; border: none; outline: none; box-shadow: none;" onclick='approveRejectSequence({{ parameter.observation }}, "approved")'>Approve Sequence</a><br>
+<a id='reject-btn-{{ parameter.observation }}' class="button" style="background-color: white; color: gray; font-size: 12px; border: none; outline: none; box-shadow: none;" onclick='approveRejectSequence({{ parameter.observation }}, "rejected")'>Reject Sequence</a><br>
 {% endif %}
 {% empty %}
 {% if time == 'previous' %}
@@ -30,6 +30,31 @@ function stopSequence(observationId) {
     success: function(response) {
       if (response.success === 'Modified') {
 	document.getElementById('cancel-btn-' + observationId).innerHTML = 'Stopped';
+      }
+    }
+  })
+}
+function approveRejectSequence(observationId, decision) {
+  if (decision === 'rejected') {
+      var cancelComment=prompt('Reason for stopping observations:', '');
+      var comment = {'cancel': cancelComment};
+      var commentJSON = JSON.stringify(comment);
+  } else {
+      var commentJSON = JSON.stringify({});
+  }
+  $.ajax({
+    url: '{% url "custom_code:approve-or-reject-observation" %}',
+    data: {'pk': observationId,
+           'comment': commentJSON,
+           'status': decision},
+    dataType: 'json',
+    success: function(response) {
+      if (response.success === 'Modified') {
+	if (decision === 'rejected') {
+	  document.getElementById('reject-btn-' + observationId).innerHTML = 'Rejected';
+        } else {
+	  document.getElementById('approve-btn-' + observationId).innerHTML = 'Approved';
+        }
       }
     }
   })

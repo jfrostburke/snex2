@@ -491,6 +491,59 @@ def observation_sequence_cancel_view(request):
     return HttpResponse(json.dumps(response_data), content_type='application/json')
 
 
+def approve_or_reject_observation_view(request):
+    
+    obsr_id = int(float(request.GET['pk']))
+    status = request.GET['status']
+    obsr = ObservationRecord.objects.get(id=obsr_id)
+    obsr.observation_id = 'template'
+    obsr.save()
+
+    obs_group - obsr.observationgroup_set.first()
+
+    if status == 'approved':
+        ## Set the cadence to active in SNEx2 and approve it in SNEx1
+        cadence = DynamicCadence.objects.get(observation_group_id=obs_group.id)
+        cadence.active = True
+        cadence.save()
+        
+        try:
+            snex_id = int(obs_group.name)
+            run_hook('approve_sequence_in_snex1',
+                    snex_id,
+                    userid=request.user.id)
+        except:
+            response_data = {'failure': 'Error'}
+            logger.error('This sequence was not in SNEx1 or was not canceled')
+            return HttpResponse(json.dumps(response_data), content_type='application/json')
+    
+    elif status == 'rejected':
+        ## Set the end time for the template in SNEx2, and cancel it in SNEx1
+        obsr.parameters['sequence_end'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+        obsr.save()
+        
+        comments = json.loads(request.GET['comment'])
+        try:
+            snex_id = int(obs_group.name)
+            if comments.get('cancel', ''):
+                save_comments(comments['cancel'], obs_group.id, request.user)
+                run_hook('cancel_sequence_in_snex1', 
+                         snex_id, 
+                         comment=comments['cancel'],
+                         tableid=snex_id,
+                         userid=request.user.id,
+                         targetid=obsr.target_id)
+            else:
+                run_hook('cancel_sequence_in_snex1', snex_id, userid=request.user.id)
+        except:
+            response_data = {'failure': 'Error'}
+            logger.error('This sequence was not in SNEx1 or was not canceled')
+            return HttpResponse(json.dumps(response_data), content_type='application/json')
+     
+    response_data = {'success': 'Modified'}
+    return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+
 def scheduling_view(request):
 
     if 'modify' in request.GET['button']:

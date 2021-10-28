@@ -517,6 +517,26 @@ def cancel_sequence_in_snex1(snex_id, comment=False, tableid=None, userid=67, ta
     logger.info('Cancel sequence in SNEx1 hook: Sequence with SNEx1 ID {} synced'.format(snex_id))
 
 
+def approve_sequence_in_snex1(snex_id):
+    '''
+    Hook to approve a pending observation request in SNEx1 
+    that was approved in SNEx2
+    '''
+    
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    
+    with _get_session(db_address=_snex1_address) as db_session:
+        Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
+ 
+        snex1_row = db_session.query(Obsrequests).filter(Obsrequests.id==snex_id).first()
+        snex1_row.approved = 1
+        snex1_row.lastmodified = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+
+        db_session.commit()
+
+    logger.info('Approve sequence in SNEx1 hook: Sequence with SNEx1 ID {} synced'.format(snex_id))
+
+
 def update_reminder_in_snex1(snex_id, next_reminder):
     '''
     Hook to update reminder for sequence in SNEx1.
