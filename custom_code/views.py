@@ -499,7 +499,7 @@ def approve_or_reject_observation_view(request):
     obsr.observation_id = 'template'
     obsr.save()
 
-    obs_group - obsr.observationgroup_set.first()
+    obs_group = obsr.observationgroup_set.first()
 
     if status == 'approved':
         ## Set the cadence to active in SNEx2 and approve it in SNEx1
