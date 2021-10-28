@@ -27,7 +27,7 @@ _SNEX1_DB = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=u
 engine1 = create_engine(_SNEX1_DB)
 
 
-def create_new_sequence(requestsid, created, modified, snex2_param, users, notes, active=True):
+def create_new_sequence(requestsid, created, modified, snex2_param, users, notes, db_session, active=True):
 
     newobsgroup = ObservationGroup(name=str(requestsid), created=created, modified=modified)
     newobsgroup.save()
@@ -267,7 +267,7 @@ class Command(BaseCommand):
                else:
                    snex2_param = get_snex2_params(obs, repeating=False)
             
-               newobsgroup = create_new_sequence(requestsid, created, modified, snex2_param, users, notes, active=False)
+               newobsgroup = create_new_sequence(requestsid, created, modified, snex2_param, users, notes, db_session, active=False)
             
                ### Add "template" record
                snex2_param['sequence_start'] = str(obs.sequencestart).replace(' ', 'T')
@@ -344,7 +344,7 @@ class Command(BaseCommand):
                     
                         ### Create new observation group and dynamic cadence, if it doesn't already exist
                         if count == 0 or count == 2:
-                            newobsgroup = create_new_sequence(requestsid, created, modified, snex2_param, users, notes, active=True)
+                            newobsgroup = create_new_sequence(requestsid, created, modified, snex2_param, users, notes, db_session, active=True)
                             #newobsgroup = ObservationGroup(name=str(requestsid), created=created, modified=modified)
                             #newobsgroup.save()
         
