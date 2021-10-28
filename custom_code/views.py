@@ -509,9 +509,7 @@ def approve_or_reject_observation_view(request):
         
         try:
             snex_id = int(obs_group.name)
-            run_hook('approve_sequence_in_snex1',
-                    snex_id,
-                    userid=request.user.id)
+            run_hook('approve_sequence_in_snex1', snex_id)
         except:
             response_data = {'failure': 'Error'}
             logger.error('This sequence was not in SNEx1 or was not canceled')
