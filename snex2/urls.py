@@ -18,7 +18,7 @@ from django.urls import path
 
 from django.urls import include
 
-from custom_code.views import TargetListView, CustomTargetCreateView, CustomDataProductUploadView, CustomDataProductDeleteView, target_redirect_view, add_tag_view, save_target_tag_view, targetlist_collapse_view, save_dataproduct_groups_view, change_target_known_to_view, change_interest_view, search_name_view, add_target_to_group_view, remove_target_from_group_view, change_observing_priority_view, CustomObservationListView, make_tns_request_view, fit_lightcurve_view, save_lightcurve_params_view, CustomObservationCreateView
+from custom_code.views import TargetListView, CustomTargetCreateView, CustomDataProductUploadView, CustomDataProductDeleteView, target_redirect_view, add_tag_view, save_target_tag_view, targetlist_collapse_view, save_dataproduct_groups_view, change_target_known_to_view, change_interest_view, search_name_view, add_target_to_group_view, remove_target_from_group_view, change_observing_priority_view, CustomObservationListView, make_tns_request_view, fit_lightcurve_view, save_lightcurve_params_view, CustomObservationCreateView, query_swift_observations_view
 from custom_code.api_views import CustomDataProductViewSet
 from rest_framework.routers import DefaultRouter
 from custom_code.dash_apps import lightcurve, spectra, spectra_individual
@@ -49,6 +49,7 @@ urlpatterns = [
     path('save-lightcurve-params/', save_lightcurve_params_view, name='save-lightcurve-params'),
     path('scheduling/', CustomObservationListView.as_view(), name='scheduling'),
     path('submit/<str:facility>/', CustomObservationCreateView.as_view(), name='submit-lco-obs'),
+    path('query-swift-observations/', query_swift_observations_view, name='query-swift-observations'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),

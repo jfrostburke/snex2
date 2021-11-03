@@ -43,6 +43,20 @@
   </script>
 </dl> 
 {% science_tags_dropdown target %}
+<button class="btn" id="swift-data-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="querySwiftData()">Has Swift Data?</button>
+<script>		
+function querySwiftData() {
+  var targetid = {{ target.id }};
+  $.ajax({
+    url: '{% url "query-swift-observations" %}',
+    data: {'target_id': targetid},
+    dataType: 'json',
+    success: function(response) {
+      document.getElementById('swift-data-button').innerHTML = response.success;
+    }
+  })
+}
+</script>
 <dl class="row">
   <h5>Interested Persons:</h5>
 </dl>

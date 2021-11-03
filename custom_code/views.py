@@ -1259,3 +1259,30 @@ class ObservationGroupDetailView(DetailView):
 #        #    target.mag_recent = make_magrecent(target.all_phot, jd_now)
 #        #    target.link = TNS_URL + target.name
 #        return context
+
+
+def query_swift_observations_view(request):
+   target_id = request.GET['target_id']
+   t = Target.objects.get(id=target_id)
+   ra, dec = t.ra, t.dec
+
+   from swifttools.swift_too import Swift_ObsQuery
+   username, shared_secret = os.environ['SWIFT_USERNAME'], os.environ['SWIFT_SECRET']
+   query = Swift_ObsQuery()
+   query.username = username
+   query.shared_secret = shared_secret
+   query.ra, query.dec = ra, dec
+   query.radius = 5 / 60 #5 arcmin
+
+   if query.submit():
+       logger.info('Queried Swift for target {}'.format(target_id))
+   else:
+       logger.info('Querying Swift failed with status {}'.format(query.status))
+       content_response = {'success': 'Failed'}
+
+   if len(query):
+       content_response = {'success': 'Yes'}
+   else:
+       content_response = {'success': 'No'}
+
+   return HttpResponse(json.dumps(content_response), content_type='application/json')
