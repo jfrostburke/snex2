@@ -1,4 +1,5 @@
 import dash_core_components as dcc
+import dash_bootstrap_components as dbc
 import dash_html_components as html
 import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
@@ -7,10 +8,12 @@ from django_plotly_dash import DjangoDash
 from tom_dataproducts.models import ReducedDatum
 from custom_code.models import ReducedDatumExtra, Papers
 import logging
+from django.templatetags.static import static
 
 logger = logging.getLogger(__name__)
 
-app = DjangoDash(name='Lightcurve')
+app = DjangoDash(name='Lightcurve', add_bootstrap_links=True)
+app.css.append_css({'external_url': static('tom_targets/css/targets_snexclone.css')})
 telescopes = ['LCO']
 reducer_groups = []
 papers_used_in = []
@@ -33,80 +36,110 @@ app.layout = html.Div([
         type='hidden',
         value=300
     ),
-    html.H3('Instrument'),
+    html.H4('Instrument'),
     dcc.Checklist(
         id='telescopes-checklist',
         options=[{'label': k, 'value': k} for k in telescopes],
-        value=telescopes
+        value=telescopes,
+        inputStyle={"margin-right": "5px", "margin-left": "5px"}
     ),
     html.Hr(),
-    html.H3('Difference Imaging'),
-    dcc.RadioItems(
-        id='subtracted-radio',
-        options=[{'label': 'Unsubtracted', 'value': 'Unsubtracted'},
-                 {'label': 'Subtracted', 'value': 'Subtracted'}
-        ],
-        value='Unsubtracted',
-        style={'display': 'none'}
-    ),
-    html.Div(
-        id='subtracted-extras',
-        children=[
-            html.H4('Subtraction Algorithm'),
-            dcc.Checklist(
-                id='algorithm-checklist',
-                options=[{'label': 'Hotpants', 'value': 'Hotpants'},
-                         {'label': 'PyZOGY', 'value': 'PyZOGY'}
+    dbc.Row(
+        [
+            dbc.Col(
+                [
+                    dbc.Row(html.H4('Difference Imaging')),
+                    dbc.Row(dcc.RadioItems(
+                        id='subtracted-radio',
+                        options=[{'label': 'Unsubtracted', 'value': 'Unsubtracted'},
+                                 {'label': 'Subtracted', 'value': 'Subtracted'}
+                        ],
+                        value='Unsubtracted',
+                        inputStyle={"margin-right": "5px", "margin-left": "5px"},
+                        style={'display': 'none'},
+                    ))
+                ], 
+            width=6),
+            dbc.Col(html.Div(
+                id='subtracted-extras',
+                children=[
+                    html.H5('Subtraction Algorithm'),
+                    dcc.Checklist(
+                        id='algorithm-checklist',
+                        options=[{'label': 'Hotpants', 'value': 'Hotpants'},
+                                 {'label': 'PyZOGY', 'value': 'PyZOGY'}
+                        ],
+                        value=['Hotpants', 'PyZOGY'],
+                        inputStyle={"margin-right": "5px", "margin-left": "5px"}
+                    ),
+                    html.H5('Template Source'),
+                    dcc.Checklist(
+                        id='template-checklist',
+                        options=[{'label': 'LCO', 'value': 'LCO'},
+                                 {'label': 'SDSS', 'value': 'SDSS'}
+                        ],
+                        value=['LCO', 'SDSS'],
+                        inputStyle={"margin-right": "5px", "margin-left": "5px"}
+                    )
                 ],
-                value=['Hotpants', 'PyZOGY']
-            ),
-            html.H4('Template Source'),
-            dcc.Checklist(
-                id='template-checklist',
-                options=[{'label': 'LCO', 'value': 'LCO'},
-                         {'label': 'SDSS', 'value': 'SDSS'}
+                style={'display': 'none'}
+            ), width=6)
+            ], style={'margin-left': '1px'}
+    ),
+    html.Hr(),
+    dbc.Row(
+        [
+            dbc.Col(html.H4('Photometry Type'), width=6),
+            dbc.Col(html.H4('Reduction Type'), width=6)
+        ]
+    ),
+    dbc.Row(
+        [
+            dbc.Col(dcc.Checklist(
+                id='photometry-type-checklist',
+                options=[{'label': 'PSF', 'value': 'PSF'},
+                         {'label': 'Aperture', 'value': 'Aperture'}
                 ],
-                value=['LCO', 'SDSS']
-            )
-        ],
-        style={'display': 'none'}
-    ),
-    html.Hr(),
-    html.H3('Photometry Type'),
-    dcc.Checklist(
-        id='photometry-type-checklist',
-        options=[{'label': 'PSF', 'value': 'PSF'},
-                 {'label': 'Aperture', 'value': 'Aperture'}
-        ],
-        value=['PSF', 'Aperture']
-    ),
-    html.Hr(),
-    html.H3('Reduction Type'),
-    dcc.RadioItems(
-        id='reduction-type-radio',
-        options=[{'label': 'Automatic', 'value': ''},
-                 {'label': 'Manual', 'value': 'manual'}
-        ],
-        value=''
+                value=['PSF', 'Aperture'],
+                inputStyle={"margin-right": "5px", "margin-left": "5px"}
+            ), width=6),
+            dbc.Col(dcc.RadioItems(
+                id='reduction-type-radio',
+                options=[{'label': 'Automatic', 'value': ''},
+                         {'label': 'Manual', 'value': 'manual'}
+                ],
+                value='',
+                inputStyle={"margin-right": "5px", "margin-left": "5px"}
+            ), width=6)
+        ]
     ),
     dcc.Checklist(
         id='final-reduction-checklist',
         options=[{'label': 'Final Reduction?', 'value': 'Final'}],
-        value=''
+        value='',
+        inputStyle={"margin-right": "5px", "margin-left": "5px"}
     ),
     html.Hr(),
-    html.H3('Data Used In'),
-    dcc.Dropdown(
-        id='papers-dropdown',
-        options=[{'label': '', 'value': ''}],
-        value=None
+    dbc.Row(
+        [
+            dbc.Col(html.H4('Data Used In'), width=6),
+            dbc.Col(html.H4('Data from Group'), width=6)
+        ]
     ),
-    html.Hr(),
-    html.H3('Data from Group'),
-    dcc.Checklist(
-        id='reducer-group-checklist',
-        options=[{'label': 'LCO', 'value': ''}],
-        value=['']
+    dbc.Row(
+        [
+            dbc.Col(dcc.Dropdown(
+                id='papers-dropdown',
+                options=[{'label': '', 'value': ''}],
+                value=None
+            ), width=6),
+            dbc.Col(dcc.Checklist(
+                id='reducer-group-checklist',
+                options=[{'label': 'LCO', 'value': ''}],
+                value=[''],
+                inputStyle={"margin-right": "5px", "margin-left": "5px"}
+            ), width=6)
+        ]
     ),
     html.Hr(),
     html.Div(
