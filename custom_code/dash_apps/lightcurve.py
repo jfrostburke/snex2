@@ -36,115 +36,144 @@ app.layout = html.Div([
         type='hidden',
         value=300
     ),
-    html.H4('Instrument'),
-    dcc.Checklist(
-        id='telescopes-checklist',
-        options=[{'label': k, 'value': k} for k in telescopes],
-        value=telescopes,
-        inputStyle={"margin-right": "5px", "margin-left": "5px"}
+    html.Button(
+        'Toggle plotting options',
+        id='show-btn',
+        n_clicks=0,
+        style={'background-color': 'white',
+               'cursor': 'pointer',
+               'padding': '10px',
+               'margin': '10px',
+               'border-color': '#174460',
+               'color': '#174460'}
     ),
-    html.Hr(),
-    dbc.Row(
-        [
-            dbc.Col(
-                [
-                    dbc.Row(html.H4('Difference Imaging')),
-                    dbc.Row(dcc.RadioItems(
-                        id='subtracted-radio',
-                        options=[{'label': 'Unsubtracted', 'value': 'Unsubtracted'},
-                                 {'label': 'Subtracted', 'value': 'Subtracted'}
-                        ],
-                        value='Unsubtracted',
-                        inputStyle={"margin-right": "5px", "margin-left": "5px"},
-                        style={'display': 'none'},
-                    ))
-                ], 
-            width=6),
-            dbc.Col(html.Div(
-                id='subtracted-extras',
-                children=[
-                    html.H5('Subtraction Algorithm'),
-                    dcc.Checklist(
-                        id='algorithm-checklist',
-                        options=[{'label': 'Hotpants', 'value': 'Hotpants'},
-                                 {'label': 'PyZOGY', 'value': 'PyZOGY'}
-                        ],
-                        value=['Hotpants', 'PyZOGY'],
-                        inputStyle={"margin-right": "5px", "margin-left": "5px"}
-                    ),
-                    html.H5('Template Source'),
-                    dcc.Checklist(
-                        id='template-checklist',
-                        options=[{'label': 'LCO', 'value': 'LCO'},
-                                 {'label': 'SDSS', 'value': 'SDSS'}
-                        ],
-                        value=['LCO', 'SDSS'],
-                        inputStyle={"margin-right": "5px", "margin-left": "5px"}
-                    )
-                ],
-                style={'display': 'none'}
-            ), width=6)
-            ], style={'margin-left': '1px'}
-    ),
-    html.Hr(),
-    dbc.Row(
-        [
-            dbc.Col(html.H4('Photometry Type'), width=6),
-            dbc.Col(html.H4('Reduction Type'), width=6)
-        ]
-    ),
-    dbc.Row(
-        [
-            dbc.Col(dcc.Checklist(
-                id='photometry-type-checklist',
-                options=[{'label': 'PSF', 'value': 'PSF'},
-                         {'label': 'Aperture', 'value': 'Aperture'}
-                ],
-                value=['PSF', 'Aperture'],
+    html.Div(
+        id='plotting-options',
+        style={'display': 'none'},
+        children=[
+            html.H4('Instrument'),
+            dcc.Checklist(
+                id='telescopes-checklist',
+                options=[{'label': k, 'value': k} for k in telescopes],
+                value=telescopes,
                 inputStyle={"margin-right": "5px", "margin-left": "5px"}
-            ), width=6),
-            dbc.Col(dcc.RadioItems(
-                id='reduction-type-radio',
-                options=[{'label': 'Automatic', 'value': ''},
-                         {'label': 'Manual', 'value': 'manual'}
-                ],
+            ),
+            html.Hr(),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        [
+                            dbc.Row(html.H4('Difference Imaging')),
+                            dbc.Row(dcc.RadioItems(
+                                id='subtracted-radio',
+                                options=[{'label': 'Unsubtracted', 'value': 'Unsubtracted'},
+                                         {'label': 'Subtracted', 'value': 'Subtracted'}
+                                ],
+                                value='Unsubtracted',
+                                inputStyle={"margin-right": "5px", "margin-left": "5px"},
+                                style={'display': 'none'},
+                            ))
+                        ], 
+                    width=6),
+                    dbc.Col(html.Div(
+                        id='subtracted-extras',
+                        children=[
+                            html.H5('Subtraction Algorithm'),
+                            dcc.Checklist(
+                                id='algorithm-checklist',
+                                options=[{'label': 'Hotpants', 'value': 'Hotpants'},
+                                         {'label': 'PyZOGY', 'value': 'PyZOGY'}
+                                ],
+                                value=['Hotpants', 'PyZOGY'],
+                                inputStyle={"margin-right": "5px", "margin-left": "5px"}
+                            ),
+                            html.H5('Template Source'),
+                            dcc.Checklist(
+                                id='template-checklist',
+                                options=[{'label': 'LCO', 'value': 'LCO'},
+                                         {'label': 'SDSS', 'value': 'SDSS'}
+                                ],
+                                value=['LCO', 'SDSS'],
+                                inputStyle={"margin-right": "5px", "margin-left": "5px"}
+                            )
+                        ],
+                        style={'display': 'none'}
+                    ), width=6)
+                    ], style={'margin-left': '1px'}
+            ),
+            html.Hr(),
+            dbc.Row(
+                [
+                    dbc.Col(html.H4('Photometry Type'), width=6),
+                    dbc.Col(html.H4('Reduction Type'), width=6)
+                ]
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(dcc.Checklist(
+                        id='photometry-type-checklist',
+                        options=[{'label': 'PSF', 'value': 'PSF'},
+                                 {'label': 'Aperture', 'value': 'Aperture'}
+                        ],
+                        value=['PSF', 'Aperture'],
+                        inputStyle={"margin-right": "5px", "margin-left": "5px"}
+                    ), width=6),
+                    dbc.Col(dcc.RadioItems(
+                        id='reduction-type-radio',
+                        options=[{'label': 'Automatic', 'value': ''},
+                                 {'label': 'Manual', 'value': 'manual'}
+                        ],
+                        value='',
+                        inputStyle={"margin-right": "5px", "margin-left": "5px"}
+                    ), width=6)
+                ]
+            ),
+            dcc.Checklist(
+                id='final-reduction-checklist',
+                options=[{'label': 'Final Reduction?', 'value': 'Final'}],
                 value='',
                 inputStyle={"margin-right": "5px", "margin-left": "5px"}
-            ), width=6)
-        ]
+            ),
+            html.Hr(),
+            dbc.Row(
+                [
+                    dbc.Col(html.H4('Data Used In'), width=6),
+                    dbc.Col(html.H4('Data from Group'), width=6)
+                ]
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(dcc.Dropdown(
+                        id='papers-dropdown',
+                        options=[{'label': '', 'value': ''}],
+                        value=None
+                    ), width=6),
+                    dbc.Col(dcc.Checklist(
+                        id='reducer-group-checklist',
+                        options=[{'label': 'LCO', 'value': ''}],
+                        value=[''],
+                        inputStyle={"margin-right": "5px", "margin-left": "5px"}
+                    ), width=6)
+                ]
+            ),
+            html.Hr(),
+        ],
     ),
-    dcc.Checklist(
-        id='final-reduction-checklist',
-        options=[{'label': 'Final Reduction?', 'value': 'Final'}],
-        value='',
-        inputStyle={"margin-right": "5px", "margin-left": "5px"}
-    ),
-    html.Hr(),
-    dbc.Row(
-        [
-            dbc.Col(html.H4('Data Used In'), width=6),
-            dbc.Col(html.H4('Data from Group'), width=6)
-        ]
-    ),
-    dbc.Row(
-        [
-            dbc.Col(dcc.Dropdown(
-                id='papers-dropdown',
-                options=[{'label': '', 'value': ''}],
-                value=None
-            ), width=6),
-            dbc.Col(dcc.Checklist(
-                id='reducer-group-checklist',
-                options=[{'label': 'LCO', 'value': ''}],
-                value=[''],
-                inputStyle={"margin-right": "5px", "margin-left": "5px"}
-            ), width=6)
-        ]
-    ),
-    html.Hr(),
     html.Div(
         id='display-selected-values')
 ])
+
+#Show photometry plotting options if button is pressed
+@app.callback(
+        Output('plotting-options', 'style'),
+        [Input('show-btn', 'n_clicks')]
+)
+def display_options(n_clicks):
+    if (n_clicks % 2) == 0:
+        return {'display': 'none'}
+    else:
+        return {}
+
 
 #Only show manually reduced data if subtracted is selected
 @app.callback(
