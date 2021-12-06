@@ -11,6 +11,10 @@
   padding: 8px;
 }
 </style>
+<h4>Does this Target have Swift Data?</h4>
+<div class="row">
+  <button class="btn" id="swift-data-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="querySwiftData()">Click to Check</button>
+</div>
 <h4>Times of Last Nondetection and First Detection</h4>
 <table id="tns-tab" class="detail-tab" style="width: 100%; margin-bottom: 10px;">
   <tr>
@@ -208,6 +212,17 @@ function save_tagline() {
       if (response.success === 'Saved') {
         document.getElementById('save-tagline-btn').innerHTML = 'Saved';
       }
+    }
+  })
+}
+function querySwiftData() {
+  var targetid = {{ target.id }};
+  $.ajax({
+    url: '{% url "query-swift-observations" %}',
+    data: {'target_id': targetid},
+    dataType: 'json',
+    success: function(response) {
+      document.getElementById('swift-data-button').innerHTML = response.success;
     }
   })
 }
