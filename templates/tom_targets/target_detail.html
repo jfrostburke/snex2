@@ -133,16 +133,20 @@ $(document).ready(function(){
         </div>
         <hr/>
 	<div class="row">
-        <div class="col-md-6">
+        <div class="col-md-3">
+	  <h4>Aladin Viewer</h4>
           {% aladin object %}
         </div>
+	<div class="col-md-9">
+	  {% test_display_thumbnail object %}
+	</div>
 	</div>
         <hr/>
         <div class="row">
         <div class="col-md-6">
           <h4>Photometry</h4>
           {#% lightcurve object %#}
-          <div id="plotly-lc-div" style="position: relative; padding-bottom: 250.0% !important; height: 0; overflow: hidden;">
+          <div id="plotly-lc-div" style="position: relative; padding-bottom: 200.0% !important; height: 0; overflow: hidden;">
 	  {% dash_lightcurve object 600 360 %}
           </div>
         </div>

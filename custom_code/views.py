@@ -1286,3 +1286,42 @@ def query_swift_observations_view(request):
        content_response = {'success': 'No'}
 
    return HttpResponse(json.dumps(content_response), content_type='application/json')
+
+
+#def make_thumbnail_view(request):
+#    from astropy.io import fits
+#    from PIL import Image
+#    from base64 import b64encode
+#
+#    filepath = request.GET['filepath']
+#    hlist = fits.open(filepath)
+#
+#    hdu = hlist[0]
+#    chip_id = int(hdu.header.get('CCDID', default=0))
+#    data = hdu.data
+#
+#    sky, sig = getsky(data)
+#    zerosig = -1
+#    depth = 256
+#    spansig = 6
+#    zero = sky + zerosig * sig
+#    span = spansig * sig
+#
+#    data -= zero
+#    data *= (depth - 1) / span
+#
+#    w = data < 0
+#    data[w] = 0
+#    w = data > (depth-1)
+#    data[w] = (depth - 1)
+#
+#    data += 256 - depth
+#
+#    im = Image.fromarray(data.astype(np.uint8), mode='L')
+#    filt = Image.ANTIALIAS
+#    grow = 0.5
+#
+#    nx, ny = im.size
+#    im = im.resize((int(nx*grow), int(ny*grow)), filt)
+#
+#    return ''

@@ -15,6 +15,7 @@ from tom_targets.forms import TargetVisibilityForm
 from tom_observations import utils, facility
 from tom_dataproducts.models import DataProduct, ReducedDatum
 from tom_observations.models import ObservationRecord, ObservationGroup
+from tom_common.hooks import run_hook
 
 from astroplan import Observer, FixedTarget, AtNightConstraint, time_grid_from_range, moon_illumination
 import datetime
@@ -1546,3 +1547,86 @@ def lightcurve_with_extras(context, target):
             'target': target,
             'plot': 'No photometry for this target yet.'
         }
+
+
+
+def getsky(data):
+    """
+    Determine the sky parameters for a FITS data extension.
+    data -- array holding the image data
+    """
+
+    # maximum number of interations for mean,std loop
+    maxiter = 30
+
+    # maximum number of data points to sample
+    maxsample = 10000
+
+    # size of the array
+    ny, nx = data.shape
+
+    # how many sampels should we take?
+    if data.size > maxsample:
+        nsample = maxsample
+    else:
+        nsample = data.size
+
+    # create sample indicies
+    xs = np.random.uniform(low=0, high=nx, size=nsample).astype('L')
+    ys = np.random.uniform(low=0, high=ny, size=nsample).astype('L')
+
+    # sample the data
+    sample = data[ys, xs].copy()
+    sample = sample.reshape(nsample)
+
+    # determine the clipped mean and standard deviation
+    mean = sample.mean()
+    std = sample.std()
+    oldsize = 0
+    niter = 0
+    while oldsize != sample.size and niter < maxiter:
+        niter += 1
+        oldsize = sample.size
+        wok = (sample < mean + 3 * std)
+        sample = sample[wok]
+        wok = (sample > mean - 3 * std)
+        sample = sample[wok]
+        mean = sample.mean()
+        std = sample.std()
+
+    return mean, std
+
+
+@register.inclusion_tag('custom_code/thumbnail.html', takes_context=True)
+def test_display_thumbnail(context, target):
+    
+    #fits_files = DataProduct.objects.filter(target_id=target.id, data_product_type='fits_file').order_by('-id')
+    #image_files = DataProduct.objects.filter(target_id=target.id, data_product_type='image_file').order_by('-id')
+    #urls = [f.data.url for f in fits_files[:6]]
+    #jpeg_urls = [f.data.url for f in image_files[:6]]
+   
+    try:
+        filenames = run_hook('find_images_from_snex1', target.id)
+    except:
+        logger.info('Finding images in snex1 failed')
+        return {'images': []}
+
+    from os import listdir
+    from os.path import isfile, join
+    thumbs = [f for f in listdir('data/') if isfile(join('data/', f))]
+    
+    images = []
+    import base64
+    if not filenames:
+        return {'images': []}
+
+    for i in filenames:
+        if any(i in f for f in thumbs):
+            thumbfile = [f for f in thumbs if f.startswith(i)][0]
+            with open('data/'+thumbfile, 'rb') as imagefile:
+                b64_image = base64.b64encode(imagefile.read())
+                images.append(b64_image)
+
+    return {#'url': urls,
+            #'jpeg_url': jpeg_urls,
+            'images': images}#b64_image.decode('utf-8')}

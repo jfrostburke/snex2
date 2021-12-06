@@ -297,7 +297,8 @@ HOOKS = {
     'sync_sequence_with_snex1': 'custom_code.hooks.sync_sequence_with_snex1',
     'cancel_sequence_in_snex1': 'custom_code.hooks.cancel_sequence_in_snex1',
     'update_reminder_in_snex1': 'custom_code.hooks.update_reminder_in_snex1',
-    'approve_sequence_in_snex1': 'custom_code.hooks.approve_sequence_in_snex1'
+    'approve_sequence_in_snex1': 'custom_code.hooks.approve_sequence_in_snex1',
+    'find_images_from_snex1': 'custom_code.hooks.find_images_from_snex1'
 }
 
 BROKERS = {
@@ -338,9 +339,9 @@ DATA_TYPES = (
 
 DATA_PRODUCT_TYPES = {
     'photometry': ('photometry', 'Photometry'),
-    #'fits_file': ('fits_file', 'FITS File'),
+    'fits_file': ('fits_file', 'FITS File'),
     'spectroscopy': ('spectroscopy', 'Spectroscopy'),
-    #'image_file': ('image_file', 'Image File')
+    'image_file': ('image_file', 'Image File')
 }
 
 DATA_PROCESSORS = {

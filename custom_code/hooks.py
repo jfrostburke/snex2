@@ -14,7 +14,7 @@ from datetime import datetime, date, timedelta
 import numpy as np
 from django.contrib.auth.models import User
 
-from sqlalchemy import create_engine, pool
+from sqlalchemy import create_engine, pool, and_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
 from contextlib import contextmanager
@@ -556,3 +556,21 @@ def update_reminder_in_snex1(snex_id, next_reminder):
 
     logger.info('Update reminder in SNEx1 hook: Sequence with SNEx1 ID {} synced'.format(snex_id))
 
+
+def find_images_from_snex1(targetid):
+    '''
+    Hook to find filenames of images in SNEx1,
+    given a target ID
+    '''
+    
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    
+    with _get_session(db_address=_snex1_address) as db_session:
+        Photlco = _load_table('photlco', db_address=_snex1_address)
+
+        query = db_session.query(Photlco).filter(and_(Photlco.targetid==targetid, Photlco.filetype==1)).order_by(Photlco.id.desc()).limit(6)
+        filenames = [q.filename.replace('.fits', '') for q in query]
+
+    logger.info('Found file names for target {}'.format(targetid))
+
+    return filenames
