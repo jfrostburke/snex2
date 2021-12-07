@@ -568,7 +568,7 @@ def find_images_from_snex1(targetid):
     with _get_session(db_address=_snex1_address) as db_session:
         Photlco = _load_table('photlco', db_address=_snex1_address)
 
-        query = db_session.query(Photlco).filter(and_(Photlco.targetid==targetid, Photlco.filetype==1)).order_by(Photlco.id.desc()).limit(8)
+        query = db_session.query(Photlco).filter(and_(Photlco.targetid==targetid, Photlco.filetype==1)).order_by(Photlco.id.desc()).limit(20)
         filenames = [q.filename.replace('.fits', '') for q in query]
 
     logger.info('Found file names for target {}'.format(targetid))

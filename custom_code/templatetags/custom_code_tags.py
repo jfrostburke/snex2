@@ -1618,23 +1618,27 @@ def test_display_thumbnail(context, target):
     import base64
     top_images = []
     bottom_images = []
+
     if not filenames:
         return {'images': []}
 
-    halfway = round(len(filenames)/2)
+    thumbfiles = []
+    for i in filenames:
+        if len(thumbfiles) >= 8:
+            break
+        if any(i in f for f in thumbs):
+            thumbfiles.append([f for f in thumbs if f.startswith(i)][0])
 
-    for i in filenames[:halfway]:
-        if any(i in f for f in thumbs):
-            thumbfile = [f for f in thumbs if f.startswith(i)][0]
-            with open('data/'+thumbfile, 'rb') as imagefile:
-                b64_image = base64.b64encode(imagefile.read())
-                top_images.append(b64_image.decode('utf-8'))
-    for i in filenames[halfway:]:
-        if any(i in f for f in thumbs):
-            thumbfile = [f for f in thumbs if f.startswith(i)][0]
-            with open('data/'+thumbfile, 'rb') as imagefile:
-                b64_image = base64.b64encode(imagefile.read())
-                bottom_images.append(b64_image.decode('utf-8'))
+    halfway = round(len(thumbfiles)/2)
+    
+    for i in thumbfiles[:halfway]:
+        with open('data/'+i, 'rb') as imagefile:        
+            b64_image = base64.b64encode(imagefile.read())
+            top_images.append(b64_image.decode('utf-8'))
+    for i in thumbfiles[halfway:]:
+        with open('data/'+i, 'rb') as imagefile:        
+            b64_image = base64.b64encode(imagefile.read())
+            bottom_images.append(b64_image.decode('utf-8'))
 
     return {#'url': urls,
             #'jpeg_url': jpeg_urls,
