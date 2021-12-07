@@ -15,4 +15,3 @@ dash-bootstrap-components==0.12.0
 dash-core-components==1.12.1
 matplotlib
 mysqlclient==1.4.6
-swifttools
