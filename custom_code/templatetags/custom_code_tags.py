@@ -1615,18 +1615,28 @@ def test_display_thumbnail(context, target):
     from os.path import isfile, join
     thumbs = [f for f in listdir('data/') if isfile(join('data/', f))]
     
-    images = []
     import base64
+    top_images = []
+    bottom_images = []
     if not filenames:
         return {'images': []}
 
-    for i in filenames:
+    halfway = round(len(filenames)/2)
+
+    for i in filenames[:halfway]:
         if any(i in f for f in thumbs):
             thumbfile = [f for f in thumbs if f.startswith(i)][0]
             with open('data/'+thumbfile, 'rb') as imagefile:
                 b64_image = base64.b64encode(imagefile.read())
-                images.append(b64_image.decode('utf-8'))
+                top_images.append(b64_image.decode('utf-8'))
+    for i in filenames[halfway:]:
+        if any(i in f for f in thumbs):
+            thumbfile = [f for f in thumbs if f.startswith(i)][0]
+            with open('data/'+thumbfile, 'rb') as imagefile:
+                b64_image = base64.b64encode(imagefile.read())
+                bottom_images.append(b64_image.decode('utf-8'))
 
     return {#'url': urls,
             #'jpeg_url': jpeg_urls,
-            'images': images}#b64_image.decode('utf-8')}
+            'top_images': top_images,
+            'bottom_images': bottom_images}#b64_image.decode('utf-8')}
