@@ -53,3 +53,7 @@ services:
             - SNEX_EMAIL_PASSWORD=${SNEX_EMAIL_PASSWORD}
             - TNS_APIKEY=${TNS_APIKEY}
             - TNS_APIID=${TNS_APIID}
+            - SWIFT_USERNAME=${SWIFT_USERNAME}
+            - SWIFT_SECRET=${SWIFT_SECRET}
+        volumes:
+            - ${SNEX_THUMBNAIL_PATH}:/snex2/data
