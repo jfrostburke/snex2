@@ -49,7 +49,7 @@ def get_comments(targetid, tablename, notes, users):
                         user_id=snex2_user.id
                     )
                 print(newcomment)
-                #newcomment.save()
+                newcomment.save()
             
             elif tablename == 'obsrequests':
                 # Need to get the observationgroup id given its name
