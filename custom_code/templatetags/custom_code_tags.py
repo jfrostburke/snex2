@@ -1625,7 +1625,7 @@ def test_display_thumbnail(context, target):
             thumbfile = [f for f in thumbs if f.startswith(i)][0]
             with open('data/'+thumbfile, 'rb') as imagefile:
                 b64_image = base64.b64encode(imagefile.read())
-                images.append(b64_image)
+                images.append(b64_image.decode('utf-8'))
 
     return {#'url': urls,
             #'jpeg_url': jpeg_urls,
