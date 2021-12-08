@@ -1625,7 +1625,7 @@ def test_display_thumbnail(context, target):
     #filenames = ['test' for i in range(12)]
     #dates = ['2020-08-03' for i in range(12)]
     #teles = ['1m' for i in range(12)]
-    #filters = ['V' for i in range(12)]
+    #filters = ['ip' for i in range(12)]
     #exptimes = [str(round(299.5)) + 's' for i in range(12)]
 
     if not filenames:
