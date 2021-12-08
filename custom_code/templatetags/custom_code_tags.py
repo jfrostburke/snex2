@@ -1604,12 +1604,14 @@ def test_display_thumbnail(context, target):
     #image_files = DataProduct.objects.filter(target_id=target.id, data_product_type='image_file').order_by('-id')
     #urls = [f.data.url for f in fits_files[:6]]
     #jpeg_urls = [f.data.url for f in image_files[:6]]
-   
+  
+    #NOTE: Production
     try:
-        filenames = run_hook('find_images_from_snex1', target.id)
+        filenames, dates, teles, filters, exptimes = run_hook('find_images_from_snex1', target.id)
     except:
         logger.info('Finding images in snex1 failed')
-        return {'images': []}
+        return {'top_images': [],
+                'bottom_images': []}
 
     from os import listdir
     from os.path import isfile, join
@@ -1618,27 +1620,55 @@ def test_display_thumbnail(context, target):
     import base64
     top_images = []
     bottom_images = []
+    
+    #NOTE: Development
+    #filenames = ['test' for i in range(12)]
+    #dates = ['2020-08-03' for i in range(12)]
+    #teles = ['1m' for i in range(12)]
+    #filters = ['V' for i in range(12)]
+    #exptimes = [str(round(299.5)) + 's' for i in range(12)]
 
     if not filenames:
-        return {'images': []}
+        return {'top_images': [],
+                'bottom_images': []}
 
+    sites = [f[:3] for f in filenames]
+    
     thumbfiles = []
-    for i in filenames:
+    thumbdates = []
+    thumbteles = []
+    thumbsites = []
+    thumbfilters = []
+    thumbexptimes = []
+
+    for i in range(len(filenames)):
         if len(thumbfiles) >= 8:
             break
-        if any(i in f for f in thumbs):
-            thumbfiles.append([f for f in thumbs if f.startswith(i)][0])
+        currentfile = filenames[i]
+        if any(currentfile in f for f in thumbs):
+            thumbfiles.append([f for f in thumbs if f.startswith(currentfile)][0])
+            thumbdates.append(dates[i])
+            thumbteles.append(teles[i])
+            thumbsites.append(sites[i])
+            thumbfilters.append(filters[i])
+            thumbexptimes.append(exptimes[i])
 
     halfway = round(len(thumbfiles)/2)
     
-    for i in thumbfiles[:halfway]:
-        with open('data/'+i, 'rb') as imagefile:        
+    for i in range(len(thumbfiles[:halfway])):
+        with open('data/'+thumbfiles[i], 'rb') as imagefile:        
             b64_image = base64.b64encode(imagefile.read())
-            top_images.append(b64_image.decode('utf-8'))
-    for i in thumbfiles[halfway:]:
-        with open('data/'+i, 'rb') as imagefile:        
+            label = '{} {} {} {} {}'.format(thumbdates[i], thumbsites[i], thumbteles[i], thumbfilters[i], thumbexptimes[i])
+            top_images.append({'image': b64_image.decode('utf-8'),
+                               'label': label,
+                               })
+    for i in range(len(thumbfiles[halfway:])):
+        with open('data/'+thumbfiles[i], 'rb') as imagefile:        
             b64_image = base64.b64encode(imagefile.read())
-            bottom_images.append(b64_image.decode('utf-8'))
+            label = '{} {} {} {} {}'.format(thumbdates[i], thumbsites[i], thumbteles[i], thumbfilters[i], thumbexptimes[i])
+            bottom_images.append({'image': b64_image.decode('utf-8'),
+                                  'label': label
+                                  })
 
     return {#'url': urls,
             #'jpeg_url': jpeg_urls,

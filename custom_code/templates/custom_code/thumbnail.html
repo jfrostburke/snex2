@@ -2,18 +2,20 @@
 {% include 'tom_dataproducts/partials/js9_scripts.html' %}
 <h4>Recent LCO Images</h4>
 <div class="row">
-{% for image in top_images %}
+{% for top_image in top_images %}
 <div class="col-md-2" style="padding: 0px;">
   <!--img style="width: 300px; height: 300px;" src="{{ jpeg }}" alt="img"-->
-  <img style="width: 90%; height: 90%; margin-left: 5px; margin-top: 5px;" src="data:image/png;base64,{{image}}" alt="img">
+  <img style="width: 90%; height: 90%; margin-left: 5px; margin-top: 5px;" src="data:image/png;base64,{{top_image.image}}" alt="img">
+  <div class="row" style="font-size: 14px; width: 90%; margin-left: 5px;">{{ top_image.label }}</div>
   {#% include 'tom_dataproducts/partials/js9_button.html' with url="{{ url }}" only %#}
 </div>
 {% endfor %}
 </div>
 <div class="row">
-{% for image in bottom_images %}
+{% for bottom_image in bottom_images %}
 <div class="col-md-2" style="padding: 0px;">
-  <img style="width: 90%; height: 90%; margin-left: 5px; margin-top: 5px;" src="data:image/png;base64,{{image}}" alt="img">
+  <img style="width: 90%; height: 90%; margin-left: 5px; margin-top: 5px;" src="data:image/png;base64,{{bottom_image.image}}" alt="img">
+  <div class="row" style="font-size: 14px; width: 90%; margin-left: 5px;">{{ bottom_image.label }}</div>
 </div>
 {% endfor %}
 </div>

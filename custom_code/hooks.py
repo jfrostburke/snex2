@@ -570,7 +570,11 @@ def find_images_from_snex1(targetid):
 
         query = db_session.query(Photlco).filter(and_(Photlco.targetid==targetid, Photlco.filetype==1)).order_by(Photlco.id.desc()).limit(20)
         filenames = [q.filename.replace('.fits', '') for q in query]
+        dates = [q.dateobs for q in query]
+        teles = [q.telescope[:2] for q in query]
+        filters = [q.filter for q in query]
+        exptimes = [str(round(float(q.exptime))) + 's' for q in query]
 
     logger.info('Found file names for target {}'.format(targetid))
 
-    return filenames
+    return filenames, dates, teles, filters, exptimes
