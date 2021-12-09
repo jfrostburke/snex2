@@ -91,9 +91,10 @@ app.layout = html.Div([
                             dcc.Checklist(
                                 id='template-checklist',
                                 options=[{'label': 'LCO', 'value': 'LCO'},
-                                         {'label': 'SDSS', 'value': 'SDSS'}
+                                         {'label': 'SDSS', 'value': 'SDSS'},
+                                         {'label': 'PS1', 'value': 'PS1'}
                                 ],
-                                value=['LCO', 'SDSS'],
+                                value=['LCO', 'SDSS', 'PS1'],
                                 inputStyle={"margin-right": "5px", "margin-left": "5px"}
                             )
                         ],
@@ -237,7 +238,7 @@ def update_algorithm_value(selected_subtraction):
         Output('template-checklist', 'value'),
         [Input('subtracted-radio', 'value')])
 def update_template_value(selected_subtraction):
-    return ['LCO', 'SDSS']
+    return ['LCO', 'SDSS', 'PS1']
 
 @app.callback(
         Output('lightcurve-plot', 'figure'),

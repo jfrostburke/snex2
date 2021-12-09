@@ -152,6 +152,7 @@ class CustomDataProductUploadForm(DataProductUploadForm):
     template_source = forms.ChoiceField(
         choices=[('LCO', 'LCO'),
                  ('SDSS', 'SDSS'),
+                 ('PS1', 'PS1'),
         ],
         #widget=TemplateSourceWidget,
         widget=forms.RadioSelect(),
