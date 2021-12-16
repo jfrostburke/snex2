@@ -4,7 +4,7 @@ from django import template
 from django.conf import settings
 from django.db.models.functions import Lower
 from django.shortcuts import reverse
-from guardian.shortcuts import get_objects_for_user, get_perms, get_groups_with_perms
+from guardian.shortcuts import get_objects_for_user, get_groups_with_perms
 from django.contrib.auth.models import User, Group
 from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django_comments.models import Comment
@@ -515,7 +515,8 @@ def target_data_with_user(context, target):
 def classifications_dropdown(target):
     classifications = [i for i in settings.TARGET_CLASSIFICATIONS]
     return {'target': target,
-            'classifications': classifications}
+            'classifications': classifications,
+            'target_class': TargetExtra.objects.get(target=target, key='classification').value}
 
 @register.inclusion_tag('custom_code/science_tags_dropdown.html')
 def science_tags_dropdown(target):
@@ -733,11 +734,7 @@ def dataproduct_update(dataproduct):
 @register.filter
 def get_dataproduct_groups(dataproduct):
     # Query all the groups with permission for this dataproduct
-    group_query = Group.objects.all()
-    groups = ''
-    for i in group_query:
-        if 'view_dataproduct' in get_perms(i, dataproduct):
-            groups += str(i.name) + ','
+    groups = ','.join([g.name for g in get_groups_with_perms(dataproduct)])
     return json.dumps(groups)
 
 
@@ -1504,10 +1501,10 @@ def lightcurve_fits(target, user, filt=False, days=None):
     }
 
 
-@register.inclusion_tag('custom_code/lightcurve.html', takes_context=True)
-def lightcurve_with_extras(context, target):
+@register.inclusion_tag('custom_code/lightcurve_collapse.html')
+def lightcurve_with_extras(target, user):
     
-    plot_data = generic_lightcurve_plot(target, context['request'].user)         
+    plot_data = generic_lightcurve_plot(target, user)         
 
     layout = go.Layout(
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),

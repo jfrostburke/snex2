@@ -40,7 +40,7 @@ from plotly import offline
 import plotly.graph_objs as go
 from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
-from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits
+from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras
 from custom_code.hooks import _get_tns_params
 
 from .forms import CustomTargetCreateForm, CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, ReferenceStatusForm
@@ -1093,6 +1093,16 @@ def make_tns_request_view(request):
         response_data = {'failure': 'No TNS name for this target'}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
 
+
+def load_lightcurve_view(request):
+    target = Target.objects.get(id=request.GET.get('target_id'))
+    user = User.objects.get(id=request.GET.get('user_id'))
+
+    lightcurve = lightcurve_with_extras(target, user)['plot']
+    context = {'success': 'success',
+               'lightcurve_plot': lightcurve
+    }
+    return HttpResponse(json.dumps(context), content_type='application/json')
 
 
 def fit_lightcurve_view(request):

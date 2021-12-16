@@ -89,7 +89,7 @@ $(document).ready(function(){
     <a class="nav-link active" id="observe-tab" href="#observe" role="tab" data-toggle="tab" style="color: #174460;">Overview</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="detail-tab" href="#detail" role="tab" data-toggle="tab" style="color: #174460;">Details</a>
+    <a class="nav-link" id="detail-tab" href="#detail" role="tab" data-toggle="tab" style="color: #174460;" onclick='load_lightcurve_details(); this.onclick=null;'>Details</a>
   </li>
   <li class="nav-item">
     <a class="nav-link" id="observations-tab" href="#observations" role="tab" data-toggle="tab" style="color: #174460;">Observations</a>
@@ -197,6 +197,19 @@ $(document).ready(function(){
   </div>
 </div>
 <script>
+function load_lightcurve_details() {
+  $.ajax({
+    url: '{% url "load-lc" %}',
+    data: {'target_id': {{ target.id }},
+           'user_id': {{ user.id }}
+    },
+    dataType: 'json',
+    success: function(response) {
+      var plot = response.lightcurve_plot;
+      $('#lc-primary').html(plot);
+    }
+  });
+}
 function display_obs() {
   var x = document.getElementById("previous-obs");
   if (x.style.display === "none") {
