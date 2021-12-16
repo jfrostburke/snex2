@@ -18,10 +18,10 @@
 .show {display: block;}
 </style>
 <div class="dropdown" style="position: relative;display: inline-block;">
-  {% if not target|target_extra_field:"classification" %}
+  {% if not target_class %}
     <button onclick="display_classification()" class="dropbtn" id="class-display-btn">set type</button>
   {% else %}
-    <button onclick="display_classification()" class="dropbtn" id="class-display-btn">{{ target|target_extra_field:"classification" }}</button>
+    <button onclick="display_classification()" class="dropbtn" id="class-display-btn">{{ target_class }}</button>
   {% endif %}
   <div id="classification_dropdown" class="dropdown-content" style="height: 180px; overflow-y: scroll; z-index: 1; width: 130px; cursor: pointer;">
     {% for class in classifications %}
