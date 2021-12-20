@@ -568,13 +568,16 @@ def find_images_from_snex1(targetid):
     with _get_session(db_address=_snex1_address) as db_session:
         Photlco = _load_table('photlco', db_address=_snex1_address)
 
-        query = db_session.query(Photlco).filter(and_(Photlco.targetid==targetid, Photlco.filetype==1)).order_by(Photlco.id.desc()).limit(20)
+        query = db_session.query(Photlco).filter(and_(Photlco.targetid==targetid, Photlco.filetype==1)).order_by(Photlco.id.desc()).limit(8)
+        filepaths = [q.filepath.replace('/supernova/data/lsc/', '') for q in query]
         filenames = [q.filename.replace('.fits', '') for q in query]
         dates = [q.dateobs for q in query]
         teles = [q.telescope[:2] for q in query]
         filters = [q.filter for q in query]
         exptimes = [str(round(float(q.exptime))) + 's' for q in query]
+        psfxs = [int(round(q.psfx)) for q in query]
+        psfys = [int(round(q.psfy)) for q in query]
 
     logger.info('Found file names for target {}'.format(targetid))
 
-    return filenames, dates, teles, filters, exptimes
+    return filepaths, filenames, dates, teles, filters, exptimes, psfxs, psfys

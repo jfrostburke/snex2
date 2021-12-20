@@ -56,4 +56,5 @@ services:
             - SWIFT_USERNAME=${SWIFT_USERNAME}
             - SWIFT_SECRET=${SWIFT_SECRET}
         volumes:
-            - ${SNEX_THUMBNAIL_PATH}:/snex2/data
+            - ${SNEX_THUMBNAIL_PATH}:/snex2/data/thumbs/
+            - ${SNEX_FITS_PATH}:/snex2/data/fits/

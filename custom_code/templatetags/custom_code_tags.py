@@ -32,6 +32,7 @@ from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSched
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
 from custom_code.facilities.lco_facility import SnexPhotometricSequenceForm, SnexSpectroscopicSequenceForm
+from custom_code.thumbnails import make_thumb
 import logging
 
 logger = logging.getLogger(__name__)
@@ -1546,65 +1547,12 @@ def lightcurve_with_extras(target, user):
         }
 
 
-
-def getsky(data):
-    """
-    Determine the sky parameters for a FITS data extension.
-    data -- array holding the image data
-    """
-
-    # maximum number of interations for mean,std loop
-    maxiter = 30
-
-    # maximum number of data points to sample
-    maxsample = 10000
-
-    # size of the array
-    ny, nx = data.shape
-
-    # how many sampels should we take?
-    if data.size > maxsample:
-        nsample = maxsample
-    else:
-        nsample = data.size
-
-    # create sample indicies
-    xs = np.random.uniform(low=0, high=nx, size=nsample).astype('L')
-    ys = np.random.uniform(low=0, high=ny, size=nsample).astype('L')
-
-    # sample the data
-    sample = data[ys, xs].copy()
-    sample = sample.reshape(nsample)
-
-    # determine the clipped mean and standard deviation
-    mean = sample.mean()
-    std = sample.std()
-    oldsize = 0
-    niter = 0
-    while oldsize != sample.size and niter < maxiter:
-        niter += 1
-        oldsize = sample.size
-        wok = (sample < mean + 3 * std)
-        sample = sample[wok]
-        wok = (sample > mean - 3 * std)
-        sample = sample[wok]
-        mean = sample.mean()
-        std = sample.std()
-
-    return mean, std
-
-
 @register.inclusion_tag('custom_code/thumbnail.html', takes_context=True)
 def test_display_thumbnail(context, target):
     
-    #fits_files = DataProduct.objects.filter(target_id=target.id, data_product_type='fits_file').order_by('-id')
-    #image_files = DataProduct.objects.filter(target_id=target.id, data_product_type='image_file').order_by('-id')
-    #urls = [f.data.url for f in fits_files[:6]]
-    #jpeg_urls = [f.data.url for f in image_files[:6]]
-  
     #NOTE: Production
     try:
-        filenames, dates, teles, filters, exptimes = run_hook('find_images_from_snex1', target.id)
+        filepaths, filenames, dates, teles, filters, exptimes, psfxs, psfys = run_hook('find_images_from_snex1', target.id)
     except:
         logger.info('Finding images in snex1 failed')
         return {'top_images': [],
@@ -1612,18 +1560,22 @@ def test_display_thumbnail(context, target):
 
     from os import listdir
     from os.path import isfile, join
-    thumbs = [f for f in listdir('data/') if isfile(join('data/', f))]
+    thumbs = [f for f in listdir('data/thumbs/') if isfile(join('data/thumbs/', f))]
     
     import base64
     top_images = []
     bottom_images = []
     
     #NOTE: Development
-    #filenames = ['test' for i in range(12)]
-    #dates = ['2020-08-03' for i in range(12)]
-    #teles = ['1m' for i in range(12)]
-    #filters = ['ip' for i in range(12)]
-    #exptimes = [str(round(299.5)) + 's' for i in range(12)]
+    #filepaths = ['/test/' for i in range(8)]
+    #filenames = ['coj1m011-fa12-20210216-0239-e91' for i in range(8)]
+    #dates = ['2020-08-03', '2020-08-02', '2020-08-01', '2020-07-31', '2020-07-30', 
+    #         '2020-07-29', '2020-07-28', '2020-07-27']
+    #teles = ['1m' for i in range(8)]
+    #filters = ['ip', 'ip', 'rp', 'rp', 'gp', 'gp', 'V', 'V']
+    #exptimes = [str(round(299.5)) + 's' for i in range(8)]
+    #psfxs = [9999 for i in range(8)]
+    #psfys = [9999 for i in range(8)]
 
     if not filenames:
         return {'top_images': [],
@@ -1639,35 +1591,37 @@ def test_display_thumbnail(context, target):
     thumbexptimes = []
 
     for i in range(len(filenames)):
-        if len(thumbfiles) >= 8:
-            break
         currentfile = filenames[i]
         if any(currentfile in f for f in thumbs):
             thumbfiles.append([f for f in thumbs if f.startswith(currentfile)][0])
-            thumbdates.append(dates[i])
-            thumbteles.append(teles[i])
-            thumbsites.append(sites[i])
-            thumbfilters.append(filters[i])
-            thumbexptimes.append(exptimes[i])
-
+        else:
+            # Generate the thumbnail and save the image
+            if psfxs[i] < 9999 and psfys[i] < 9999:
+                f = make_thumb(['data/fits/'+filepaths[i]+currentfile+'.fits'], grow=1.0, x=psfxs[i], y=psfys[i], ticks=True)
+            else:
+                f = make_thumb(['data/fits/'+filepaths[i]+currentfile+'.fits'], grow=1.0, x=1024, y=1024, ticks=False)
+            thumbfiles.append(f[0])
+        
+        thumbdates.append(dates[i])
+        thumbteles.append(teles[i])
+        thumbsites.append(sites[i])
+        thumbfilters.append(filters[i])
+        thumbexptimes.append(exptimes[i])
+    
     halfway = round(len(thumbfiles)/2)
     
-    for i in range(len(thumbfiles[:halfway])):
-        with open('data/'+thumbfiles[i], 'rb') as imagefile:        
+    for i in range(len(thumbfiles)):
+        with open('data/thumbs/'+thumbfiles[i], 'rb') as imagefile:        
             b64_image = base64.b64encode(imagefile.read())
             label = '{} {} {} {} {}'.format(thumbdates[i], thumbsites[i], thumbteles[i], thumbfilters[i], thumbexptimes[i])
-            top_images.append({'image': b64_image.decode('utf-8'),
-                               'label': label,
-                               })
-    for i in range(len(thumbfiles[halfway:])):
-        with open('data/'+thumbfiles[i], 'rb') as imagefile:        
-            b64_image = base64.b64encode(imagefile.read())
-            label = '{} {} {} {} {}'.format(thumbdates[i], thumbsites[i], thumbteles[i], thumbfilters[i], thumbexptimes[i])
-            bottom_images.append({'image': b64_image.decode('utf-8'),
-                                  'label': label
-                                  })
+            if i < halfway:
+                top_images.append({'image': b64_image.decode('utf-8'),
+                                   'label': label,
+                                })
+            else:
+                bottom_images.append({'image': b64_image.decode('utf-8'),
+                                      'label': label
+                                      })
 
-    return {#'url': urls,
-            #'jpeg_url': jpeg_urls,
-            'top_images': top_images,
-            'bottom_images': bottom_images}#b64_image.decode('utf-8')}
+    return {'top_images': top_images,
+            'bottom_images': bottom_images}
