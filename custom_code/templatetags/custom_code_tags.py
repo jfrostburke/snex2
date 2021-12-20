@@ -812,9 +812,11 @@ def observation_summary(context, target=None, time='previous'):
         #Check if the request is pending, and if so skip it
         pending_obs = obsgroup.observation_records.all().filter(observation_id='template pending').first()
         if not pending_obs and time == 'pending':
+            logger.info('No pending obs found for cadence {} and obsgroup {}'.format(cadence.id, obsgroup.id))
             continue
         
         if time == 'pending':
+            logger.info('Pending obs found for cadence {} and obsgroup {}'.format(cadence.id, obsgroup.id))
             observation = pending_obs
         else:
             observation = obsgroup.observation_records.all().filter(observation_id='template').first()
