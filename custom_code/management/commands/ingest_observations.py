@@ -462,7 +462,7 @@ class Command(BaseCommand):
         elif options['perms']:
             targets_in_snex2 = [int(t.id) for t in Target.objects.all()]
             for target_id in targets_in_snex2:
-                add_permssions_to_templates(target_id, existing_obs, snex1_groups, obsrequests)
+                add_permissions_to_templates(target_id, existing_obs, snex1_groups, obsrequests)
 
         elif options['target_id']:
             get_sequences_for_target(options['target_id'], existing_obs, snex1_groups, obsrequests, obslog)
