@@ -226,7 +226,7 @@ def add_permissions_to_templates(target_id, existing_obs, snex1_groups, obsreque
             template = obsgroup.observation_records.filter(observation_id='template').first()
 
             if template:
-                update_permissions(int(obs.groupid), template, snex1_groups)
+                update_permissions(int(obs.groupidcode), template, snex1_groups)
                 print('Added permissions to template for target {} and sequence {}'.format(target_id, obsgroup.name))
 
 
