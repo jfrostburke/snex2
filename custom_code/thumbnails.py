@@ -419,6 +419,6 @@ def make_thumb(files, grow=1.0, sky=None, sig=None, x=900, y=900, width=250, hei
         im.save(f, 'WEBP')
         f.close()
 
-        outfiles.append(outfile)
+        outfiles.append(filename.split('/')[-1].replace('.fits', '.webp'))#outfile)
 
     return outfiles
