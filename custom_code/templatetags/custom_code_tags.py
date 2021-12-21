@@ -1611,7 +1611,7 @@ def test_display_thumbnail(context, target):
     halfway = round(len(thumbfiles)/2)
     
     for i in range(len(thumbfiles)):
-        with open('data/thumbs/'+thumbfiles[i], 'rb') as imagefile:        
+        with open(thumbfiles[i], 'rb') as imagefile:        
             b64_image = base64.b64encode(imagefile.read())
             label = '{} {} {} {} {}'.format(thumbdates[i], thumbsites[i], thumbteles[i], thumbfilters[i], thumbexptimes[i])
             if i < halfway:
