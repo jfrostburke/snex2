@@ -206,6 +206,30 @@ def get_snex2_params(obs, repeating=True):
     return snex2_param
 
 
+def add_permissions_to_templates(target_id, existing_obs, snex1_groups, obsrequests):
+    
+    with get_session(db_address=_SNEX1_DB) as db_session:
+        all_sequences = db_session.query(obsrequests).filter(
+            and_(
+                obsrequests.approved==1,
+                obsrequests.targetid==target_id
+            )
+        )
+
+        obs_to_add = []
+        for o in all_sequences:
+            if int(o.id) in existing_obs:
+                obs_to_add.append(o)
+
+        for obs in obs_to_add:
+            obsgroup = ObservationGroup.objects.filter(name=str(obs.id)).first()
+            template = obsgroup.observation_records.filter(observation_id='template').first()
+
+            if template:
+                update_permissions(int(obs.groupid), template, snex1_groups)
+                print('Added permissions to template for target {} and sequence {}'.format(target_id, obsgroup.name))
+
+
 def make_templates_for_target(target_id, existing_obs, snex1_groups, obsrequests, obslog, users):
 
     with get_session(db_address=_SNEX1_DB) as db_session:
@@ -402,6 +426,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--target_id', help='Ingest data for this SNEx1 target ID')
         parser.add_argument('--template', action='store_true', help='Create template observation records?')
+        parser.add_argument('--perms', action='store_true', help='Add permissions to existing templates')
 
     def handle(self, *args, **options):
 
@@ -432,6 +457,12 @@ class Command(BaseCommand):
             targets_in_snex2 = [int(t.id) for t in Target.objects.all()]
             for target_id in targets_in_snex2:
                 make_templates_for_target(target_id, existing_obs, snex1_groups, obsrequests, obslog, users)
+        elif options['perms'] and options['target_id']:
+            add_permissions_to_templates(options['target_id'], existing_obs, snex1_groups, obsrequests)
+        elif options['perms']:
+            targets_in_snex2 = [int(t.id) for t in Target.objects.all()]
+            for target_id in targets_in_snex2:
+                add_permssions_to_templates(target_id, existing_obs, snex1_groups, obsrequests)
 
         elif options['target_id']:
             get_sequences_for_target(options['target_id'], existing_obs, snex1_groups, obsrequests, obslog)

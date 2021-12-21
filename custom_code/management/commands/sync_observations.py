@@ -254,31 +254,34 @@ class Command(BaseCommand):
 
             ### Add the pending observations not in SNEx2
             for obs in pending_obs_to_add:
-               created = obs.datecreated
-               modified = obs.lastmodified
-               target_id = int(obs.targetid)
-               target_query = Target.objects.filter(id=target_id)
-               if not target_query.exists():
-                    print('Observation not ingested because target {} does not exist'.format(target_id))
-                    continue
-               requestsid = int(obs.id)
-               if obs.autostop == 0:
-                   snex2_param = get_snex2_params(obs, repeating=True)
-               else:
-                   snex2_param = get_snex2_params(obs, repeating=False)
+                created = obs.datecreated
+                modified = obs.lastmodified
+                target_id = int(obs.targetid)
+                target_query = Target.objects.filter(id=target_id)
+                if not target_query.exists():
+                     print('Observation not ingested because target {} does not exist'.format(target_id))
+                     continue
+                requestsid = int(obs.id)
+                if obs.autostop == 0:
+                    snex2_param = get_snex2_params(obs, repeating=True)
+                else:
+                    snex2_param = get_snex2_params(obs, repeating=False)
             
-               newobsgroup = create_new_sequence(requestsid, created, modified, snex2_param, users, notes, db_session, active=False)
+                newobsgroup = create_new_sequence(requestsid, created, modified, snex2_param, users, notes, db_session, active=False)
             
-               ### Add "template" record
-               snex2_param['sequence_start'] = str(obs.sequencestart).replace(' ', 'T')
-               snex2_param['sequence_end'] = str(obs.sequenceend).replace(' ', 'T')
-               snex2_param['start_user'] = db_session.query(users).filter(users.id==obs.userstart).first().firstname
-               rmndr = snex2_param.pop('reminder')
-               template = ObservationRecord(facility='LCO', observation_id='template pending',
-                                  status='', created=created, modified=modified,
-                                  target_id=target_id, user_id=2, parameters=snex2_param)
-               template.save()
-               newobsgroup.observation_records.add(template)
+                ### Add "template" record
+                snex2_param['sequence_start'] = str(obs.sequencestart).replace(' ', 'T')
+                snex2_param['sequence_end'] = str(obs.sequenceend).replace(' ', 'T')
+                snex2_param['start_user'] = db_session.query(users).filter(users.id==obs.userstart).first().firstname
+                rmndr = snex2_param.pop('reminder')
+                template = ObservationRecord(facility='LCO', observation_id='template pending',
+                                   status='', created=created, modified=modified,
+                                   target_id=target_id, user_id=2, parameters=snex2_param)
+                template.save()
+                # Save permissions on template
+                if int(obs.groupidcode) is not None:
+                    update_permissions(int(obs.groupidcode), template, snex1_groups) #View obs record
+                newobsgroup.observation_records.add(template)
              
             count = 0
             #print('Getting parameters for new sequences')
@@ -345,36 +348,6 @@ class Command(BaseCommand):
                         ### Create new observation group and dynamic cadence, if it doesn't already exist
                         if count == 0 or count == 2:
                             newobsgroup = create_new_sequence(requestsid, created, modified, snex2_param, users, notes, db_session, active=True)
-                            #newobsgroup = ObservationGroup(name=str(requestsid), created=created, modified=modified)
-                            #newobsgroup.save()
-        
-                            #cadence_strategy = snex2_param['cadence_strategy']
-                            #cadence_params = {'cadence_frequency': snex2_param['cadence_frequency']}
-                            #newcadence = DynamicCadence(cadence_strategy=cadence_strategy, cadence_parameters=cadence_params, active=True, created=created, modified=modified, observation_group_id=newobsgroup.id)
-                            #newcadence.save()
-
-                            #### Check if there are any SNEx1 comments associated with this
-                            #### observation request, and if so, save them in SNEx2
-                            #comment = db_session.query(notes).filter(and_(notes.tablename=='obsrequests', notes.tableid==requestsid)).first()
-
-                            #if comment:
-                            #    usr = db_session.query(users).filter(users.id==comment.userid).first()
-                            #    snex2_user = User.objects.get(username=usr.name)
-                            #    content_type_id = ContentType.objects.get(model='observationgroup').id
-                            #    
-                            #    newcomment = Comment(
-                            #            object_pk=newobsgroup.id,
-                            #            user_name=snex2_user.username,
-                            #            user_email=snex2_user.email,
-                            #            comment=comment.note,
-                            #            submit_date=comment.posttime,
-                            #            is_public=True,
-                            #            is_removed=False,
-                            #            content_type_id=content_type_id,
-                            #            site_id=2,
-                            #            user_id=snex2_user.id
-                            #        )
-                            #    newcomment.save()
 
                             ### Add "template" record
                             snex2_param['sequence_start'] = str(obs.sequencestart).replace(' ', 'T')
@@ -385,6 +358,9 @@ class Command(BaseCommand):
                                                status='', created=created, modified=modified,
                                                target_id=target_id, user_id=user_id, parameters=snex2_param)
                             template.save()
+                            # Save permissions on template
+                            if int(obs.groupidcode) is not None:
+                                update_permissions(int(obs.groupidcode), template, snex1_groups) #View obs record
                             newobsgroup.observation_records.add(template)
                             
                         ### Add the new observation record, if it exists in SNEx1 but not SNEx2
