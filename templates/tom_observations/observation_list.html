@@ -25,6 +25,12 @@
         </span>
       </div>
     </div>
+    <div class="row">
+      <div class="col-md-6">
+	<input type="checkbox" id="checkbox-pessto" onclick="showPESSTO()" value="Show ePESSTO Sequences">
+	<label for="checkbox-pessto">Show ePESSTO Sequences</label>
+      </div>
+    </div>
     {% with filter.qs|order_by_pending_requests as pending_requests %}
     {% if pending_requests|length > 0 %}
     <div class="row">
@@ -53,4 +59,17 @@
     {% endwith %}
   </div>
 </div>
+<script>
+function showPESSTO() {
+  var pesstoSequences = document.getElementsByClassName('pessto-table');
+  for (var i = 0; i < pesstoSequences.length; i++) {
+    console.log(pesstoSequences[i].style.display);
+    if (pesstoSequences[i].style.display != 'block') {
+      pesstoSequences[i].style.display = 'block';
+    } else {
+      pesstoSequences[i].style.display = 'none';
+    }
+  }
+}
+</script>
 {% endblock %}

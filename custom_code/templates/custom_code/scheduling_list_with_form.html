@@ -15,8 +15,16 @@
 .exposure-row {
     width: 350px;
 }
+.pessto-table {
+    display: none;
+}
 </style>
+{% for parameter in parameters %}
+{% if parameter.proposal == 'SUPA2021B-001' %}
+<table class="table pessto-table">
+{% else %}
 <table class="table">
+{% endif %}
   <thead>
     <tr>
       <th>View</th>
@@ -36,7 +44,6 @@
     </tr>
   </thead>
   <tbody>
-    {% for parameter in parameters %}
     <tr>
       <td><a class="btn btn-success" href="{% url 'custom_code:observationgroup-detail' parameter.obsgroup_id %}">Details</a></td>
       <td><a href="{% url 'tom_targets:detail' parameter.target.id %}" title="{{ parameter.target.id }}">{{ parameter.names|join:", " }}</a></td>
@@ -161,16 +168,14 @@
         });
       });
     </script>
-    {% empty %}
-    <tr>
-      <td colspan="7">
-        No observations yet. You might want to create an observation from one of
-        <a href="{% url 'tom_targets:list' %}">your saved targets</a>.
-      </td>
-    </tr>
-    {% endfor %}
   </tbody>
 </table>
+{% empty %}
+<div class="row">
+    No observations yet. You might want to create an observation from one of
+    <a href="{% url 'tom_targets:list' %}">your saved targets</a>.
+</div>
+{% endfor %}
 <script>
 function modify_sequence(clickedId) {
   var thenum = clickedId.replace( /^\D+/g, '');
