@@ -25,18 +25,29 @@
         </span>
       </div>
     </div>
+    {% with filter.qs|order_by_pending_requests as pending_requests %}
+    {% if pending_requests|length > 0 %}
+    <div class="row">
+      <h4>Pending Requests</h4>
+    </div>
+    {% for q in pending_requests %}
+    {#% schedule_pending_request q %#}
+    {% scheduling_list_with_form q 'pending' %}
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
     <div class="row">
       <h4>Expired Reminders</h4>
     </div>
     {% with pagenumber=request.GET.urlencode %}
     {% for q in filter.qs|order_by_reminder_expired:pagenumber %}
-    {% scheduling_list_with_form q %}
+    {% scheduling_list_with_form q 'notpending' %}
     {% endfor %}
     <div class="row">
       <h4>Upcoming Reminders</h4>
     </div>
     {% for q in filter.qs|order_by_reminder_upcoming:pagenumber %}
-    {% scheduling_list_with_form q %}
+    {% scheduling_list_with_form q 'notpending' %}
     {% endfor %}
     {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
     {% endwith %}

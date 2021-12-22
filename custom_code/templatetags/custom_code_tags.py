@@ -940,30 +940,14 @@ def smart_name_list(target):
     return good_names
     
 
-@register.inclusion_tag('custom_code/scheduling_list_with_form.html', takes_context=True)
-def scheduling_list_with_form(context, observation):
+def get_scheduling_form(observation, user_id, start, requested_str, case='notpending'):
+    '''
+    Used to get the initial parameters and form for scheduling current
+    and pending sequences.
+    '''
     parameters = []
-    facility = observation.facility
-    
-    # For now, we'll only worry about scheduling for LCO observations
-    if facility != 'LCO':
-        return {'observations': observation,
-                'parameters': ''}
-        
-    observation_id = observation.id
-    
+    facility = observation.facility 
     obsgroup = observation.observationgroup_set.first()
-    template_observation = obsgroup.observation_records.all().filter(observation_id='template').first()
-    if not template_observation:
-        obsset = obsgroup.observation_records.all()
-        obsset = obsset.annotate(start=KeyTextTransform('start', 'parameters'))
-        obsset = obsset.order_by('start')
-        start = str(obsset.first().parameters['start']).replace('T', ' ')
-        requested_str = ''
-    else:
-        start = str(template_observation.parameters['sequence_start']).replace('T', ' ')
-        requested_str = str(template_observation.parameters.get('start_user', ''))
-    
     target = observation.target
     target_names = smart_name_list(observation.target)
 
@@ -1008,7 +992,7 @@ def scheduling_list_with_form(context, observation):
                 observing_parameters[pos] = parameter.get(pos, '')
 
         initial = {'name': target.name,
-                   'observation_id': observation_id,
+                   'observation_id': observation.id,
                    'target_id': target.id,
                    'facility': facility,
                    'observation_type': parameter.get('observation_type', ''),
@@ -1027,7 +1011,7 @@ def scheduling_list_with_form(context, observation):
 
         form = PhotSchedulingForm(initial=initial)
 
-        parameters.append({'observation_id': observation_id,
+        parameters.append({'observation_id': observation.id,
                            'obsgroup_id': obsgroup.id,
                            'target': target,
                            'names': target_names,
@@ -1038,7 +1022,8 @@ def scheduling_list_with_form(context, observation):
                            'start': start + ' by ' + requested_str,
                            'comment': comment_str,
                            'reminder': end,
-                           'user_id': context['request'].user.id
+                           'user_id': user_id,
+                           'case': case
                         })
     
     else: # For spectra observations
@@ -1067,7 +1052,7 @@ def scheduling_list_with_form(context, observation):
             }
 
         initial = {'name': target.name,
-                   'observation_id': observation_id,
+                   'observation_id': observation.id,
                    'target_id': target.id,
                    'facility': facility,
                    'observation_type': parameter.get('observation_type', ''),
@@ -1081,7 +1066,7 @@ def scheduling_list_with_form(context, observation):
             }
         form = SpecSchedulingForm(initial=initial)
 
-        parameters.append({'observation_id': observation_id,
+        parameters.append({'observation_id': observation.id,
                            'obsgroup_id': obsgroup.id,
                            'target': target,
                            'names': target_names,
@@ -1092,7 +1077,8 @@ def scheduling_list_with_form(context, observation):
                            'start': start + ' by ' + requested_str,
                            'comment': comment_str,
                            'reminder': end,
-                           'user_id': context['request'].user.id
+                           'user_id': user_id,
+                           'case': case
                         })
 
 
@@ -1101,6 +1087,40 @@ def scheduling_list_with_form(context, observation):
             'form': form
     }
 
+
+@register.inclusion_tag('custom_code/scheduling_list_with_form.html', takes_context=True)
+def scheduling_list_with_form(context, observation, case='notpending'):
+    facility = observation.facility
+    
+    # For now, we'll only worry about scheduling for LCO observations
+    if facility != 'LCO':
+        return {'observations': observation,
+                'parameters': ''}
+         
+    obsgroup = observation.observationgroup_set.first()
+    template_observation = obsgroup.observation_records.all().filter(observation_id='template').first()
+    if not template_observation and case!='pending':
+        obsset = obsgroup.observation_records.all()
+        obsset = obsset.annotate(start=KeyTextTransform('start', 'parameters'))
+        obsset = obsset.order_by('start')
+        start = str(obsset.first().parameters['start']).replace('T', ' ')
+        requested_str = ''
+    else:
+        if case == 'pending':
+            template_observation = observation
+        start = str(template_observation.parameters['sequence_start']).replace('T', ' ')
+        requested_str = str(template_observation.parameters.get('start_user', ''))
+    
+    return get_scheduling_form(observation, context['request'].user.id, start, requested_str, case=case)
+
+
+@register.filter
+def order_by_pending_requests(queryset): #, pagenumber):
+    #queryset = queryset.exclude(status='CANCELED') 
+    #queryset = queryset.filter(observation_id='template pending').order_by('id')
+    queryset = ObservationRecord.objects.filter(observation_id='template pending')
+    return queryset
+    
 
 @register.filter
 def order_by_reminder_expired(queryset, pagenumber):

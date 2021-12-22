@@ -71,9 +71,14 @@
 	  <div class="row">
 	  {% csrf_token %}
 	  {% buttons %}
+	  {% if parameter.case == 'pending' %}
+	  <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'approved')" class="btn" style="background-color: green; color: white;" value="Approve Sequence" id="approve-{{ parameter.observation_id }}" readonly>
+          <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'rejected')" class="btn" style="background-color: red; color: white;" value="Reject Sequence" id="reject-{{ parameter.observation_id }}" readonly>
+	  {% else %}
 	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
 	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: green; color: white;" value="Continue As-is" id="continue-{{ parameter.observation_id }}" readonly>
 	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: red; color: white;" value="Stop Sequence" id="stop-{{ parameter.observation_id }}" readonly>
+	  {% endif %}
           {% endbuttons %}
 	  </div>
 	</td>
@@ -93,9 +98,14 @@
 	  <div class="row">
 	  {% csrf_token %}
 	  {% buttons %}
+	  {% if parameter.case == 'pending' %}
+	  <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'approved')" class="btn" style="background-color: green; color: white;" value="Approve Sequence" id="approve-{{ parameter.observation_id }}" readonly>
+          <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'rejected')" class="btn" style="background-color: red; color: white;" value="Reject Sequence" id="reject-{{ parameter.observation_id }}" readonly>
+	  {% else %}
 	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
 	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: green; color: white;" value="Continue As-is" id="continue-{{ parameter.observation_id }}" readonly>
 	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: red; color: white;" value="Stop Sequence" id="stop-{{ parameter.observation_id }}" readonly>
+	  {% endif %}
           {% endbuttons %}
 	  </div>
 	</td>
@@ -185,7 +195,31 @@ function modify_sequence(clickedId) {
     }
   });
 }
-
+function approveRejectSequence(observationId, decision) {
+  if (decision === 'rejected') {
+      var cancelComment=prompt('Reason for stopping observations:', '');
+      var comment = {'cancel': cancelComment};
+      var commentJSON = JSON.stringify(comment);
+  } else {
+      var commentJSON = JSON.stringify({});
+  }
+  $.ajax({
+    url: '{% url "custom_code:approve-or-reject-observation" %}',
+    data: {'pk': observationId,
+           'comment': commentJSON,
+           'status': decision},
+    dataType: 'json',
+    success: function(response) {
+      if (response.success === 'Modified') {
+        if (decision === 'rejected') {
+          document.getElementById('reject-btn-' + observationId).innerHTML = 'Rejected';
+        } else {
+          document.getElementById('approve-btn-' + observationId).innerHTML = 'Approved';
+        }
+      }
+    }
+  })
+}
 $(".cadence-input").keyup(function() {
   var t = this;
   var table = t.closest(".table");
