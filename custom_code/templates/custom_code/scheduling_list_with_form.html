@@ -212,9 +212,9 @@ function approveRejectSequence(observationId, decision) {
     success: function(response) {
       if (response.success === 'Modified') {
         if (decision === 'rejected') {
-          document.getElementById('reject-btn-' + observationId).innerHTML = 'Rejected';
+          document.getElementById('reject-' + observationId).value = 'Rejected';
         } else {
-          document.getElementById('approve-btn-' + observationId).innerHTML = 'Approved';
+          document.getElementById('approve-' + observationId).value = 'Approved';
         }
       }
     }
