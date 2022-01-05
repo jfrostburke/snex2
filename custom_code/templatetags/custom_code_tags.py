@@ -515,9 +515,14 @@ def target_data_with_user(context, target):
 @register.inclusion_tag('custom_code/classifications_dropdown.html')
 def classifications_dropdown(target):
     classifications = [i for i in settings.TARGET_CLASSIFICATIONS]
+    target_classification = TargetExtra.objects.filter(target=target, key='classification').first()
+    if target_classification is None:
+        target_class = None
+    else:
+        target_class = target_classification.value
     return {'target': target,
             'classifications': classifications,
-            'target_class': TargetExtra.objects.get(target=target, key='classification').value}
+            'target_class': target_class}
 
 @register.inclusion_tag('custom_code/science_tags_dropdown.html')
 def science_tags_dropdown(target):
