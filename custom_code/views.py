@@ -42,6 +42,7 @@ from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
 from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras
 from custom_code.hooks import _get_tns_params
+from custom_code.thumbnails import make_thumb
 
 from .forms import CustomTargetCreateForm, CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, ReferenceStatusForm
 from tom_targets.views import TargetCreateView
@@ -59,6 +60,7 @@ from tom_observations.facilities.lco import FAILED_OBSERVING_STATES, TERMINAL_OB
 from tom_observations.views import ObservationCreateView, ObservationListView, ObservationRecordCancelView
 import requests
 from rest_framework.authtoken.models import Token
+import base64
 
 import logging
 
@@ -1301,40 +1303,27 @@ def query_swift_observations_view(request):
    return HttpResponse(json.dumps(content_response), content_type='application/json')
 
 
-#def make_thumbnail_view(request):
-#    from astropy.io import fits
-#    from PIL import Image
-#    from base64 import b64encode
-#
-#    filepath = request.GET['filepath']
-#    hlist = fits.open(filepath)
-#
-#    hdu = hlist[0]
-#    chip_id = int(hdu.header.get('CCDID', default=0))
-#    data = hdu.data
-#
-#    sky, sig = getsky(data)
-#    zerosig = -1
-#    depth = 256
-#    spansig = 6
-#    zero = sky + zerosig * sig
-#    span = spansig * sig
-#
-#    data -= zero
-#    data *= (depth - 1) / span
-#
-#    w = data < 0
-#    data[w] = 0
-#    w = data > (depth-1)
-#    data[w] = (depth - 1)
-#
-#    data += 256 - depth
-#
-#    im = Image.fromarray(data.astype(np.uint8), mode='L')
-#    filt = Image.ANTIALIAS
-#    grow = 0.5
-#
-#    nx, ny = im.size
-#    im = im.resize((int(nx*grow), int(ny*grow)), filt)
-#
-#    return ''
+def make_thumbnail_view(request):
+
+    filename_dict = json.loads(request.GET['filenamedict'])
+    zoom = float(request.GET['zoom'])
+    sigma = float(request.GET['sigma'])
+
+    if filename_dict['psfx'] < 9999 and filename_dict['psfy'] < 9999:
+        f = make_thumb(['data/fits/'+filename_dict['filepath']+filename_dict['filename']+'.fits'], grow=zoom, spansig=sigma, x=filename_dict['psfx'], y=filename_dict['psfy'], ticks=True)
+    else:
+        f = make_thumb(['data/fits/'+filename_dict['filepath']+filename_dict['filename']+'.fits'], grow=zoom, spansig=sigma, x=1024, y=1024, ticks=False)
+
+    with open('data/thumbs/'+f[0], 'rb') as imagefile:
+        b64_image = base64.b64encode(imagefile.read())
+        thumb = b64_image.decode('utf-8')
+
+    content_response = {'success': 'Yes',
+                        'thumb': 'data:image/png;base64,{}'.format(thumb),
+                        'telescope': filename_dict['tele'],
+                        'instrument': filename_dict['filename'].split('-')[1][:2],
+                        'filter': filename_dict['filter'],
+                        'exptime': filename_dict['exptime']
+                    }
+
+    return HttpResponse(json.dumps(content_response), content_type='application/json')

@@ -297,3 +297,15 @@ class ReferenceStatusForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super(ReferenceStatusForm, self).__init__(*args, **kwargs)
+
+
+class ThumbnailForm(forms.Form):
+
+    filenames = forms.ChoiceField(choices=[('','')], widget=forms.Select(), label='Filename')
+    zoom = forms.FloatField(min_value=0.1, max_value=10.0, label='Zoom')
+    sigma = forms.FloatField(min_value=1.0, max_value=50.0, label='Sigma')
+
+    def __init__(self, *args, **kwargs):
+        filename_choices = kwargs.pop('choices')['filenames']
+        super(ThumbnailForm, self).__init__(*args, **kwargs)
+        self.fields['filenames'].choices = filename_choices

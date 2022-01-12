@@ -1,0 +1,72 @@
+{% load bootstrap4 static %}
+<div class="row" style="padding-top: 50px;">
+  <div class="col-md-2">
+    <div class="row">
+      <div class="col-md-6"><b>Telescope: </b></div>
+      <div class="col-md-6" id="thumb-telescope">{{ telescope }}</div>
+    </div>
+    <div class="row">
+      <div class="col-md-6"><b>Instrument: </b></div>
+      <div class="col-md-6" id="thumb-instrument">{{ instrument }}</div>
+    </div>
+    <div class="row">
+      <div class="col-md-6"><b>Filter: </b></div>
+      <div class="col-md-6" id="thumb-filter">{{ filter }}</div>
+    </div>
+    <div class="row">
+      <div class="col-md-6"><b>Exptime: </b></div>
+      <div class="col-md-6" id="thumb-exptime">{{ exptime }}</div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="row" id="form-thumbnail">
+      <img id="form-img" style="width: 75%; height: 75%; margin-left: 5px; margin-top: 5px;" src="data:image/png;base64,{{ thumb }}" alt="img">
+    </div>
+  </div>
+  <div class="col-md-2">
+    <form>
+      {% bootstrap_form form %}
+    </form>
+  </div>
+</div>
+<script>
+  var zoom = document.getElementById("id_zoom");
+  zoom.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      makeThumbnail();
+    }
+  });
+  var sigma = document.getElementById("id_sigma");
+  sigma.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      makeThumbnail();
+    }
+  });
+  var filename = document.getElementById("id_filenames");
+  filename.addEventListener("change", function (e) {
+    makeThumbnail();
+  });
+
+  function makeThumbnail() {
+    var zoomVal = document.getElementById("id_zoom").value;
+    var sigmaVal = document.getElementById("id_sigma").value;
+    var filenameVal = document.getElementById("id_filenames").value;
+
+    $.ajax({
+      url: '{% url "make-thumbnail" %}',
+      data: {'zoom': zoomVal,
+             'sigma': sigmaVal,
+             'filenamedict': filenameVal
+      },
+      dataType: 'json',
+      success: function(response) {
+        var thumb = response.thumb;
+	document.getElementById("form-img").src = thumb;
+        $('#thumb-telescope').html(response.telescope);
+        $('#thumb-instrument').html(response.instrument);
+        $('#thumb-filter').html(response.filter);
+        $('#thumb-exptime').html(response.exptime);
+      }
+    });
+  };
+</script>

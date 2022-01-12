@@ -557,7 +557,7 @@ def update_reminder_in_snex1(snex_id, next_reminder):
     logger.info('Update reminder in SNEx1 hook: Sequence with SNEx1 ID {} synced'.format(snex_id))
 
 
-def find_images_from_snex1(targetid):
+def find_images_from_snex1(targetid, allimages=False):
     '''
     Hook to find filenames of images in SNEx1,
     given a target ID
@@ -568,7 +568,10 @@ def find_images_from_snex1(targetid):
     with _get_session(db_address=_snex1_address) as db_session:
         Photlco = _load_table('photlco', db_address=_snex1_address)
 
-        query = db_session.query(Photlco).filter(and_(Photlco.targetid==targetid, Photlco.filetype==1)).order_by(Photlco.id.desc()).limit(8)
+        if not allimages:
+            query = db_session.query(Photlco).filter(and_(Photlco.targetid==targetid, Photlco.filetype==1)).order_by(Photlco.id.desc()).limit(8)
+        else:
+            query = db_session.query(Photlco).filter(and_(Photlco.targetid==targetid, Photlco.filetype==1)).order_by(Photlco.id.desc())
         filepaths = [q.filepath.replace('/supernova/data/lsc/', '') for q in query]
         filenames = [q.filename.replace('.fits', '') for q in query]
         dates = [q.dateobs for q in query]

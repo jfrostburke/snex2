@@ -383,7 +383,7 @@ def make_thumb(files, grow=1.0, sky=None, sig=None, x=900, y=900, width=250, hei
     """
     Make thumbnails from a FITS image
     """
-    region = [x-width, x+width, y-height, y+height]
+    region = [round(x-(width/grow)), round(x+(width/grow)), round(y-(height/grow)), round(y+(height/grow))]
     # make the thumbnails
     outfiles = []
     for filename in files:
@@ -392,7 +392,7 @@ def make_thumb(files, grow=1.0, sky=None, sig=None, x=900, y=900, width=250, hei
             r = os.system('funpack -D '+filename+'.fz')
 
         # load in the image data
-        thumb = ImageThumb(filename, region=region, skip=skip, grow=grow, verbose=True)
+        thumb = ImageThumb(filename, skip=skip, grow=grow, verbose=True, region=region)
         data = thumb.datacube[0][1].copy()
         data = make_depth_256(data, sky=thumb.sky, sig=thumb.sig, zerosig=0, spansig=spansig)
 
@@ -414,11 +414,16 @@ def make_thumb(files, grow=1.0, sky=None, sig=None, x=900, y=900, width=250, hei
             draw.line((x_new-7,y_new,x_new-25,y_new), fill='white')
 
         # make the thumbs
-        outfile = 'data/thumbs/'+filename.split('/')[-1].replace('.fits', '.webp')
+        if grow == 1.0 and not sig:
+            newfile = filename.split('/')[-1].replace('.fits', '.webp')
+            outfile = 'data/thumbs/'+newfile
+        else:
+            newfile = filename.split('/')[-1].replace('.fits', 'grow{}sig{}.webp'.format(grow, sig))
+            outfile = 'data/thumbs/'+newfile
         f = open(outfile, 'wb')
         im.save(f, 'WEBP')
         f.close()
 
-        outfiles.append(filename.split('/')[-1].replace('.fits', '.webp'))#outfile)
+        outfiles.append(newfile)
 
     return outfiles

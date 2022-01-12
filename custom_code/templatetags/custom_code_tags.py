@@ -28,11 +28,12 @@ import time
 import matplotlib.pyplot as plt
 
 from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons
-from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, SpecSchedulingForm, ReferenceStatusForm
+from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, SpecSchedulingForm, ReferenceStatusForm, ThumbnailForm
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
 from custom_code.facilities.lco_facility import SnexPhotometricSequenceForm, SnexSpectroscopicSequenceForm
 from custom_code.thumbnails import make_thumb
+import base64
 import logging
 
 logger = logging.getLogger(__name__)
@@ -1388,6 +1389,69 @@ def target_details(context, target):
             'description': description}
 
 
+@register.inclusion_tag('custom_code/image_slideshow.html', takes_context=True)
+def image_slideshow(context, target):
+    request = context['request']
+    user = context['user']
+
+    ### Get a list of all the image filenames for this target
+    #NOTE: Production
+    try:
+        filepaths, filenames, dates, teles, filters, exptimes, psfxs, psfys = run_hook('find_images_from_snex1', target.id, allimages=True)
+    except:
+        logger.info('Finding images in snex1 failed')
+        return {'target': target,
+                'form': 'No images found for this target'}
+
+    #NOTE: Development
+    #filepaths = ['/test/' for i in range(8)]
+    #filenames = ['coj1m011-fa12-20210216-0239-e91' for i in range(8)]
+    #dates = ['2020-08-03', '2020-08-02', '2020-08-01', '2020-07-31', '2020-07-30', 
+    #         '2020-07-29', '2020-07-28', '2020-07-27']
+    #teles = ['1m' for i in range(8)]
+    #filters = ['ip', 'ip', 'rp', 'rp', 'gp', 'gp', 'V', 'V']
+    #exptimes = [str(round(299.5)) + 's' for i in range(8)]
+    #psfxs = [9999 for i in range(8)]
+    #psfys = [9999 for i in range(8)]
+    
+    thumbdict = [(json.dumps({'filename': filenames[i],
+                   'filepath': filepaths[i],
+                   'date': dates[i],
+                   'tele': teles[i],
+                   'filter': filters[i],
+                   'exptime': exptimes[i],
+                   'psfx': psfxs[i],
+                   'psfy': psfys[i]
+                }),
+                filenames[i]) for i in range(len(filenames))]
+
+    initial = {'filenames': filenames[-1],
+               'zoom': 1.0,
+               'sigma': 4.0
+            }
+
+    choices = {'filenames': thumbdict}
+    thumbnailform = ThumbnailForm(initial=initial, choices=choices)
+
+    ### Make the initial thumbnail
+    if psfxs[-1] < 9999 and psfys[-1] < 9999:
+        f = make_thumb(['data/fits/'+filepaths[-1]+filenames[-1]+'.fits'], grow=1.0, x=psfxs[-1], y=psfys[-1], ticks=True)
+    else:
+        f = make_thumb(['data/fits/'+filepaths[-1]+filenames[-1]+'.fits'], grow=1.0, x=1024, y=1024, ticks=False)
+
+    with open('data/thumbs/'+f[0], 'rb') as imagefile:        
+        b64_image = base64.b64encode(imagefile.read())
+        thumb = b64_image
+
+    return {'target': target,
+            'form': thumbnailform,
+            'thumb': b64_image.decode('utf-8'),
+            'telescope': teles[-1],
+            'instrument': filenames[-1].split('-')[1][:2],
+            'filter': filters[-1],
+            'exptime': exptimes[-1]}
+
+
 @register.inclusion_tag('custom_code/lightcurve_collapse.html')
 def lightcurve_fits(target, user, filt=False, days=None):
     
@@ -1587,7 +1651,6 @@ def test_display_thumbnail(context, target):
     from os.path import isfile, join
     thumbs = [f for f in listdir('data/thumbs/') if isfile(join('data/thumbs/', f))]
     
-    import base64
     top_images = []
     bottom_images = []
     
@@ -1618,7 +1681,7 @@ def test_display_thumbnail(context, target):
     for i in range(len(filenames)):
         currentfile = filenames[i]
         if any(currentfile in f for f in thumbs):
-            thumbfiles.append([f for f in thumbs if f.startswith(currentfile)][0])
+            thumbfiles.append([f for f in thumbs if f.startswith(currentfile) and 'grow' not in f][0])
         else:
             # Generate the thumbnail and save the image
             if psfxs[i] < 9999 and psfys[i] < 9999:

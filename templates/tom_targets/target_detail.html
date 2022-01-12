@@ -101,6 +101,9 @@ $(document).ready(function(){
     <a class="nav-link" id="manage-groups-tab" href="#manage-groups" role="tab" data-toggle="tab" style="color: #174460;">Observing Runs</a>
   </li>
   <li class="nav-item">
+    <a class="nav-link" id="images-tab" href="#images" role="tab" data-toggle="tab" style="color: #174460;">Images</a>
+  </li>
+  <li class="nav-item">
     <a class="nav-link" id="photometry-tab" href="#photometry" role="tab" data-toggle="tab" style="color: #174460;">Photometry</a>
   </li>
   <li class="nav-item">
@@ -184,6 +187,9 @@ $(document).ready(function(){
       </div>
       <div class="tab-pane" id="manage-groups">
         {% target_groups target %}
+      </div>
+      <div class="tab-pane" id="images">
+        {% image_slideshow object %}
       </div>
       <div class="tab-pane" id="photometry">
         {#% lightcurve object %#}
