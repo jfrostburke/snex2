@@ -1423,7 +1423,8 @@ def image_slideshow(context, target):
                    'psfx': psfxs[i],
                    'psfy': psfys[i]
                 }),
-                filenames[i]) for i in range(len(filenames))]
+                #filenames[i]) for i in range(len(filenames))]
+                '{} ({} {})'.format(dates[i], filters[i], exptimes[i])) for i in range(len(filenames))]
 
     initial = {'filenames': filenames[-1],
                'zoom': 1.0,
@@ -1680,8 +1681,10 @@ def test_display_thumbnail(context, target):
 
     for i in range(len(filenames)):
         currentfile = filenames[i]
-        if any(currentfile in f for f in thumbs):
-            thumbfiles.append([f for f in thumbs if f.startswith(currentfile) and 'grow' not in f][0])
+        if any(currentfile in f and 'grow' not in f for f in thumbs):
+            matchingfiles = [f for f in thumbs if f.startswith(currentfile) and 'grow' not in f]
+            if matchingfiles:
+                thumbfiles.append(matchingfiles[0])
         else:
             # Generate the thumbnail and save the image
             if psfxs[i] < 9999 and psfys[i] < 9999:
