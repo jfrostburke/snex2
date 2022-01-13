@@ -1401,7 +1401,11 @@ def image_slideshow(context, target):
     except:
         logger.info('Finding images in snex1 failed')
         return {'target': target,
-                'form': 'No images found for this target'}
+                'form': ThumbnailForm(initial={}, choices={'filenames': [('', 'No images found')]})} 
+
+    if not filenames:
+        return {'target': target,
+                'form': ThumbnailForm(initial={}, choices={'filenames': [('', 'No images found')]})}
 
     #NOTE: Development
     #filepaths = ['/test/' for i in range(8)]

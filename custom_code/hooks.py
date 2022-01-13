@@ -574,7 +574,7 @@ def find_images_from_snex1(targetid, allimages=False):
             query = db_session.query(Photlco).filter(and_(Photlco.targetid==targetid, Photlco.filetype==1)).order_by(Photlco.id.desc())
         filepaths = [q.filepath.replace('/supernova/data/lsc/', '') for q in query]
         filenames = [q.filename.replace('.fits', '') for q in query]
-        dates = [q.dateobs for q in query]
+        dates = [date.strftime(q.dateobs, '%m/%d/%Y') for q in query]
         teles = [q.telescope[:2] for q in query]
         filters = [q.filter for q in query]
         exptimes = [str(round(float(q.exptime))) + 's' for q in query]
