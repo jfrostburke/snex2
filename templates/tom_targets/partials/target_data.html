@@ -47,7 +47,11 @@
   <h5>Interested Persons:</h5>
 </dl>
 {% interested_persons target user %}
-{% papers_list target %}
+<dl class="row" style="display: block;">
+  <h5>Data Used In: </h5>
+  {% papers_list target %}
+  {% papers_form target %}
+</dl>
 <dl class="row">
   <h5>Reference Status:</h5>
 </dl>

@@ -916,6 +916,14 @@ def papers_list(target):
             'form': paper_form}
 
 
+@register.inclusion_tag('custom_code/papers_form.html')
+def papers_form(target):
+
+    paper_form = PapersForm(initial={'target': target})
+    return {'object': target,
+            'form': paper_form}
+
+
 @register.filter
 def smart_name_list(target):
 
@@ -1288,6 +1296,8 @@ def upcoming_observing_runs(targetlist):
     today = datetime.date.today()
     try:
         for obj in targetlist:
+            if obj.name == 'Interesting Targets':
+                continue
             name = obj.name
             observing_run_datestr = name.split('_')[1]
             year = int(observing_run_datestr[:4])
@@ -1308,6 +1318,8 @@ def past_observing_runs(targetlist):
     today = datetime.date.today()
     try:
         for obj in targetlist:
+            if obj.name == 'Interesting Targets':
+                continue
             name = obj.name
             observing_run_datestr = name.split('_')[1]
             year = int(observing_run_datestr[:4])
@@ -1321,6 +1333,14 @@ def past_observing_runs(targetlist):
     except Exception as e:
         print(e)
         return targetlist
+
+
+@register.filter
+def interesting_targets(targetlist):
+    for obj in targetlist:
+        if obj.name == 'Interesting Targets':
+            return obj
+    return []
 
 
 @register.filter
