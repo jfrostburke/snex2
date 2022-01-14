@@ -46,6 +46,16 @@
   });
   var filename = document.getElementById("id_filenames");
   filename.addEventListener("change", function (e) {
+    if (filename.selectedIndex === filename.options.length - 1) {
+      document.getElementById("previous-img").style.display = "none";
+      document.getElementById("next-img").style.display = "block";
+    } else if (filename.selectedIndex === 0) {
+      document.getElementById("previous-img").style.display = "block";
+      document.getElementById("next-img").style.display = "none";
+    } else {
+      document.getElementById("previous-img").style.display = "block";
+      document.getElementById("next-img").style.display = "block";
+    }
     makeThumbnail();
   });
 
