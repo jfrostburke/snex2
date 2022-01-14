@@ -1402,11 +1402,7 @@ def image_slideshow(context, target):
         logger.info('Finding images in snex1 failed')
         return {'target': target,
                 'form': ThumbnailForm(initial={}, choices={'filenames': [('', 'No images found')]})} 
-
-    if not filenames:
-        return {'target': target,
-                'form': ThumbnailForm(initial={}, choices={'filenames': [('', 'No images found')]})}
-
+    
     #NOTE: Development
     #filepaths = ['/test/' for i in range(8)]
     #filenames = ['coj1m011-fa12-20210216-0239-e91' for i in range(8)]
@@ -1417,6 +1413,10 @@ def image_slideshow(context, target):
     #exptimes = [str(round(299.5)) + 's' for i in range(8)]
     #psfxs = [9999 for i in range(8)]
     #psfys = [9999 for i in range(8)]
+    
+    if not filenames:
+        return {'target': target,
+                'form': ThumbnailForm(initial={}, choices={'filenames': [('', 'No images found')]})}
     
     thumbdict = [(json.dumps({'filename': filenames[i],
                    'filepath': filepaths[i],
@@ -1430,7 +1430,7 @@ def image_slideshow(context, target):
                 #filenames[i]) for i in range(len(filenames))]
                 '{} ({} {})'.format(dates[i], filters[i], exptimes[i])) for i in range(len(filenames))]
 
-    initial = {'filenames': filenames[-1],
+    initial = {'filenames': filenames[0],
                'zoom': 1.0,
                'sigma': 4.0
             }
@@ -1439,10 +1439,10 @@ def image_slideshow(context, target):
     thumbnailform = ThumbnailForm(initial=initial, choices=choices)
 
     ### Make the initial thumbnail
-    if psfxs[-1] < 9999 and psfys[-1] < 9999:
-        f = make_thumb(['data/fits/'+filepaths[-1]+filenames[-1]+'.fits'], grow=1.0, x=psfxs[-1], y=psfys[-1], ticks=True)
+    if psfxs[0] < 9999 and psfys[0] < 9999:
+        f = make_thumb(['data/fits/'+filepaths[0]+filenames[0]+'.fits'], grow=1.0, x=psfxs[0], y=psfys[0], ticks=True)
     else:
-        f = make_thumb(['data/fits/'+filepaths[-1]+filenames[-1]+'.fits'], grow=1.0, x=1024, y=1024, ticks=False)
+        f = make_thumb(['data/fits/'+filepaths[0]+filenames[0]+'.fits'], grow=1.0, x=1024, y=1024, ticks=False)
 
     with open('data/thumbs/'+f[0], 'rb') as imagefile:        
         b64_image = base64.b64encode(imagefile.read())
@@ -1451,10 +1451,10 @@ def image_slideshow(context, target):
     return {'target': target,
             'form': thumbnailform,
             'thumb': b64_image.decode('utf-8'),
-            'telescope': teles[-1],
-            'instrument': filenames[-1].split('-')[1][:2],
-            'filter': filters[-1],
-            'exptime': exptimes[-1]}
+            'telescope': teles[0],
+            'instrument': filenames[0].split('-')[1][:2],
+            'filter': filters[0],
+            'exptime': exptimes[0]}
 
 
 @register.inclusion_tag('custom_code/lightcurve_collapse.html')

@@ -20,7 +20,9 @@
   </div>
   <div class="col-md-8">
     <div class="row" id="form-thumbnail">
-      <img id="form-img" style="width: 75%; height: 75%; margin-left: 5px; margin-top: 5px;" src="data:image/png;base64,{{ thumb }}" alt="img">
+      <button class="btn" id="previous-img" style="font-size: 20px;" onclick="prevImg()">&laquo; Previous</button>
+      <img id="form-img" style="width: 70%; height: 70%; margin-left: 5px; margin-top: 5px;" src="data:image/png;base64,{{ thumb }}" alt="img">
+      <button class="btn" id="next-img" style="font-size: 20px; display: none;" onclick="nextImg()">Next &raquo;</button>
     </div>
   </div>
   <div class="col-md-2">
@@ -68,5 +70,28 @@
         $('#thumb-exptime').html(response.exptime);
       }
     });
+  };
+
+  function prevImg() {
+    var select = document.getElementById("id_filenames");
+    if (select.selectedIndex === select.options.length - 2) {
+      select.selectedIndex++;
+      document.getElementById("previous-img").style.display = "none";
+    } else {
+      select.selectedIndex++;
+      document.getElementById("next-img").style.display = "block";
+    }
+    makeThumbnail();
+  };
+  function nextImg() {
+    var select = document.getElementById("id_filenames");
+    if (select.selectedIndex === 1) {
+      select.selectedIndex--;
+      document.getElementById("next-img").style.display = "none";
+    } else {
+      select.selectedIndex--;
+      document.getElementById("previous-img").style.display = "block";
+    }
+    makeThumbnail();
   };
 </script>
