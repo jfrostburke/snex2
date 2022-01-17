@@ -879,15 +879,18 @@ def add_target_to_group_view(request):
     targetlist_id = request.GET.get('group_id')
     targetlist = TargetList.objects.get(id=targetlist_id)
 
-    if request.user.has_perm('tom_targets.view_target', target) and target not in targetlist.targets.all():
- 
-        if len(targetlist.targets.all()) == 0:
-            target_priority = 1
-        else:
-            target_priority = max([t.extra_fields['observing_run_priority'] for t in targetlist.targets.all()]) + 1
+    list_type = request.GET.get('list')
 
-        new_target_priority = TargetExtra(target=target, key='observing_run_priority', value=target_priority)
-        new_target_priority.save()
+    if request.user.has_perm('tom_targets.view_target', target) and target not in targetlist.targets.all():
+
+        if list_type == 'observing_run':
+            if len(targetlist.targets.all()) == 0:
+                target_priority = 1
+            else:
+                target_priority = max([t.extra_fields['observing_run_priority'] for t in targetlist.targets.all()]) + 1
+
+            new_target_priority = TargetExtra(target=target, key='observing_run_priority', value=target_priority)
+            new_target_priority.save()
         
         targetlist.targets.add(target)
         

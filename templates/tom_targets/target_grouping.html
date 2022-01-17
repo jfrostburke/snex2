@@ -7,6 +7,7 @@
 {% block content %}
 <head>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://kryogenix.org/code/browser/sorttable/sorttable.js"></script>
 </head>
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
@@ -24,24 +25,40 @@
 <div class="tab-content">
   <div class="tab-pane in active" id="interestingobjs">
     <div class="row" style="padding-top: 15px;">
-	<table class="table">
+      {% with object_list|interesting_targets as group %}
+        <div class="autocomplete">
+          <form action="/name-search/" method="get">
+            <input class="addTargetInput" id="addTargetInput-{{ group.id }}" type="text" placeholder="Search for a target to add">
+            <input type="button" value="Add" onclick="addTarget('{{ group.id }}', 'interesting_list')">
+            <input class="hidden" style="display: none;" name="groupID" value="{{ group.id }}">
+          </form>
+          <div class="replaceableContent" id="replaceable-content-{{ group.id }}">
+          {% include 'custom_code/partials/name-search-results.html' %}
+          </div>
+        </div>
+      {% endwith %}
+	<table class="table sortable">
           <thead>
 	    <tr>
-	      <th>Names</th>
-	      <th>Lightcurve</th>
-	      <th>Spectra</th>
-	      <th>Classification</th>
-	      <th>Redshift</th>
-	      <th>Science Interests</th>
-	      <th>Comments</th>
-	      <th>Papers</th>
+	      <th style="width: 10%; cursor: pointer;">Names</th>
+	      <th class="sorttable_nosort" style="width: 20%;">Lightcurve</th>
+	      <th class="sorttable_nosort" style="width: 20%;">Spectra</th>
+	      <th style="width: 5%; cursor: pointer;">Classification</th>
+	      <th style="width: 5%; cursor: pointer;">Redshift</th>
+	      <th style="width: 10%; cursor: pointer;">Science Interests</th>
+	      <th style="width: 20%; cursor: pointer;">Comments</th>
+	      <th style="width: 10%; cursor: pointer;">Papers</th>
 	    </tr>
 	  </thead>
 	  <tbody>
           {% with object_list|interesting_targets as interesting_list %}
 	  {% for target in interesting_list.targets.all %}
 	    <tr>
-	      <td><a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target|smart_name_list|join:", " }}</a>
+	      <td sorttable_customkey="{{ target|get_best_name }}"><!--a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target|smart_name_list|join:", " }}</a-->
+		{% for target_name in target|smart_name_list %}
+		<a href="{% url 'targets:detail' target.id %}" title="{{ target_name }}">{{ target_name }}</a><br>
+		{% endfor %}
+	      </td>
 	      <td>{% lightcurve_collapse target user %}</td>
 	      <td>{% spectra_collapse target %}</td>
 	      <td>{{ target|target_extra_field:"classification" }}</td>
@@ -86,7 +103,7 @@
             <div class="autocomplete">
               <form action="/name-search/" method="get">
                 <input class="addTargetInput" id="addTargetInput-{{ group.id }}" type="text" placeholder="Search for a target to add">
-                <input type="button" value="Add" onclick="addTarget('{{ group.id }}')">
+                <input type="button" value="Add" onclick="addTarget('{{ group.id }}', 'observing_run')">
                 <input class="hidden" style="display: none;" name="groupID" value="{{ group.id }}">
               </form>
               <div class="replaceableContent" id="replaceable-content-{{ group.id }}">
@@ -195,12 +212,13 @@ function fillName(clickedName) {
   spectra_input.value = clickedName;
 };
 
-function addTarget(groupId) {
+function addTarget(groupId, listType) {
   var nameInput = document.getElementById("addTargetInput-"+groupId).value;
   $.ajax({
     url: '{% url "add-target-to-group" %}',
     data: {'target_name': nameInput,
-	   'group_id': groupId
+	   'group_id': groupId,
+	   'list': listType
       },
     dataType: 'json',
   });
