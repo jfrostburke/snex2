@@ -82,11 +82,23 @@
 <div id="lc-primary" class="row">
   {#% lightcurve_with_extras target user %#}
 </div>
-<h4>Target Description / "Tagline"</h4>
-<div class="row" style="text-align: justify; margin-left: 5px;">A sentence or two describing anything that makes this target interesting or unique, <br>such as weird light curve evolution, spectral features, lots of external data, etc.</div>
-<textarea id="tagline" rows="4" cols="60" style="margin-top: 10px; margin-bottom: 10px;" placeholder="Enter a couple of descriptive sentences">{{ description }}</textarea>
-<div class="row">
-  <button id="save-tagline-btn" class="btn" onclick="save_tagline()" style="background-color: white; color: #174460; border-color: #174460;">Save Tagline</button>
+<div class="row" style="margin-top: 20px;">
+  <div class="col-md-6">
+    <h4>Target Description / "Tagline"</h4>
+    <div class="row" style="text-align: justify; margin-left: 5px;">A sentence or two describing anything that makes this target interesting or unique, <br>such as weird light curve evolution, spectral features, lots of external data, etc.</div>
+    <textarea id="tagline" rows="4" cols="60" style="margin-top: 10px; margin-bottom: 10px;" placeholder="Enter a couple of descriptive sentences">{{ description }}</textarea>
+    <div class="row">
+      <button id="save-tagline-btn" class="btn" onclick="save_tagline()" style="background-color: white; color: #174460; border-color: #174460;">Save Tagline</button>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <h4>Is this an Interesting Target?</h4>
+    {% if target|is_interesting %}
+    <a>This target is already in the interesting targets list</a>
+    {% else %}
+    <button class="btn" id='interesting-target-button' onclick="addTargetToList()" style="background-color: white; color: #174460; border-color: #174460;">Add to Interesting Targets List</button>
+    {% endif %}
+  </div>
 </div>
 <script>
 function update_values() {
@@ -223,6 +235,19 @@ function querySwiftData() {
     dataType: 'json',
     success: function(response) {
       document.getElementById('swift-data-button').innerHTML = response.success;
+    }
+  })
+}
+function addTargetToList() {
+  $.ajax({
+    url: '{% url "add-target-to-group" %}',
+    data: {'target_name': '{{ target.name }}',
+	   'group_id': {{ interesting_list_id }},
+           'list': 'interesting_list'
+    },
+    dataType: 'json',
+    success: function(response) {
+      document.getElementById('interesting-target-button').innerHTML = 'Added';
     }
   })
 }

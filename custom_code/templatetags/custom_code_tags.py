@@ -14,7 +14,7 @@ from tom_targets.models import Target, TargetExtra, TargetList
 from tom_targets.forms import TargetVisibilityForm
 from tom_observations import utils, facility
 from tom_dataproducts.models import DataProduct, ReducedDatum
-from tom_observations.models import ObservationRecord, ObservationGroup
+from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
 from tom_common.hooks import run_hook
 
 from astroplan import Observer, FixedTarget, AtNightConstraint, time_grid_from_range, moon_illumination
@@ -1343,6 +1343,54 @@ def interesting_targets(targetlist):
     return []
 
 
+@register.inclusion_tag('custom_code/interesting_targets_table.html')
+def interesting_targets_table(user, listtype='global'):
+    if listtype == 'global':
+        targetlist = TargetList.objects.filter(name='Interesting Targets')
+        if targetlist:
+            return {'user': user,
+                    'interesting_target_list': targetlist.first().targets.all(),
+                    'table_type': 'global'}
+        else:
+            return {'user': user,
+                    'interesting_target_list': [],
+                    'table_type': 'global'}
+
+    elif listtype == 'personal':
+        targetlist = [q.target for q in InterestedPersons.objects.filter(user=user)]
+        return {'user': user,
+                'interesting_target_list': targetlist,
+                'table_type': 'personal'}
+
+
+@register.filter
+def is_interesting(target):
+    interesting_list = TargetList.objects.filter(name='Interesting Targets').first()
+    if not interesting_list:
+        return False
+    if target in interesting_list.targets.all():
+        return True
+    else:
+        return False
+
+
+@register.filter
+def active_cadences_for_target(target, user):
+    if settings.TARGET_PERMISSIONS_ONLY:
+        observations = target.observationrecord_set.all()
+    else:
+        observations = get_objects_for_user(
+                            user,
+                            'tom_observations.view_observationrecord',
+                            ).filter(target=target)
+    
+    obsgroups = ObservationGroup.objects.filter(observation_records__in=observations).distinct()
+    if any([d.active for d in DynamicCadence.objects.filter(observation_group__in=obsgroups)]):
+        return 'Yes'
+    else:
+        return 'No'
+
+
 @register.filter
 def get_other_observing_runs(targetlist):
     other_runs = []
@@ -1399,6 +1447,14 @@ def target_details(context, target):
         description = description_query.value
     else:
         description = ''
+
+    interesting_list = TargetList.objects.filter(name='Interesting Targets').first()
+    if not interesting_list:
+        # Make a new list for interesting targets
+        interesting_list = TargetList(name='Interesting Targets')
+        interesting_list.save()
+    
+    interesting_list_id = int(interesting_list.id)
     
     return {'target': target,
             'request': request,
@@ -1406,7 +1462,8 @@ def target_details(context, target):
             'last_nondetection': nondet_params,
             'first_detection': det_params,
             'maximum': max_params,
-            'description': description}
+            'description': description,
+            'interesting_list_id': interesting_list_id}
 
 
 @register.inclusion_tag('custom_code/image_slideshow.html', takes_context=True)

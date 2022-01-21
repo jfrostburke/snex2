@@ -1,0 +1,45 @@
+{% load bootstrap4 targets_extras custom_code_tags %}
+<table class="table sortable">
+  <caption style="caption-side: top; text-align: center; font-size: large; color: black;">
+  {% if table_type == 'global' %}
+    All Interesting Targets
+  {% else %}
+    My Interesting Targets
+  {% endif %}
+  </caption>
+  <thead>
+    <tr>
+      <th style="width: 5%; cursor: pointer;">Names</th>
+      <th class="sorttable_nosort" style="width: 20%;">Lightcurve</th>
+      <th class="sorttable_nosort" style="width: 20%;">Spectra</th>
+      <th style="width: 5%; cursor: pointer;">Classification</th>
+      <th style="width: 5%; cursor: pointer;">Redshift</th>
+      <th style="width: 10%; cursor: pointer;">Science Interests</th>
+      <th style="width: 5%; cursor: pointer;">Active Cadences?</th>
+      <th style="width: 20%; cursor: pointer;">Comments</th>
+      <th style="width: 10%; cursor: pointer;">Papers</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for target in interesting_target_list %}
+    <tr>
+      {% with target|get_best_name as best_name %}
+      <td sorttable_customkey="{{ best_name|cut:" " }}"><!--a href="{% url 'targets:detail' target.id %}" title="{{ best_name }}">{{ target|smart_name_list|join:", " }}</a-->
+        {% for target_name in target|smart_name_list %}
+        <a href="{% url 'targets:detail' target.id %}" title="{{ target_name }}">{{ target_name }}</a><br>
+        {% endfor %}
+      </td>
+      {% endwith %}
+      <td>{% lightcurve_collapse target user %}</td>
+      <td>{% spectra_collapse target %}</td>
+      <td>{{ target|target_extra_field:"classification" }}</td>
+      <td>{{ target|target_extra_field:"redshift" }}</td>
+      <td>{{ target|get_target_tags|slice:"1:-2" }}</td>
+      <td>{{ target|active_cadences_for_target:user }}</td>
+      <td>{{ target|target_extra_field:"target_description" }}</td>
+      <td>{% papers_list target %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+

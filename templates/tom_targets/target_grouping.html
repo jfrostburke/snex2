@@ -8,6 +8,56 @@
 <head>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script src="https://kryogenix.org/code/browser/sorttable/sorttable.js"></script>
+  <style>
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+  }
+  
+  .switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 34px;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 50%;
+  }
+  
+  input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+  }
+  
+  input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+  }
+  </style>
 </head>
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
@@ -24,7 +74,14 @@
 </ul>
 <div class="tab-content">
   <div class="tab-pane in active" id="interestingobjs">
-    <div class="row" style="padding-top: 15px;">
+    <div class="row" style="align-items: center;">
+      <label class="switch">
+        <input type="checkbox" id="slider">
+        <span class="slider round" onclick="switchTargetTable()"></span>
+      </label>
+      <a id="slider-label" style="padding-left: 10px;">Show targets you are interested in</a>
+    </div>
+    <div class="row" id="global-interesting-targets" style="padding-top: 15px;">
       {% with object_list|interesting_targets as group %}
         <div class="autocomplete">
           <form action="/name-search/" method="get">
@@ -37,40 +94,10 @@
           </div>
         </div>
       {% endwith %}
-	<table class="table sortable">
-          <thead>
-	    <tr>
-	      <th style="width: 10%; cursor: pointer;">Names</th>
-	      <th class="sorttable_nosort" style="width: 20%;">Lightcurve</th>
-	      <th class="sorttable_nosort" style="width: 20%;">Spectra</th>
-	      <th style="width: 5%; cursor: pointer;">Classification</th>
-	      <th style="width: 5%; cursor: pointer;">Redshift</th>
-	      <th style="width: 10%; cursor: pointer;">Science Interests</th>
-	      <th style="width: 20%; cursor: pointer;">Comments</th>
-	      <th style="width: 10%; cursor: pointer;">Papers</th>
-	    </tr>
-	  </thead>
-	  <tbody>
-          {% with object_list|interesting_targets as interesting_list %}
-	  {% for target in interesting_list.targets.all %}
-	    <tr>
-	      <td sorttable_customkey="{{ target|get_best_name }}"><!--a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target|smart_name_list|join:", " }}</a-->
-		{% for target_name in target|smart_name_list %}
-		<a href="{% url 'targets:detail' target.id %}" title="{{ target_name }}">{{ target_name }}</a><br>
-		{% endfor %}
-	      </td>
-	      <td>{% lightcurve_collapse target user %}</td>
-	      <td>{% spectra_collapse target %}</td>
-	      <td>{{ target|target_extra_field:"classification" }}</td>
-	      <td>{{ target|target_extra_field:"redshift" }}</td>
-	      <td>{{ target|get_target_tags|slice:"1:-2" }}</td>
-	      <td>{{ target|target_extra_field:"target_description" }}</td>
-	      <td>{% papers_list target %}</td>
-	    </tr>
-	  {% endfor %}
-	  {% endwith %}
-	  </tbody>
-	</table>
+      {% interesting_targets_table user 'global' %}
+    </div>
+    <div class="row" id="personal-interesting-targets" style="padding-top: 15px; display: none;">
+      {% interesting_targets_table user 'personal' %}
     </div>
   </div>
   <div class="tab-pane" id="observe">
@@ -246,6 +273,21 @@ function changePriority(groupId, targetId) {
   });
 };
 
+function switchTargetTable() {
+  var slider = document.getElementById('slider');
+  var sliderLabel = document.getElementById('slider-label');
+  var globalIntTargs = document.getElementById('global-interesting-targets');
+  var personalIntTargs = document.getElementById('personal-interesting-targets');
+  if (slider.checked) {
+    sliderLabel.innerHTML = 'Show targets you are interested in';
+    globalIntTargs.style.display = 'block';
+    personalIntTargs.style.display = 'none';
+  } else {
+    sliderLabel.innerHTML = 'Show all interesting targets';
+    globalIntTargs.style.display = 'none';
+    personalIntTargs.style.display = 'block';
+  }
+};
 </script>
 
 {% for group in object_list %}
