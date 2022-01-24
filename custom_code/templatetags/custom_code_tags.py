@@ -1283,9 +1283,18 @@ def interested_persons(target, user):
         current_user_name = user.get_full_name()
     except:
         current_user_name = user
+    
+    interesting_list = TargetList.objects.filter(name='Interesting Targets').first()
+    if not interesting_list:
+        # Make a new list for interesting targets
+        interesting_list = TargetList(name='Interesting Targets')
+        interesting_list.save()
+    
+    interesting_list_id = int(interesting_list.id)
       
     return {'target': target,
             'interested_persons': interested_persons,
+            'interesting_list_id': interesting_list_id,
             'user': current_user_name
         }
 
@@ -1447,23 +1456,14 @@ def target_details(context, target):
         description = description_query.value
     else:
         description = ''
-
-    interesting_list = TargetList.objects.filter(name='Interesting Targets').first()
-    if not interesting_list:
-        # Make a new list for interesting targets
-        interesting_list = TargetList(name='Interesting Targets')
-        interesting_list.save()
-    
-    interesting_list_id = int(interesting_list.id)
-    
+ 
     return {'target': target,
             'request': request,
             'user': user,
             'last_nondetection': nondet_params,
             'first_detection': det_params,
             'maximum': max_params,
-            'description': description,
-            'interesting_list_id': interesting_list_id}
+            'description': description}
 
 
 @register.inclusion_tag('custom_code/image_slideshow.html', takes_context=True)

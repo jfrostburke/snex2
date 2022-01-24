@@ -5,9 +5,14 @@
   {% endfor %}
   <div id="new-interested-person" style="display: none;"></div><br>
   {% if user in interested_persons %}
-  <button class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Not Interested</button>
+  <button title="Mark yourself as interesting in this target" class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Not Interested</button>
   {% else %}
-  <button class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Interested</button>
+  <button title="Mark yourself as interesting in this target" class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Interested</button>
+  {% endif %}
+  {% if target|is_interesting %}
+  <button title="Add this target to the GSP list of interesting objects" class="btn" id='interesting-target-button' onclick="addRemoveTargetToList('remove')" style="background-color: white; color: #174460; border-color: #174460;">Remove from Interesting Targets</button>
+  {% else %}
+  <button title="Add this target to the GSP list of interesting objects" class="btn" id='interesting-target-button' onclick="addRemoveTargetToList('add')" style="background-color: white; color: #174460; border-color: #174460;">Add to Interesting Targets</button>
   {% endif %}
 </dl>
 <script>
@@ -30,6 +35,33 @@
       }
     })
   }
+  function addRemoveTargetToList(action) {
+    if (action === 'add') {
+      $.ajax({
+        url: '{% url "add-target-to-group" %}',
+        data: {'target_name': '{{ target.name }}',
+               'group_id': {{ interesting_list_id }},
+               'list': 'interesting_list'
+        },
+        dataType: 'json',
+        success: function(response) {
+          document.getElementById('interesting-target-button').innerHTML = 'Remove from Interesting Targets List';
+	  document.getElementById('interesting-target-button').setAttribute('onclick', "addRemoveTargetToList('remove')");
+        }
+      })
+    } else {
+      $.ajax({
+        url: '{% url "remove-target-from-group" %}',
+	data: {'target_id': {{ target.id }},
+               'group_id': {{ interesting_list_id }},
+               'list': 'interesting_list'
+        },
+        dataType: 'json',
+        success: function(response) {
+          document.getElementById('interesting-target-button').innerHTML = 'Add to Interesting Targets List';
+	  document.getElementById('interesting-target-button').setAttribute('onclick', "addRemoveTargetToList('add')");
+        }
+      })
+    }
+  }
 </script>
-
-

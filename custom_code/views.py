@@ -893,8 +893,9 @@ def add_target_to_group_view(request):
             new_target_priority.save()
         
         targetlist.targets.add(target)
-        
-    return HttpResponseRedirect('/targets/targetgrouping/')
+    
+    response_data = {'success': 'Added'}
+    return HttpResponse(json.dumps(response_data), content_type='application/json') 
 
 
 def remove_target_from_group_view(request):
@@ -903,27 +904,32 @@ def remove_target_from_group_view(request):
     
     targetlist_id = request.GET.get('group_id')
     targetlist = TargetList.objects.get(id=targetlist_id)
+    
+    list_type = request.GET.get('list')
 
     if request.user.has_perm('tom_targets.view_target', target) and target in targetlist.targets.all():
         targetlist.targets.remove(target)
-        old_priority = TargetExtra.objects.get(target=target, key='observing_run_priority')
-        try:
-            old_priority_value = int(old_priority.value)
-        except:
-            old_priority_value = int(float(old_priority.value))
+
+        if list_type == 'observing_run': 
+            old_priority = TargetExtra.objects.get(target=target, key='observing_run_priority')
+            try:
+                old_priority_value = int(old_priority.value)
+            except:
+                old_priority_value = int(float(old_priority.value))
  
-        if len(targetlist.targets.all()) > 0:
-            for t in targetlist.targets.all():
-                this_target_priority_value = t.extra_fields['observing_run_priority']
-                if this_target_priority_value > old_priority_value:
-                    this_target_new_priority = this_target_priority_value - 1
-                    this_target_priority = TargetExtra.objects.get(target=t, key='observing_run_priority')
-                    this_target_priority.value = this_target_new_priority
-                    this_target_priority.save()
+            if len(targetlist.targets.all()) > 0:
+                for t in targetlist.targets.all():
+                    this_target_priority_value = t.extra_fields['observing_run_priority']
+                    if this_target_priority_value > old_priority_value:
+                        this_target_new_priority = this_target_priority_value - 1
+                        this_target_priority = TargetExtra.objects.get(target=t, key='observing_run_priority')
+                        this_target_priority.value = this_target_new_priority
+                        this_target_priority.save()
+            
+            old_priority.delete()
         
-        old_priority.delete()
-        
-    return HttpResponseRedirect('/targets/targetgrouping/')
+    response_data = {'success': 'Removed'}
+    return HttpResponse(json.dumps(response_data), content_type='application/json') 
 
 
 def change_observing_priority_view(request):

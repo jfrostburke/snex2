@@ -165,7 +165,7 @@
               <td>
                 <div id="airmass-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
               </td>
-    	  <td><button class="btn btn-danger" title="Remove Target" id="remove-target-id" onclick="removeTarget('{{ group.id }}', '{{ target.id }}')">Remove Target</button></td>
+    	  <td><button class="btn btn-danger" title="Remove Target" id="remove-target-id" onclick="removeTarget('{{ group.id }}', '{{ target.id }}', 'observing_run')">Remove Target</button></td>
           </tr>
           {% endfor %}
           {% endfor %}
@@ -251,11 +251,12 @@ function addTarget(groupId, listType) {
   });
 };
 
-function removeTarget(groupId, targetId) {
+function removeTarget(groupId, targetId, listType) {
   $.ajax({
     url: '{% url "remove-target-from-group" %}',
     data: {'target_id': targetId,
-	   'group_id': groupId
+	   'group_id': groupId,
+	   'list': listType
       },
     dataType: 'json',
   });

@@ -91,14 +91,6 @@
       <button id="save-tagline-btn" class="btn" onclick="save_tagline()" style="background-color: white; color: #174460; border-color: #174460;">Save Tagline</button>
     </div>
   </div>
-  <div class="col-md-6">
-    <h4>Is this an Interesting Target?</h4>
-    {% if target|is_interesting %}
-    <a>This target is already in the interesting targets list</a>
-    {% else %}
-    <button class="btn" id='interesting-target-button' onclick="addTargetToList()" style="background-color: white; color: #174460; border-color: #174460;">Add to Interesting Targets List</button>
-    {% endif %}
-  </div>
 </div>
 <script>
 function update_values() {
@@ -235,19 +227,6 @@ function querySwiftData() {
     dataType: 'json',
     success: function(response) {
       document.getElementById('swift-data-button').innerHTML = response.success;
-    }
-  })
-}
-function addTargetToList() {
-  $.ajax({
-    url: '{% url "add-target-to-group" %}',
-    data: {'target_name': '{{ target.name }}',
-	   'group_id': {{ interesting_list_id }},
-           'list': 'interesting_list'
-    },
-    dataType: 'json',
-    success: function(response) {
-      document.getElementById('interesting-target-button').innerHTML = 'Added';
     }
   })
 }

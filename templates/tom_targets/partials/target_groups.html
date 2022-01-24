@@ -23,6 +23,7 @@
                 <button type="submit" title="Remove Target from Group" class="btn btn-danger" name="remove">Remove</button>
                 <input type="hidden" name="target_id" value="{{ target.id }}"/>
                 <input type="hidden" name="group_id" value="{{ group.id }}"/>
+		<input type="hidden" name="list" value="observing_run"/>
             </form>
         </td>
         
@@ -59,6 +60,7 @@
                 <button type="submit" title="Add Target to Group" class="btn" style="background-color: green; color: white;" name="add">Add</button>
                 <input type="hidden" name="target_name" value="{{ target.name }}"/>
                 <input type="hidden" name="group_id" value="{{ group.id }}"/>
+		<input type="hidden" name="list" value="observing_run"/>
             </form>
         </td>
         
