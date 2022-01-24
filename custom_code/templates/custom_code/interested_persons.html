@@ -5,7 +5,7 @@
   {% endfor %}
   <div id="new-interested-person" style="display: none;"></div><br>
   {% if user in interested_persons %}
-  <button title="Mark yourself as interesting in this target" class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Not Interested</button>
+  <button title="Mark yourself as interested in this target" class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Not Interested</button>
   {% else %}
   <button title="Mark yourself as interested in this target" class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Interested</button>
   {% endif %}
