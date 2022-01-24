@@ -7,7 +7,7 @@
   {% if user in interested_persons %}
   <button title="Mark yourself as interesting in this target" class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Not Interested</button>
   {% else %}
-  <button title="Mark yourself as interesting in this target" class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Interested</button>
+  <button title="Mark yourself as interested in this target" class="btn" id="interest-button" style="background-color: white; color: #174460; border-color: #174460;" onclick="changeInterest()">I'm Interested</button>
   {% endif %}
   {% if target|is_interesting %}
   <button title="Add this target to the GSP list of interesting objects" class="btn" id='interesting-target-button' onclick="addRemoveTargetToList('remove')" style="background-color: white; color: #174460; border-color: #174460;">Remove from Interesting Targets</button>
