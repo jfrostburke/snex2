@@ -33,8 +33,8 @@ class Command(BaseCommand):
         interests = load_table('interests', db_address=_SNEX1_DB)
         users = load_table('users', db_address=_SNEX1_DB)
         if not options.get('days_ago'):
-            print('could not find days ago, using default value of 9999')
-            dg = 9999
+            print('could not find days ago, using default value of 1')
+            dg = 1
         else:
             dg = int(options['days_ago'])
         days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=dg)
@@ -45,11 +45,16 @@ class Command(BaseCommand):
             for interest in interested_people:
 
                 usr = db_session.query(users).filter(users.id==interest.userid).first()
-                snex2_user = User.objects.get(username=usr.name)
+                snex2_user = User.objects.filter(username=usr.name).first()
 
                 t = Target.objects.filter(id=interest.targetid).first()
                 if not t:
                     # Target not in SNEx2, so don't worry about it
+                    continue
+
+                if not snex2_user:
+                    # User not yet in SNEx2, should probably record this
+                    print('WARNING: User {} not in SNEx2'.format(user.name))
                     continue
                 
                 ### Handle cases for newly interested person, newly interested person who then
@@ -59,7 +64,7 @@ class Command(BaseCommand):
                 if not interest.uninterested:# == '0000-00-00 00:00:00': #Case 1
                     # Add to Interested Persons table
                     newinterest = InterestedPersons(target=t, user=snex2_user)
-                    #newinterest.save()
+                    newinterest.save()
                     print('Saved newly interested person {} for target {}'.format(snex2_user.id, t.id))
 
                 elif interest.interested > days_ago and interest.uninterested > days_ago: #Case 2
@@ -68,14 +73,14 @@ class Command(BaseCommand):
                     # just in case timedelta has changed between then and now
                     oldinterest = InterestedPersons.objects.filter(target=t, user=snex2_user).first()
                     if oldinterest:
-                        #oldinterest.delete()
+                        oldinterest.delete()
                         print('Deleted old interested person {} for target {}'.format(snex2_user.id, t.id))
                     
                 else: #Case 3
                     # Get the correct row in the Interested Persons table and delete it
                     oldinterest = InterestedPersons.objects.filter(target=t, user=snex2_user).first()
                     if oldinterest:
-                        #oldinteret.delete()
+                        oldinteret.delete()
                         print('Deleted old interested person {} for target {}'.format(snex2_user.id, t.id))
 
         print('Done ingesting new comments')
