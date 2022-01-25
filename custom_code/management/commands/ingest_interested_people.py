@@ -37,7 +37,7 @@ class Command(BaseCommand):
             dg = 9999
         else:
             dg = int(options['days_ago'])
-        days_ago = datetime.datetime.strftime(datetime.datetime.utcnow() - datetime.timedelta(days=dg), '%Y-%m-%d %H:%M:%S')
+        days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=dg)
 
         with get_session(db_address=_SNEX1_DB) as db_session:
         
@@ -56,7 +56,7 @@ class Command(BaseCommand):
                 ### marked themselves as uninterested, and old interested person who recently
                 ### marked themselves as uninterested
 
-                if interest.uninterested == '0000-00-00 00:00:00': #Case 1
+                if not interest.uninterested:# == '0000-00-00 00:00:00': #Case 1
                     # Add to Interested Persons table
                     newinterest = InterestedPersons(target=t, user=snex2_user)
                     #newinterest.save()
