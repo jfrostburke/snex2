@@ -26,14 +26,18 @@ class Command(BaseCommand):
     help = 'Ingests interested people from SNEx1 to SNEx2'
 
     def add_arguments(self, parser):
-        parser.add_argument('--days-ago', help='Ingest people interested/uninterested from this many days ago')
+        parser.add_argument('--days_ago', help='Ingest people interested/uninterested from this many days ago')
 
     def handle(self, *args, **options):
 
         interests = load_table('interests', db_address=_SNEX1_DB)
         users = load_table('users', db_address=_SNEX1_DB)
-
-        days_ago = datetime.datetime.strftime(datetime.datetime.utcnow() - datetime.timedelta(days=int(options['days-ago'])), '%Y-%m-%d %H:%M:%S')
+        if not options['days_ago']:
+            print('could not find days ago, using default value of 9999')
+            dg = 9999
+        else:
+            dg = int(options['days_ago'])
+        days_ago = datetime.datetime.strftime(datetime.datetime.utcnow() - datetime.timedelta(days=dg), '%Y-%m-%d %H:%M:%S')
 
         with get_session(db_address=_SNEX1_DB) as db_session:
         
