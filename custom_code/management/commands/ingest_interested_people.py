@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
         interests = load_table('interests', db_address=_SNEX1_DB)
         users = load_table('users', db_address=_SNEX1_DB)
-        if not options['days_ago']:
+        if not options.get('days_ago'):
             print('could not find days ago, using default value of 9999')
             dg = 9999
         else:
