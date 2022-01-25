@@ -30,8 +30,8 @@
         {% endfor %}
       </td>
       {% endwith %}
-      <td>{% lightcurve_collapse target user %}</td>
-      <td>{% spectra_collapse target %}</td>
+      <td id="interest-lc-{{target.name|cut:" "}}"></td>
+      <td id="interest-spec-{{target.name|cut:" "}}"></td>
       <td>{{ target|target_extra_field:"classification" }}</td>
       <td>{{ target|target_extra_field:"redshift" }}</td>
       <td>{{ target|get_target_tags|slice:"1:-2" }}</td>
@@ -42,4 +42,22 @@
   {% endfor %}
   </tbody>
 </table>
-
+<script>
+$(document).ready(function() {
+  {% for target in interesting_target_list %}
+    $.ajax({
+      url: '{% url "targetlist_collapse" %}',
+      data: {'target_id': {{ target.id }},
+             'user_id': {{ user.id }}
+      },
+      dataType: 'json',
+      success: function(response) {
+        var lightcurve_plot = response.lightcurve_plot;
+        $('#interest-lc-{{target.name|cut:" "}}').html(lightcurve_plot);
+        var spectra_plot = response.spectra_plot;
+        $('#interest-spec-{{target.name|cut:" "}}').html(spectra_plot);
+      }
+    });
+  {% endfor %}
+});
+</script>
