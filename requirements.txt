@@ -1,5 +1,5 @@
 dataclasses
-tomtoolkit
+tomtoolkit==2.9.2
 gunicorn[gevent]
 django-heroku
 django-storages
