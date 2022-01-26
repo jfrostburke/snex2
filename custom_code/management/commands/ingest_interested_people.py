@@ -62,10 +62,12 @@ class Command(BaseCommand):
                 ### marked themselves as uninterested
 
                 if not interest.uninterested:# == '0000-00-00 00:00:00': #Case 1
-                    # Add to Interested Persons table
-                    newinterest = InterestedPersons(target=t, user=snex2_user)
-                    newinterest.save()
-                    print('Saved newly interested person {} for target {}'.format(snex2_user.id, t.id))
+                    # Check if this is already in SNEx2 (marked as interested in SNEx2 first)
+                    if not InterestedPersons.objects.filter(target=t, user=snex2_user).first()
+                        # Add to Interested Persons table
+                        newinterest = InterestedPersons(target=t, user=snex2_user)
+                        newinterest.save()
+                        print('Saved newly interested person {} for target {}'.format(snex2_user.id, t.id))
 
                 elif interest.interested > days_ago and interest.uninterested > days_ago: #Case 2
                     # No need to do anything, since the person marked and then unmarked themselves
@@ -80,8 +82,8 @@ class Command(BaseCommand):
                     # Get the correct row in the Interested Persons table and delete it
                     oldinterest = InterestedPersons.objects.filter(target=t, user=snex2_user).first()
                     if oldinterest:
-                        oldinteret.delete()
+                        oldinterest.delete()
                         print('Deleted old interested person {} for target {}'.format(snex2_user.id, t.id))
 
-        print('Done ingesting new comments')
+        print('Done syncing interested people')
 
