@@ -63,7 +63,7 @@ class Command(BaseCommand):
 
                 if not interest.uninterested:# == '0000-00-00 00:00:00': #Case 1
                     # Check if this is already in SNEx2 (marked as interested in SNEx2 first)
-                    if not InterestedPersons.objects.filter(target=t, user=snex2_user).first()
+                    if not InterestedPersons.objects.filter(target=t, user=snex2_user).first():
                         # Add to Interested Persons table
                         newinterest = InterestedPersons(target=t, user=snex2_user)
                         newinterest.save()
