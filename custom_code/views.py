@@ -3,6 +3,7 @@ from django.shortcuts import redirect, render
 from django.db.models import Q #
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.views.generic import View
+from django.views.generic.list import ListView
 from django.views.generic.edit import FormView, UpdateView
 from django.views.generic.detail import DetailView
 from django.urls import reverse
@@ -1340,3 +1341,24 @@ def make_thumbnail_view(request):
                     }
 
     return HttpResponse(json.dumps(content_response), content_type='application/json')
+
+
+class InterestingTargetsView(ListView):
+
+    template_name = 'custom_code/interesting_targets.html'
+    model = Target
+    context_object_name = 'global_interesting_targets'
+
+    def get_queryset(self):
+        interesting_targets_list = TargetList.objects.filter(name='Interesting Targets').first()
+        if interesting_targets_list:
+            global_interesting_targets = interesting_targets_list.targets.all()
+            return global_interesting_targets
+        else:
+            return []
+
+    def get_context_data(self, **kwargs):
+        context = super(InterestingTargetsView, self).get_context_data(**kwargs)
+        context['personal_interesting_targets'] = [q.target for q in InterestedPersons.objects.filter(user=self.request.user)] 
+        context['interesting_group_id'] = TargetList.objects.get(name='Interesting Targets').id
+        return context

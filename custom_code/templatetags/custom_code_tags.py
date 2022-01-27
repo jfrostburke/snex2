@@ -1352,26 +1352,6 @@ def interesting_targets(targetlist):
     return []
 
 
-@register.inclusion_tag('custom_code/interesting_targets_table.html')
-def interesting_targets_table(user, listtype='global'):
-    if listtype == 'global':
-        targetlist = TargetList.objects.filter(name='Interesting Targets')
-        if targetlist:
-            return {'user': user,
-                    'interesting_target_list': targetlist.first().targets.all(),
-                    'table_type': 'global'}
-        else:
-            return {'user': user,
-                    'interesting_target_list': [],
-                    'table_type': 'global'}
-
-    elif listtype == 'personal':
-        targetlist = [q.target for q in InterestedPersons.objects.filter(user=user)]
-        return {'user': user,
-                'interesting_target_list': targetlist,
-                'table_type': 'personal'}
-
-
 @register.filter
 def is_interesting(target):
     interesting_list = TargetList.objects.filter(name='Interesting Targets').first()

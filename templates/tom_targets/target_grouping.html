@@ -7,200 +7,110 @@
 {% block content %}
 <head>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-  <script src="https://kryogenix.org/code/browser/sorttable/sorttable.js"></script>
-  <style>
-  .switch {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-  }
-  
-  .switch input { 
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-  
-  .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    -webkit-transition: .4s;
-    transition: .4s;
-    border-radius: 34px;
-  }
-  
-  .slider:before {
-    position: absolute;
-    content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    -webkit-transition: .4s;
-    transition: .4s;
-    border-radius: 50%;
-  }
-  
-  input:focus + .slider {
-    box-shadow: 0 0 1px #2196F3;
-  }
-  
-  input:checked + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
-    transform: translateX(26px);
-  }
-  </style>
 </head>
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
     <h3>Target Groupings</h3>
   </div>
 </nav>
-<ul class="nav nav-tabs" role="tablist" id="tabs">
-  <li class="nav-item">
-    <a class="nav-link active" id="interesting-targets-tab" href="#interestingobjs" role="tab" data-toggle="tab" style="color: #174460;">Interesting Targets</a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link" id="observing-run-tab" href="#observe" role="tab" data-toggle="tab" style="color: #174460;">Observing Runs</a>
-  </li>
-</ul>
-<div class="tab-content">
-  <div class="tab-pane in active" id="interestingobjs">
-    <div class="row" style="align-items: center;">
-      <label class="switch">
-        <input type="checkbox" id="slider">
-        <span class="slider round" onclick="switchTargetTable()"></span>
-      </label>
-      <a id="slider-label" style="padding-left: 10px;">Show targets you are interested in</a>
+<div class="row" style="padding-top: 15px;">
+    <div class="col-md-10">
+        <p>
+            <a href="{% url 'targets:create-group' %}" class="btn btn-primary">Create New Grouping</a>
+        </p>
     </div>
-    <div class="row" id="global-interesting-targets" style="padding-top: 15px;">
-      {% with object_list|interesting_targets as group %}
+</div>
+{% bootstrap_pagination page_obj extra=request.GET.urlencode %}
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Group</th>
+      <th>Total Targets</th>
+      <th>Add a Target</th>
+      <th>Delete Group</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for group in object_list|upcoming_observing_runs %}
+    <tr>
+      <td>
+        <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{group.name}}" aria-expanded="true">+</button>
+        <a href="{% url 'targets:list' %}?targetlist__name={{ group.id }}" name="targetlist__name" title="View Group">{{ group.name }}</a>
+      </td>
+      <td valign="middle"><div id="targetCount-{{ group.id }}">{{ group.targets.count }}</div></td>
+      <td>
         <div class="autocomplete">
           <form action="/name-search/" method="get">
             <input class="addTargetInput" id="addTargetInput-{{ group.id }}" type="text" placeholder="Search for a target to add">
-            <input type="button" value="Add" onclick="addTarget('{{ group.id }}', 'interesting_list')">
+            <input type="button" value="Add" onclick="addTarget('{{ group.id }}', 'observing_run')">
             <input class="hidden" style="display: none;" name="groupID" value="{{ group.id }}">
           </form>
           <div class="replaceableContent" id="replaceable-content-{{ group.id }}">
           {% include 'custom_code/partials/name-search-results.html' %}
           </div>
         </div>
-      {% endwith %}
-      {% interesting_targets_table user 'global' %}
-    </div>
-    <div class="row" id="personal-interesting-targets" style="padding-top: 15px; display: none;">
-      {% interesting_targets_table user 'personal' %}
-    </div>
-  </div>
-  <div class="tab-pane" id="observe">
-    <div class="row" style="padding-top: 15px;">
-        <div class="col-md-10">
-            <p>
-                <a href="{% url 'targets:create-group' %}" class="btn btn-primary">Create New Grouping</a>
-            </p>
-        </div>
-    </div>
-    {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
-    <table class="table table-striped">
-      <thead>
-        <tr>
-          <th>Group</th>
-          <th>Total Targets</th>
-          <th>Add a Target</th>
-          <th>Delete Group</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for group in object_list|upcoming_observing_runs %}
-        <tr>
-          <td>
-            <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{group.name}}" aria-expanded="true">+</button>
-            <a href="{% url 'targets:list' %}?targetlist__name={{ group.id }}" name="targetlist__name" title="View Group">{{ group.name }}</a>
+      </td>
+      <td><a href="{% url 'targets:delete-group' group.id%}" title="Delete Group" class="btn btn-danger">Delete</a></td>
+    </tr>
+      {% for target in group.targets.all|order_by_priority %}
+      <tr class="collapse" id="show-both-{{group.name}}">
+          <td colspan=1 style="border-top:none;">
+            {% with target|smart_name_list as target_names %}
+            <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target_names|join:", " }}</a>
+              {% endwith %}
           </td>
-          <td valign="middle"><div id="targetCount-{{ group.id }}">{{ group.targets.count }}</div></td>
           <td>
-            <div class="autocomplete">
-              <form action="/name-search/" method="get">
-                <input class="addTargetInput" id="addTargetInput-{{ group.id }}" type="text" placeholder="Search for a target to add">
-                <input type="button" value="Add" onclick="addTarget('{{ group.id }}', 'observing_run')">
-                <input class="hidden" style="display: none;" name="groupID" value="{{ group.id }}">
-              </form>
-              <div class="replaceableContent" id="replaceable-content-{{ group.id }}">
-              {% include 'custom_code/partials/name-search-results.html' %}
-              </div>
-            </div>
+            <form>
+      	    <label>Priority:</label>
+      	    <div class="row">
+	    <input id="priority-{{target.id}}" type="number" name="priority" style="width: 30px; margin-left: 20px;" value={{target|target_extra_field:"observing_run_priority"}}><br>
+      	    </div>
+	    </form><br>
+	    <div class="row"><button class="btn btn-primary" name="Change Priority" onclick="changePriority('{{ group.id }}', '{{ target.id }}')">Change Priority</button></div>
+          </td>  
+          <td>
+            <div id="lightcurve-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
           </td>
-          <td><a href="{% url 'targets:delete-group' group.id%}" title="Delete Group" class="btn btn-danger">Delete</a></td>
-        </tr>
-          {% for target in group.targets.all|order_by_priority %}
-          <tr class="collapse" id="show-both-{{group.name}}">
-              <td colspan=1 style="border-top:none;">
-                {% with target|smart_name_list as target_names %}
-                <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target_names|join:", " }}</a>
-                  {% endwith %}
-              </td>
-              <td>
-                <form>
-          	    <label>Priority:</label>
-          	    <div class="row">
-    	    <input id="priority-{{target.id}}" type="number" name="priority" style="width: 30px; margin-left: 20px;" value={{target|target_extra_field:"observing_run_priority"}}><br>
-          	    </div>
-    	    </form><br>
-    	    <div class="row"><button class="btn btn-primary" name="Change Priority" onclick="changePriority('{{ group.id }}', '{{ target.id }}')">Change Priority</button></div>
-              </td>  
-              <td>
-                <div id="lightcurve-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
-              </td>
-              <td>
-                <div id="spectra-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
-              </td>
-              <td>
-                <div id="airmass-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
-              </td>
-    	  <td><button class="btn btn-danger" title="Remove Target" id="remove-target-id" onclick="removeTarget('{{ group.id }}', '{{ target.id }}', 'observing_run')">Remove Target</button></td>
-          </tr>
-          {% endfor %}
-          {% endfor %}
-      </tbody>
-    </table>
-    <button class="btn btn-primary" data-toggle="collapse" data-target="#div-old-runs" aria-expanded="true">Show old observing runs</button>
-    <table class="table table-striped collapse" id="div-old-runs">
-      <thead>
-        <tr>
-          <th>Group</th>
-          <th>Total Targets</th>
-          <th>Targets</th>
-          <th>Delete Group</th>
-        </tr>
-      </thead>
-      <tbody>
-      {% for group in object_list|past_observing_runs %}
-      <tr>
-        <td style="border-top:none;">
-          <a href="{% url 'targets:list' %}?targetlist__name={{ group.id }}" name="targetlist__name" title="View Group">{{ group.name }}</a>
-        </td>
-        <td><div id="targetCount-{{ group.id }}">{{ group.targets.count }}</div></td>
-        <td>
-        {% for target in group.targets.all %}
-        <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target|get_best_name }}</a><br>
-        {% endfor %}
-        </td>
-        <td><a href="{% url 'targets:delete-group' group.id%}" title="Delete Group" class="btn btn-danger">Delete</a></td>
+          <td>
+            <div id="spectra-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+          </td>
+          <td>
+            <div id="airmass-{{target.name|cut:" "}}" style="display: inline-block; text-align: center"></div>
+          </td>
+	  <td><button class="btn btn-danger" title="Remove Target" id="remove-target-id" onclick="removeTarget('{{ group.id }}', '{{ target.id }}', 'observing_run')">Remove Target</button></td>
       </tr>
       {% endfor %}
-      </tbody>
-    </table>
-    {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
-  </div>
-</div>
+      {% endfor %}
+  </tbody>
+</table>
+<button class="btn btn-primary" data-toggle="collapse" data-target="#div-old-runs" aria-expanded="true">Show old observing runs</button>
+<table class="table table-striped collapse" id="div-old-runs">
+  <thead>
+    <tr>
+      <th>Group</th>
+      <th>Total Targets</th>
+      <th>Targets</th>
+      <th>Delete Group</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for group in object_list|past_observing_runs %}
+  <tr>
+    <td style="border-top:none;">
+      <a href="{% url 'targets:list' %}?targetlist__name={{ group.id }}" name="targetlist__name" title="View Group">{{ group.name }}</a>
+    </td>
+    <td><div id="targetCount-{{ group.id }}">{{ group.targets.count }}</div></td>
+    <td>
+    {% for target in group.targets.all %}
+    <a href="{% url 'targets:detail' target.id %}" title="{{ target|get_best_name }}">{{ target|get_best_name }}</a><br>
+    {% endfor %}
+    </td>
+    <td><a href="{% url 'targets:delete-group' group.id%}" title="Delete Group" class="btn btn-danger">Delete</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% bootstrap_pagination page_obj extra=request.GET.urlencode %}
 <script>
 var endpoint = '/name-search/';
 var delay_by_in_ms = 700;
@@ -272,22 +182,6 @@ function changePriority(groupId, targetId) {
       },
     dataType: 'json'
   });
-};
-
-function switchTargetTable() {
-  var slider = document.getElementById('slider');
-  var sliderLabel = document.getElementById('slider-label');
-  var globalIntTargs = document.getElementById('global-interesting-targets');
-  var personalIntTargs = document.getElementById('personal-interesting-targets');
-  if (slider.checked) {
-    sliderLabel.innerHTML = 'Show targets you are interested in';
-    globalIntTargs.style.display = 'block';
-    personalIntTargs.style.display = 'none';
-  } else {
-    sliderLabel.innerHTML = 'Show all interesting targets';
-    globalIntTargs.style.display = 'none';
-    personalIntTargs.style.display = 'block';
-  }
 };
 </script>
 

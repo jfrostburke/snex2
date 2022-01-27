@@ -1,0 +1,219 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 static targets_extras custom_code_tags %}
+{% block title %}Interesting Targets{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<head>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://kryogenix.org/code/browser/sorttable/sorttable.js"></script>
+  <style>
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 34px;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+    border-radius: 50%;
+  }
+
+  input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+  }
+
+  input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+  }
+  </style>
+</head>
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Interesting Targets</h3>
+  </div>
+</nav>
+<div class="tab-content">
+  <div class="tab-pane in active" id="interestingobjs">
+    <div class="row" style="align-items: center;">
+      <label class="switch">
+        <input type="checkbox" id="slider">
+        <span class="slider round" onclick="switchTargetTable()"></span>
+      </label>
+      <a id="slider-label" style="padding-left: 10px;">Show targets you are interested in</a>
+    </div>
+    <div class="row" id="global-interesting-targets" style="padding-top: 15px;">
+      <div class="autocomplete">
+        <form action="/name-search/" method="get">
+          <input class="addTargetInput" id="addTargetInput-{{ interesting_group_id }}" type="text" placeholder="Search for a target to add">
+          <input type="button" value="Add" onclick="addTarget('{{ group.id }}', 'interesting_list')">
+          <input class="hidden" style="display: none;" name="groupID" value="{{ interesting_group_id }}">
+        </form>
+        <div class="replaceableContent" id="replaceable-content-{{ interesting_group_id }}">
+        {% include 'custom_code/partials/name-search-results.html' %}
+        </div>
+      </div>
+      <table class="table sortable">
+        <caption style="caption-side: top; text-align: center; font-size: large; color: black;">
+          All Interesting Targets
+        </caption>
+        <thead>
+          <tr>
+            <th style="width: 5%; cursor: pointer;">Names</th>
+            <th class="sorttable_nosort" style="width: 20%;">Lightcurve</th>
+            <th class="sorttable_nosort" style="width: 20%;">Spectra</th>
+            <th style="width: 5%; cursor: pointer;">Classification</th>
+            <th style="width: 5%; cursor: pointer;">Redshift</th>
+            <th style="width: 10%; cursor: pointer;">Science Interests</th>
+            <th style="width: 5%; cursor: pointer;">Active Cadences?</th>
+            <th style="width: 20%; cursor: pointer;">Comments</th>
+            <th style="width: 10%; cursor: pointer;">Papers</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for target in global_interesting_targets %}
+          <tr>
+            {% with target|get_best_name as best_name %}
+            <td sorttable_customkey="{{ best_name|cut:" " }}"><!--a href="{% url 'targets:detail' target.id %}" title="{{ best_name }}">{{ target|smart_name_list|join:", " }}</a-->
+              {% for target_name in target|smart_name_list %}
+              <a href="{% url 'targets:detail' target.id %}" title="{{ target_name }}">{{ target_name }}</a><br>
+              {% endfor %}
+            </td>
+            {% endwith %}
+            <td id="global-interest-lc-{{target.name|cut:" "}}"></td>
+            <td id="global-interest-spec-{{target.name|cut:" "}}"></td>
+            <td>{{ target|target_extra_field:"classification" }}</td>
+            <td>{{ target|target_extra_field:"redshift" }}</td>
+            <td>{{ target|get_target_tags|slice:"1:-2" }}</td>
+            <td>{{ target|active_cadences_for_target:user }}</td>
+            <td>{{ target|target_extra_field:"target_description" }}</td>
+            <td>{% papers_list target %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="row" id="personal-interesting-targets" style="padding-top: 15px; display: none;">
+      <table class="table sortable">
+        <caption style="caption-side: top; text-align: center; font-size: large; color: black;">
+          My Interesting Targets
+        </caption>
+        <thead>
+          <tr>
+            <th style="width: 5%; cursor: pointer;">Names</th>
+            <th class="sorttable_nosort" style="width: 20%;">Lightcurve</th>
+            <th class="sorttable_nosort" style="width: 20%;">Spectra</th>
+            <th style="width: 5%; cursor: pointer;">Classification</th>
+            <th style="width: 5%; cursor: pointer;">Redshift</th>
+            <th style="width: 10%; cursor: pointer;">Science Interests</th>
+            <th style="width: 5%; cursor: pointer;">Active Cadences?</th>
+            <th style="width: 20%; cursor: pointer;">Comments</th>
+            <th style="width: 10%; cursor: pointer;">Papers</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for target in personal_interesting_targets %}
+          <tr>
+            {% with target|get_best_name as best_name %}
+            <td sorttable_customkey="{{ best_name|cut:" " }}"><!--a href="{% url 'targets:detail' target.id %}" title="{{ best_name }}">{{ target|smart_name_list|join:", " }}</a-->
+              {% for target_name in target|smart_name_list %}
+              <a href="{% url 'targets:detail' target.id %}" title="{{ target_name }}">{{ target_name }}</a><br>
+              {% endfor %}
+            </td>
+            {% endwith %}
+            <td id="personal-interest-lc-{{target.name|cut:" "}}"></td>
+            <td id="personal-interest-spec-{{target.name|cut:" "}}"></td>
+            <td>{{ target|target_extra_field:"classification" }}</td>
+            <td>{{ target|target_extra_field:"redshift" }}</td>
+            <td>{{ target|get_target_tags|slice:"1:-2" }}</td>
+            <td>{{ target|active_cadences_for_target:user }}</td>
+            <td>{{ target|target_extra_field:"target_description" }}</td>
+            <td>{% papers_list target %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+$(document).ready(function() {
+  {% for target in global_interesting_targets %}
+    $.ajax({
+      url: '{% url "targetlist_collapse" %}',
+      data: {'target_id': {{ target.id }},
+             'user_id': {{ user.id }}
+      },
+      dataType: 'json',
+      success: function(response) {
+        var lightcurve_plot = response.lightcurve_plot;
+        $('#global-interest-lc-{{target.name|cut:" "}}').html(lightcurve_plot);
+        var spectra_plot = response.spectra_plot;
+        $('#global-interest-spec-{{target.name|cut:" "}}').html(spectra_plot);
+      }
+    });
+  {% endfor %}
+  {% for target in personal_interesting_targets %}
+    $.ajax({
+      url: '{% url "targetlist_collapse" %}',
+      data: {'target_id': {{ target.id }},
+             'user_id': {{ user.id }}
+      },
+      dataType: 'json',
+      success: function(response) {
+        var lightcurve_plot = response.lightcurve_plot;
+        $('#personal-interest-lc-{{target.name|cut:" "}}').html(lightcurve_plot);
+        var spectra_plot = response.spectra_plot;
+        $('#personal-interest-spec-{{target.name|cut:" "}}').html(spectra_plot);
+      }
+    });
+  {% endfor %}
+});
+function switchTargetTable() {
+  var slider = document.getElementById('slider');
+  var sliderLabel = document.getElementById('slider-label');
+  var globalIntTargs = document.getElementById('global-interesting-targets');
+  var personalIntTargs = document.getElementById('personal-interesting-targets');
+  if (slider.checked) {
+    sliderLabel.innerHTML = 'Show targets you are interested in';
+    globalIntTargs.style.display = 'block';
+    personalIntTargs.style.display = 'none';
+  } else {
+    sliderLabel.innerHTML = 'Show all interesting targets';
+    globalIntTargs.style.display = 'none';
+    personalIntTargs.style.display = 'block';
+  }
+};
+</script>
+{% endblock %}
