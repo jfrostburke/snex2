@@ -834,6 +834,8 @@ def change_interest_view(request):
         user_interest_row = InterestedPersons.objects.get(target=target, user=user)
         user_interest_row.delete()
 
+        run_hook('change_interest_in_snex1', target.id, user.username, 'uninterested')
+
         response_data = {'success': 'Uninterested'}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
 
@@ -841,6 +843,8 @@ def change_interest_view(request):
         user_interest_row = InterestedPersons(target=target, user=user)
         user_interest_row.save()
 
+        run_hook('change_interest_in_snex1', target.id, user.username, 'interested')
+        
         response_data = {'success': 'Interested',
                          'name': user.get_full_name()
                     }

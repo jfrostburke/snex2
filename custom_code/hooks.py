@@ -584,3 +584,39 @@ def find_images_from_snex1(targetid, allimages=False):
     logger.info('Found file names for target {}'.format(targetid))
 
     return filepaths, filenames, dates, teles, filters, exptimes, psfxs, psfys
+
+
+def change_interest_in_snex1(targetid, username, status):
+    '''
+    Hook to change the an interested person
+    in SNEx1
+    '''
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+
+    with _get_session(db_address=_snex1_address) as db_session:
+        Interests = _load_table('interests', db_address=_snex1_address)
+        Users = _load_table('users', db_address=_snex1_address)
+
+        snex1_user = db_session.query(Users).filter(Users.name==username).first()
+        now = datetime.strftime(datetime.utcnow(), '%Y-%m-%d %H:%M:%S')
+
+        if status == 'interested':
+            oldinterest = db_session.query(Interests).filter(and_(Interests.userid==snex1_user.id, Interests.targetid==targetid)).first()
+            
+            if not oldinterest:
+                newinterest = Interests(userid=snex1_user.id, 
+                                        targetid=targetid, 
+                                        interested=now)
+                db_session.add(newinterest)
+            
+            else:
+                oldinterest.interested = now
+
+        elif status == 'uninterested':
+            oldinterest = db_session.query(Interests).filter(and_(Interests.userid==snex1_user.id, Interests.targetid==targetid)).first()
+            oldinterest.uninterested = now
+
+        db_session.commit()
+    
+    logger.info('Synced {} interested in target {} with SNEx1'.format(username, targetid))
+

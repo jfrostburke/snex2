@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
     'tom_registration',
+    #'debug_toolbar'
 
 ]
 
@@ -78,6 +79,7 @@ MIDDLEWARE = [
     'tom_common.middleware.ExternalServiceMiddleware',
     'tom_common.middleware.AuthStrategyMiddleware',
     'tom_registration.middleware.RedirectAuthenticatedUsersFromRegisterMiddleware',
+    #'debug_toolbar.middleware.DebugToolbarMiddleware',
 
 ]
 
@@ -298,7 +300,8 @@ HOOKS = {
     'cancel_sequence_in_snex1': 'custom_code.hooks.cancel_sequence_in_snex1',
     'update_reminder_in_snex1': 'custom_code.hooks.update_reminder_in_snex1',
     'approve_sequence_in_snex1': 'custom_code.hooks.approve_sequence_in_snex1',
-    'find_images_from_snex1': 'custom_code.hooks.find_images_from_snex1'
+    'find_images_from_snex1': 'custom_code.hooks.find_images_from_snex1',
+    'change_interest_in_snex1': 'custom_code.hooks.change_interest_in_snex1'
 }
 
 BROKERS = {
@@ -410,6 +413,14 @@ PLOTLY_DASH = {
     'cache_arguments': False,
     #'cache_timeout_initial_arguments': 120,
 }
+
+if DEBUG:
+    INTERNAL_IPS = [
+        '127.0.0.1',
+    ]
+    DEBUG_TOOLBAR_CONFIG = {
+        'RESULTS_CACHE_SIZE': 200,
+    }
 
 try:
     from local_settings import * # noqa
