@@ -291,10 +291,10 @@ function switchTargetTable() {
 };
 </script>
 
-{% for group in object_list %}
-  {% for target in group.targets.all %}
-  <script>
-  $(document).ready(function() {
+<script>
+$(document).ready(function() {
+  {% for group in object_list|upcoming_observing_runs %}
+    {% for target in group.targets.all %}
       $.ajax({
         url: '{% url "targetlist_collapse" %}',
         data: {'target_id': {{ target.id }},
@@ -310,9 +310,8 @@ function switchTargetTable() {
           $('#airmass-{{target.name|cut:" "}}').html(airmass_plot);
         }
       });
-    });
-  
-  </script>
+    {% endfor %}
   {% endfor %}
-{% endfor %}
+});
+</script>
 {% endblock %}
