@@ -104,20 +104,18 @@
         <tbody>
         {% for target in global_interesting_targets %}
           <tr>
-            {% with target|get_best_name as best_name %}
-            <td sorttable_customkey="{{ best_name|cut:" " }}"><!--a href="{% url 'targets:detail' target.id %}" title="{{ best_name }}">{{ target|smart_name_list|join:", " }}</a-->
+            <td sorttable_customkey="{{ target.best_name|cut:" " }}">
               {% for target_name in target|smart_name_list %}
               <a href="{% url 'targets:detail' target.id %}" title="{{ target_name }}">{{ target_name }}</a><br>
               {% endfor %}
             </td>
-            {% endwith %}
             <td id="global-interest-lc-{{target.name|cut:" "}}"></td>
             <td id="global-interest-spec-{{target.name|cut:" "}}"></td>
-            <td>{{ target|target_extra_field:"classification" }}</td>
-            <td>{{ target|target_extra_field:"redshift" }}</td>
-            <td>{{ target|get_target_tags|slice:"1:-2" }}</td>
+            <td>{{ target.classification }}</td>
+            <td>{{ target.redshift }}</td>
+            <td>{{ target.science_tags }}</td>
             <td>{{ target|active_cadences_for_target:user }}</td>
-            <td>{{ target|target_extra_field:"target_description" }}</td>
+            <td>{{ target.description }}</td>
             <td>{% papers_list target %}</td>
           </tr>
         {% endfor %}
@@ -145,20 +143,18 @@
         <tbody>
         {% for target in personal_interesting_targets %}
           <tr>
-            {% with target|get_best_name as best_name %}
-            <td sorttable_customkey="{{ best_name|cut:" " }}"><!--a href="{% url 'targets:detail' target.id %}" title="{{ best_name }}">{{ target|smart_name_list|join:", " }}</a-->
+            <td sorttable_customkey="{{ target.best_name|cut:" " }}">
               {% for target_name in target|smart_name_list %}
               <a href="{% url 'targets:detail' target.id %}" title="{{ target_name }}">{{ target_name }}</a><br>
               {% endfor %}
             </td>
-            {% endwith %}
             <td id="personal-interest-lc-{{target.name|cut:" "}}"></td>
             <td id="personal-interest-spec-{{target.name|cut:" "}}"></td>
-            <td>{{ target|target_extra_field:"classification" }}</td>
-            <td>{{ target|target_extra_field:"redshift" }}</td>
-            <td>{{ target|get_target_tags|slice:"1:-2" }}</td>
+            <td>{{ target.classification }}</td>
+            <td>{{ target.redshift }}</td>
+            <td>{{ target.science_tags }}</td>
             <td>{{ target|active_cadences_for_target:user }}</td>
-            <td>{{ target|target_extra_field:"target_description" }}</td>
+            <td>{{ target.description }}</td>
             <td>{% papers_list target %}</td>
           </tr>
         {% endfor %}
@@ -169,36 +165,38 @@
 </div>
 <script>
 $(document).ready(function() {
-  {% for target in global_interesting_targets %}
-    $.ajax({
-      url: '{% url "targetlist_collapse" %}',
-      data: {'target_id': {{ target.id }},
-             'user_id': {{ user.id }}
-      },
-      dataType: 'json',
-      success: function(response) {
-        var lightcurve_plot = response.lightcurve_plot;
-        $('#global-interest-lc-{{target.name|cut:" "}}').html(lightcurve_plot);
-        var spectra_plot = response.spectra_plot;
-        $('#global-interest-spec-{{target.name|cut:" "}}').html(spectra_plot);
-      }
-    });
-  {% endfor %}
-  {% for target in personal_interesting_targets %}
-    $.ajax({
-      url: '{% url "targetlist_collapse" %}',
-      data: {'target_id': {{ target.id }},
-             'user_id': {{ user.id }}
-      },
-      dataType: 'json',
-      success: function(response) {
-        var lightcurve_plot = response.lightcurve_plot;
-        $('#personal-interest-lc-{{target.name|cut:" "}}').html(lightcurve_plot);
-        var spectra_plot = response.spectra_plot;
-        $('#personal-interest-spec-{{target.name|cut:" "}}').html(spectra_plot);
-      }
-    });
-  {% endfor %}
+  setTimeout(function() {
+    {% for target in global_interesting_targets %}
+      $.ajax({
+        url: '{% url "targetlist_collapse" %}',
+        data: {'target_id': {{ target.id }},
+               'user_id': {{ user.id }}
+        },
+        dataType: 'json',
+        success: function(response) {
+          var lightcurve_plot = response.lightcurve_plot;
+          $('#global-interest-lc-{{target.name|cut:" "}}').html(lightcurve_plot);
+          var spectra_plot = response.spectra_plot;
+          $('#global-interest-spec-{{target.name|cut:" "}}').html(spectra_plot);
+        }
+      });
+    {% endfor %}
+    {% for target in personal_interesting_targets %}
+      $.ajax({
+        url: '{% url "targetlist_collapse" %}',
+        data: {'target_id': {{ target.id }},
+               'user_id': {{ user.id }}
+        },
+        dataType: 'json',
+        success: function(response) {
+          var lightcurve_plot = response.lightcurve_plot;
+          $('#personal-interest-lc-{{target.name|cut:" "}}').html(lightcurve_plot);
+          var spectra_plot = response.spectra_plot;
+          $('#personal-interest-spec-{{target.name|cut:" "}}').html(spectra_plot);
+        }
+      });
+    {% endfor %}
+  }, 5000);
 });
 function switchTargetTable() {
   var slider = document.getElementById('slider');

@@ -12,9 +12,8 @@ from django_comments.models import Comment
 
 from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter#, BrokerTargetFilter
-from tom_targets.models import TargetList
-
-from tom_targets.models import Target, TargetExtra
+from tom_targets.models import TargetList, Target, TargetExtra
+from tom_targets.templatetags.targets_extras import target_extra_field
 from guardian.mixins import PermissionListMixin
 from guardian.models import GroupObjectPermission
 from guardian.shortcuts import get_objects_for_user, assign_perm, remove_perm
@@ -41,7 +40,7 @@ from plotly import offline
 import plotly.graph_objs as go
 from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
-from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras
+from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras, get_best_name
 from custom_code.hooks import _get_tns_params
 from custom_code.thumbnails import make_thumb
 
@@ -1359,6 +1358,19 @@ class InterestingTargetsView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(InterestingTargetsView, self).get_context_data(**kwargs)
+        for target in context['global_interesting_targets']:
+            target.best_name = get_best_name(target)
+            target.classification = target_extra_field(target, 'classification')
+            target.redshift = target_extra_field(target, 'redshift')
+            target.description = target_extra_field(target, 'target_description')
+            target.science_tags = ', '.join([s.tag for s in ScienceTags.objects.filter(id__in=[t.tag_id for t in TargetTags.objects.filter(target_id=target.id)])])
+
         context['personal_interesting_targets'] = [q.target for q in InterestedPersons.objects.filter(user=self.request.user)] 
+        for target in context['personal_interesting_targets']:
+            target.best_name = get_best_name(target)
+            target.classification = target_extra_field(target, 'classification')
+            target.redshift = target_extra_field(target, 'redshift')
+            target.description = target_extra_field(target, 'target_description')
+            target.science_tags = ', '.join([s.tag for s in ScienceTags.objects.filter(id__in=[t.tag_id for t in TargetTags.objects.filter(target_id=target.id)])])
         context['interesting_group_id'] = TargetList.objects.get(name='Interesting Targets').id
         return context
