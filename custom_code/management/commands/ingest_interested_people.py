@@ -54,7 +54,7 @@ class Command(BaseCommand):
 
                 if not snex2_user:
                     # User not yet in SNEx2, should probably record this
-                    print('WARNING: User {} not in SNEx2'.format(user.name))
+                    print('WARNING: User {} not in SNEx2'.format(usr.name))
                     continue
                 
                 ### Handle cases for newly interested person, newly interested person who then
