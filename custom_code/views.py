@@ -1352,6 +1352,7 @@ class InterestingTargetsView(ListView):
         interesting_targets_list = TargetList.objects.filter(name='Interesting Targets').first()
         if interesting_targets_list:
             global_interesting_targets = interesting_targets_list.targets.all()
+            logger.info('Got list of global interesting targets')
             return global_interesting_targets
         else:
             return []
@@ -1364,6 +1365,7 @@ class InterestingTargetsView(ListView):
             target.redshift = target_extra_field(target, 'redshift')
             target.description = target_extra_field(target, 'target_description')
             target.science_tags = ', '.join([s.tag for s in ScienceTags.objects.filter(id__in=[t.tag_id for t in TargetTags.objects.filter(target_id=target.id)])])
+        logger.info('Finished getting context data for global interesting targets')
 
         context['personal_interesting_targets'] = [q.target for q in InterestedPersons.objects.filter(user=self.request.user)] 
         for target in context['personal_interesting_targets']:
@@ -1372,5 +1374,6 @@ class InterestingTargetsView(ListView):
             target.redshift = target_extra_field(target, 'redshift')
             target.description = target_extra_field(target, 'target_description')
             target.science_tags = ', '.join([s.tag for s in ScienceTags.objects.filter(id__in=[t.tag_id for t in TargetTags.objects.filter(target_id=target.id)])])
+        logger.info('Finished getting context data for personal interesting targets')
         context['interesting_group_id'] = TargetList.objects.get(name='Interesting Targets').id
         return context

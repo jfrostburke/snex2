@@ -164,40 +164,40 @@
   </div>
 </div>
 <script>
-//$(document).ready(function() {
-//  setTimeout(function() {
-//    {% for target in global_interesting_targets %}
-//      $.ajax({
-//        url: '{% url "targetlist_collapse" %}',
-//        data: {'target_id': {{ target.id }},
-//               'user_id': {{ user.id }}
-//        },
-//        dataType: 'json',
-//        success: function(response) {
-//          var lightcurve_plot = response.lightcurve_plot;
-//          $('#global-interest-lc-{{target.name|cut:" "}}').html(lightcurve_plot);
-//          var spectra_plot = response.spectra_plot;
-//          $('#global-interest-spec-{{target.name|cut:" "}}').html(spectra_plot);
-//        }
-//      });
-//    {% endfor %}
-//    {% for target in personal_interesting_targets %}
-//      $.ajax({
-//        url: '{% url "targetlist_collapse" %}',
-//        data: {'target_id': {{ target.id }},
-//               'user_id': {{ user.id }}
-//        },
-//        dataType: 'json',
-//        success: function(response) {
-//          var lightcurve_plot = response.lightcurve_plot;
-//          $('#personal-interest-lc-{{target.name|cut:" "}}').html(lightcurve_plot);
-//          var spectra_plot = response.spectra_plot;
-//          $('#personal-interest-spec-{{target.name|cut:" "}}').html(spectra_plot);
-//        }
-//      });
-//    {% endfor %}
-//  }, 5000);
-//});
+$(document).ready(function() {
+  setTimeout(function() {
+    {% for target in global_interesting_targets %}
+      $.ajax({
+        url: '{% url "targetlist_collapse" %}',
+        data: {'target_id': {{ target.id }},
+               'user_id': {{ user.id }}
+        },
+        dataType: 'json',
+        success: function(response) {
+          var lightcurve_plot = response.lightcurve_plot;
+          $('#global-interest-lc-{{target.name|cut:" "}}').html(lightcurve_plot);
+          var spectra_plot = response.spectra_plot;
+          $('#global-interest-spec-{{target.name|cut:" "}}').html(spectra_plot);
+        }
+      });
+    {% endfor %}
+    {% for target in personal_interesting_targets %}
+      $.ajax({
+        url: '{% url "targetlist_collapse" %}',
+        data: {'target_id': {{ target.id }},
+               'user_id': {{ user.id }}
+        },
+        dataType: 'json',
+        success: function(response) {
+          var lightcurve_plot = response.lightcurve_plot;
+          $('#personal-interest-lc-{{target.name|cut:" "}}').html(lightcurve_plot);
+          var spectra_plot = response.spectra_plot;
+          $('#personal-interest-spec-{{target.name|cut:" "}}').html(spectra_plot);
+        }
+      });
+    {% endfor %}
+  }, 5000);
+});
 function switchTargetTable() {
   var slider = document.getElementById('slider');
   var sliderLabel = document.getElementById('slider-label');
