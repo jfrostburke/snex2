@@ -60,4 +60,4 @@ services:
             - ${SNEX_FITS_PATH}:/snex2/data/fits/
             - ${SNEX_0m4_FITS_PATH}:/snex2/data/fits/0m4/
             - ${SNEX_2m_FITS_PATH}:/snex2/data/fits/fts/
-            - $(SNEX_MUSCAT_FITS_PATH}:/snex2/data/fits/2m0a/
+            - ${SNEX_MUSCAT_FITS_PATH}:/snex2/data/fits/2m0a/
