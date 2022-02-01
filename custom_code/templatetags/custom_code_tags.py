@@ -1364,23 +1364,6 @@ def is_interesting(target):
 
 
 @register.filter
-def active_cadences_for_target(target, user):
-    if settings.TARGET_PERMISSIONS_ONLY:
-        observations = target.observationrecord_set.all()
-    else:
-        observations = get_objects_for_user(
-                            user,
-                            'tom_observations.view_observationrecord',
-                            ).filter(target=target)
-    
-    obsgroups = ObservationGroup.objects.filter(observation_records__in=observations).distinct()
-    if any([d.active for d in DynamicCadence.objects.filter(observation_group__in=obsgroups)]):
-        return 'Yes'
-    else:
-        return 'No'
-
-
-@register.filter
 def get_other_observing_runs(targetlist):
     other_runs = []
     today = datetime.date.today()
@@ -1452,24 +1435,25 @@ def image_slideshow(context, target):
     user = context['user']
 
     ### Get a list of all the image filenames for this target
-    #NOTE: Production
-    try:
-        filepaths, filenames, dates, teles, filters, exptimes, psfxs, psfys = run_hook('find_images_from_snex1', target.id, allimages=True)
-    except:
-        logger.info('Finding images in snex1 failed')
-        return {'target': target,
-                'form': ThumbnailForm(initial={}, choices={'filenames': [('', 'No images found')]})} 
-    
-    #NOTE: Development
-    #filepaths = ['/test/' for i in range(8)]
-    #filenames = ['coj1m011-fa12-20210216-0239-e91' for i in range(8)]
-    #dates = ['2020-08-03', '2020-08-02', '2020-08-01', '2020-07-31', '2020-07-30', 
-    #         '2020-07-29', '2020-07-28', '2020-07-27']
-    #teles = ['1m' for i in range(8)]
-    #filters = ['ip', 'ip', 'rp', 'rp', 'gp', 'gp', 'V', 'V']
-    #exptimes = [str(round(299.5)) + 's' for i in range(8)]
-    #psfxs = [9999 for i in range(8)]
-    #psfys = [9999 for i in range(8)]
+    if not settings.DEBUG:
+        #NOTE: Production
+        try:
+            filepaths, filenames, dates, teles, filters, exptimes, psfxs, psfys = run_hook('find_images_from_snex1', target.id, allimages=True)
+        except:
+            logger.info('Finding images in snex1 failed')
+            return {'target': target,
+                    'form': ThumbnailForm(initial={}, choices={'filenames': [('', 'No images found')]})} 
+    else: 
+        #NOTE: Development
+        filepaths = ['/test/' for i in range(8)]
+        filenames = ['coj1m011-fa12-20210216-0239-e91' for i in range(8)]
+        dates = ['2020-08-03', '2020-08-02', '2020-08-01', '2020-07-31', '2020-07-30', 
+                 '2020-07-29', '2020-07-28', '2020-07-27']
+        teles = ['1m' for i in range(8)]
+        filters = ['ip', 'ip', 'rp', 'rp', 'gp', 'gp', 'V', 'V']
+        exptimes = [str(round(299.5)) + 's' for i in range(8)]
+        psfxs = [9999 for i in range(8)]
+        psfys = [9999 for i in range(8)]
     
     if not filenames:
         return {'target': target,
@@ -1701,36 +1685,38 @@ def lightcurve_with_extras(target, user):
 @register.inclusion_tag('custom_code/thumbnail.html', takes_context=True)
 def test_display_thumbnail(context, target):
     
-    #NOTE: Production
-    try:
-        filepaths, filenames, dates, teles, filters, exptimes, psfxs, psfys = run_hook('find_images_from_snex1', target.id)
-    except:
-        logger.info('Finding images in snex1 failed')
-        return {'top_images': [],
-                'bottom_images': []}
-
     from os import listdir
     from os.path import isfile, join
-    thumbs = [f for f in listdir('data/thumbs/') if isfile(join('data/thumbs/', f))]
     
-    top_images = []
-    bottom_images = []
-    
-    #NOTE: Development
-    #filepaths = ['/test/' for i in range(8)]
-    #filenames = ['coj1m011-fa12-20210216-0239-e91' for i in range(8)]
-    #dates = ['2020-08-03', '2020-08-02', '2020-08-01', '2020-07-31', '2020-07-30', 
-    #         '2020-07-29', '2020-07-28', '2020-07-27']
-    #teles = ['1m' for i in range(8)]
-    #filters = ['ip', 'ip', 'rp', 'rp', 'gp', 'gp', 'V', 'V']
-    #exptimes = [str(round(299.5)) + 's' for i in range(8)]
-    #psfxs = [9999 for i in range(8)]
-    #psfys = [9999 for i in range(8)]
+    if not settings.DEBUG:
+        #NOTE: Production
+        try:
+            filepaths, filenames, dates, teles, filters, exptimes, psfxs, psfys = run_hook('find_images_from_snex1', target.id)
+        except:
+            logger.info('Finding images in snex1 failed')
+            return {'top_images': [],
+                    'bottom_images': []}
+
+    else:
+ 
+        #NOTE: Development
+        filepaths = ['/test/' for i in range(8)]
+        filenames = ['coj1m011-fa12-20210216-0239-e91' for i in range(8)]
+        dates = ['2020-08-03', '2020-08-02', '2020-08-01', '2020-07-31', '2020-07-30', 
+                 '2020-07-29', '2020-07-28', '2020-07-27']
+        teles = ['1m' for i in range(8)]
+        filters = ['ip', 'ip', 'rp', 'rp', 'gp', 'gp', 'V', 'V']
+        exptimes = [str(round(299.5)) + 's' for i in range(8)]
+        psfxs = [9999 for i in range(8)]
+        psfys = [9999 for i in range(8)]
 
     if not filenames:
         return {'top_images': [],
                 'bottom_images': []}
 
+    thumbs = [f for f in listdir('data/thumbs/') if isfile(join('data/thumbs/', f))]
+    top_images = []
+    bottom_images = [] 
     sites = [f[:3] for f in filenames]
     
     thumbfiles = []
