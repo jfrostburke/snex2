@@ -799,18 +799,13 @@ def observation_summary(context, target=None, time='previous'):
     observations = observations.annotate(start=KeyTextTransform('start', 'parameters'))
     observations = observations.order_by('start')
 
-    ### Get all inactive cadences
-    cadences = []
-    for o in observations:
-        obsgroup = o.observationgroup_set.first()
-        if obsgroup is not None:
-            cadence = obsgroup.dynamiccadence_set.first()
-            if cadence is not None and time != 'ongoing':
-                if cadence not in cadences and not cadence.active:
-                    cadences.append(cadence)
-            elif cadence is not None:
-                if cadence not in cadences and cadence.active:
-                    cadences.append(cadence)
+    if time == 'ongoing':
+        cadences = DynamicCadence.objects.filter(active=True, observation_group__in=ObservationGroup.objects.filter(name__in=[o.parameters['name'] for o in observations]))
+    
+    else:
+        if time == 'pending':
+            observations = observations.filter(observation_id='template pending')
+        cadences = DynamicCadence.objects.filter(active=False, observation_group__in=ObservationGroup.objects.filter(name__in=[o.parameters['name'] for o in observations]))
     
     parameters = []
     for cadence in cadences:
