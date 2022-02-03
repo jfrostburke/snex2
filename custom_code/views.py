@@ -16,7 +16,7 @@ from tom_targets.models import TargetList, Target, TargetExtra
 from tom_targets.templatetags.targets_extras import target_extra_field
 from guardian.mixins import PermissionListMixin
 from guardian.models import GroupObjectPermission
-from guardian.shortcuts import get_objects_for_user, assign_perm, remove_perm
+from guardian.shortcuts import get_objects_for_user, assign_perm, remove_perm, get_users_with_perms
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
@@ -974,15 +974,11 @@ class CustomObservationListView(ObservationListView):
         DynamicCadences that the user has permission to view
         """
         try:
-            obsrecordlist = [o.observation_group.observation_records.filter(
-                id__in=get_objects_for_user(
-                    self.request.user, 'tom_observations.view_observationrecord'
-                )
-            ).order_by('-created').first() for o in DynamicCadence.objects.filter(active=True)]
+            obsrecordlist = [c.observation_group.observation_records.filter(observation_id__in=['template', 'template pending']).first() for c in DynamicCadence.objects.filter(active=True)]
         except Exception as e:
             logger.info(e)
             obsrecordlist = []
-        obsrecordlist_ids = [o.id for o in obsrecordlist if o is not None]
+        obsrecordlist_ids = [o.id for o in obsrecordlist if o is not None and self.request.user in get_users_with_perms(o)]
         return ObservationRecord.objects.filter(id__in=obsrecordlist_ids)
 
 class CustomObservationCreateView(ObservationCreateView):
