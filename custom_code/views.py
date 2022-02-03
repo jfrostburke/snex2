@@ -974,7 +974,7 @@ class CustomObservationListView(ObservationListView):
         DynamicCadences that the user has permission to view
         """
         try:
-            obsrecordlist = [c.observation_group.observation_records.filter(observation_id__in=['template', 'template pending']).first() for c in DynamicCadence.objects.filter(active=True)]
+            obsrecordlist = [c.observation_group.observation_records.order_by('-created').first() for c in DynamicCadence.objects.filter(active=True)]
         except Exception as e:
             logger.info(e)
             obsrecordlist = []
