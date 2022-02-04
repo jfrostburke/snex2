@@ -51,7 +51,7 @@ class Command(BaseCommand):
                 target = Target.objects.get(id=paper_to_add.targetid)
                 
                 reference = paper_to_add.reference
-                author_last_name = reference.split('et al')[0].split(',')[0].replace(' ','')
+                author_last_name = reference.replace('.','').split('et al')[0].split(',')[0].replace(' ','')
                 
                 if paper_to_add.datecreated > days_ago and paper_to_add.lastmodified > days_ago:
                     # Paper was just added, so ingest it into SNEx2  
@@ -65,7 +65,7 @@ class Command(BaseCommand):
                                       description=description, 
                                       status=status, 
                                       created=created)
-                    #newpaper.save()
+                    newpaper.save()
                     print('Added new paper with snex1 id {} and name {}'.format(paper_to_add.id, author_last_name))
 
                 elif paper_to_add.lastmodified > days_ago:
@@ -74,7 +74,7 @@ class Command(BaseCommand):
                     if oldpaper:
                         oldpaper.description = paper_to_add.contents
                         oldpaper.status = status_dict[paper_to_add.status]
-                        #oldpaper.save()
+                        oldpaper.save()
                         print('Modified existing paper with snex1 id {}'.format(paper_to_add.id))
                     else:
                         print('WARNING: This paper is not in snex1: {}'.format(paper_to_add.id))
