@@ -26,7 +26,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--days_ago', help='Ingest people interested/uninterested from this many days ago')
 
-    def handle(self, *args, **kwargs):
+    def handle(self, *args, **options):
 
         papers = load_table('papers', db_address=_SNEX1_DB)
 
