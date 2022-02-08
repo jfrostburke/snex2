@@ -58,13 +58,15 @@ class Command(BaseCommand):
                     description = paper_to_add.contents
                     
                     status = status_dict[paper_to_add.status]
-                    created = paper_to_add.datecreated
+                    created = str(paper_to_add.datecreated)
 
                     newpaper = Papers(target=target, 
                                       author_last_name=author_last_name, 
                                       description=description, 
                                       status=status, 
                                       created=created)
+                    newpaper.save()
+                    newpaper.created = created #Need to do this again because it defaults to now
                     newpaper.save()
                     print('Added new paper with snex1 id {} and name {}'.format(paper_to_add.id, author_last_name))
 
