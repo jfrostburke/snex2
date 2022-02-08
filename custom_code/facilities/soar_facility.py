@@ -52,6 +52,12 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
         label='Priority'
     )
 
+    # These are required fields in the base LCO form, so I need to include them but will ignore
+    start = forms.CharField(widget=forms.TextInput(attrs={'type': 'date'}), required=False, label='')
+    end = forms.CharField(widget=forms.TextInput(attrs={'type': 'date'}), required=False, label='')
+    name = forms.CharField(initial='SOAR Observation', required=False, label='')
+
+
     def filter_choices(self):
         return set([
             (f['code'], f['name']) for ins in self._get_instruments().values() for f in
@@ -70,8 +76,18 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
             ins['modes']['readout'].get('modes', []) if 'Image' not in f['name']
         ])
 
+
+    def clean_start(self):
+        # Took care of this in clean method, so ignore
+        return self.cleaned_data['start']
+
+
+    def clean_end(self):
+        # Took care of this in clean method, so ignore
+        return self.cleaned_data['end']
+
+
     def clean(self):
-        print('Cleaning data')
         cleaned_data = super().clean()
         target = Target.objects.get(pk=cleaned_data['target_id'])
         cleaned_data['name'] = target.name
@@ -101,6 +117,9 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
         self.fields['grating'] = forms.ChoiceField(choices=self.grating_choices(), initial='400_SYGY', label='')
         self.fields['filter'] = forms.ChoiceField(choices=list(self.filter_choices()), initial=list(self.filter_choices())[0][0], label='')
         self.fields['readout'] = forms.ChoiceField(choices=self.readout_choices(), label='')
+
+        for field_name in ['start', 'end', 'name']:
+            self.fields[field_name].widget = forms.HiddenInput()
 
         self.helper.layout = Layout(
             self.common_layout,
@@ -143,7 +162,6 @@ class SOARFacility(SOARFacility):
         return SOARObservationForm
 
     def add_calibrations(self, observation_payload):
-        print('Adding calibrations')
         _target = observation_payload['requests'][0]['configurations'][0]['target']
         _constraints = observation_payload['requests'][0]['configurations'][0]['constraints']
         instrument_type = observation_payload['requests'][0]['configurations'][0]['instrument_type']
@@ -190,27 +208,21 @@ class SOARFacility(SOARFacility):
         return observation_payload
 
     def validate_observation(self, observation_payload):
-        print('About to validate observations')
         observation_payload = self.add_calibrations(observation_payload)
-        print('Got calibrations')
         response = make_request(
             'POST',
             PORTAL_URL + '/api/requestgroups/validate/',
             json=observation_payload,
             headers=self._portal_headers()
         )
-        print('Validated observations')
         return response.json()['errors']
 
     def submit_observation(self, observation_payload):
-        print('About to submit observations, getting payload')
         observation_payload = self.add_calibrations(observation_payload)
-        print('Added calibrations, will submit next')
         response = make_request(
             'POST',
             PORTAL_URL + '/api/requestgroups/',
             json=observation_payload,
             headers=self._portal_headers()
         )
-        print('Submitted request')
         return [r['id'] for r in response.json()['requests']]
