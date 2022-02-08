@@ -320,7 +320,8 @@ TOM_FACILITY_CLASSES = [
     'custom_code.facilities.gemini_facility.GeminiFacility',
     #'tom_observations.facilities.gemini.GEMFacility',
     'custom_code.facilities.lco_facility.SnexLCOFacility',
-    'tom_observations.facilities.soar.SOARFacility',
+    #'tom_observations.facilities.soar.SOARFacility',
+    'custom_code.facilities.soar_facility.SOARFacility'
 ]
 
 TOM_HARVESTER_CLASSES = [

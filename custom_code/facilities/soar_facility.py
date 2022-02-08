@@ -1,7 +1,8 @@
 import copy
+import requests
 
 from tom_observations.facilities.soar import SOARFacility, SOARBaseObservationForm, SOARSpectroscopyObservationForm
-from tom_observations.facilities.lco import LCOSpectroscopyObservationForm, make_request
+from tom_observations.facilities.lco import LCOSpectroscopyObservationForm
 from django import forms
 import datetime
 from django.conf import settings
@@ -23,7 +24,15 @@ PORTAL_URL = LCO_SETTINGS['portal_url']
 TERMINAL_OBSERVING_STATES = ['COMPLETED', 'CANCELED', 'WINDOW_EXPIRED']
 
 # There is currently only one available grating, which is required for spectroscopy.
-SPECTRAL_GRATING = 'SYZY_400'
+#SPECTRAL_GRATING = 'SYZY_400'
+
+def make_request(*args, **kwargs):
+    response = requests.request(*args, **kwargs)
+    if 400 <= response.status_code < 500:
+        raise ImproperCredentialsException('SOAR: ' + str(response.content))
+    response.raise_for_status()
+    return response
+
 
 class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObservationForm):
 
@@ -49,31 +58,50 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
             ins['optical_elements'].get('slits', [])
         ])
 
+    def grating_choices(self):
+        return set([
+            (f['code'], f['name']) for ins in self._get_instruments().values() for f in 
+            ins['optical_elements'].get('gratings', [])
+        ])
+
+    def readout_choices(self):
+        return set([
+            (f['code'], f['name']) for ins in self._get_instruments().values() for f in 
+            ins['modes']['readout'].get('modes', []) if 'Image' not in f['name']
+        ])
+
     def clean(self):
+        print('Cleaning data')
         cleaned_data = super().clean()
         target = Target.objects.get(pk=cleaned_data['target_id'])
         cleaned_data['name'] = target.name
         cleaned_data['start'] = str(datetime.datetime.utcnow())
         cleaned_data['end'] = str(datetime.datetime.utcnow() +
                                        datetime.timedelta(days=cleaned_data['window']))
-        cleaned_data['instrument_type'] = self.instrument_choices()[0][0] # Only Goodman Redcam
-        cleaned_data['filter'] = list(self.filter_choices())[0][0] # Only 1.0" slit
+        return cleaned_data
 
+    
     def _build_instrument_config(self):
         instrument_configs = super()._build_instrument_config()
         
         instrument_configs[0]['optical_elements'] = {
             'slit': self.cleaned_data['filter'],
-            'grating': SPECTRAL_GRATING
+            'grating': self.cleaned_data['grating']#SPECTRAL_GRATING
         }
         instrument_configs[0]['rotator_mode'] = 'SKY'
+        instrument_configs[0]['mode'] = self.cleaned_data['readout']
 
         return instrument_configs
 
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['proposal'] = forms.ChoiceField(choices=self.proposal_choices(),initial='TOM2020A-002')
+        self.fields['proposal'] = forms.ChoiceField(choices=self.proposal_choices(),initial='SOAR2022A-002')
+        self.fields['instrument_type'] = forms.ChoiceField(choices=self.instrument_choices(), initial=self.instrument_choices()[0][0], label='')
+        self.fields['grating'] = forms.ChoiceField(choices=self.grating_choices(), initial='400_SYGY', label='')
+        self.fields['filter'] = forms.ChoiceField(choices=list(self.filter_choices()), initial=list(self.filter_choices())[0][0], label='')
+        self.fields['readout'] = forms.ChoiceField(choices=self.readout_choices(), label='')
+
         self.helper.layout = Layout(
             self.common_layout,
             Div(
@@ -85,6 +113,10 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
                     PrependedText('exposure_time','Exposure Time'),
                     PrependedText('exposure_count','Exposure Count'),
                     PrependedText('rotator_angle','Rotator Angle'),
+                    PrependedText('instrument_type','Camera'),
+                    PrependedText('grating', 'Grating'),
+                    PrependedText('filter','Slit Width'),
+                    PrependedText('readout', 'Readout Mode'),
                     css_class='col'
                 ),
                 Div(
@@ -103,17 +135,22 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
 
 class SOARFacility(SOARFacility):
 
-    observation_types = [('SPECTRA', 'Goodman Spectrograph RedCam: 1.0" slit')]
+    observation_types = [('SPECTRA', 'Goodman Spectrograph RedCam: 1.0" slit'),
+                         ('SPECTRA', 'Goodman Spectrograph BlueCam: 1.0" slit')]
+    observation_forms = {'SPECTRA': SOARObservationForm}
 
     def get_form(self, observation_type):
         return SOARObservationForm
 
     def add_calibrations(self, observation_payload):
+        print('Adding calibrations')
         _target = observation_payload['requests'][0]['configurations'][0]['target']
         _constraints = observation_payload['requests'][0]['configurations'][0]['constraints']
         instrument_type = observation_payload['requests'][0]['configurations'][0]['instrument_type']
-        rotator_angle= observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['extra_params']['rotator_angle']
-        slit= observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['optical_elements']['slit']
+        rotator_angle = observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['extra_params']['rotator_angle']
+        slit = observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['optical_elements']['slit']
+        grating = observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['optical_elements']['grating']
+        readout = observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['mode']
 
         template_calibration= {
             "instrument_type": instrument_type,
@@ -125,8 +162,9 @@ class SOARFacility(SOARFacility):
                 },
                 'optical_elements': {
                     'slit': slit,
-                    'grating': SPECTRAL_GRATING
+                    'grating': grating
                 },
+                'mode': readout,
 
             }],
             'acquisition_config': {
@@ -152,21 +190,27 @@ class SOARFacility(SOARFacility):
         return observation_payload
 
     def validate_observation(self, observation_payload):
+        print('About to validate observations')
         observation_payload = self.add_calibrations(observation_payload)
+        print('Got calibrations')
         response = make_request(
             'POST',
             PORTAL_URL + '/api/requestgroups/validate/',
             json=observation_payload,
             headers=self._portal_headers()
         )
+        print('Validated observations')
         return response.json()['errors']
 
     def submit_observation(self, observation_payload):
+        print('About to submit observations, getting payload')
         observation_payload = self.add_calibrations(observation_payload)
+        print('Added calibrations, will submit next')
         response = make_request(
             'POST',
             PORTAL_URL + '/api/requestgroups/',
             json=observation_payload,
             headers=self._portal_headers()
         )
+        print('Submitted request')
         return [r['id'] for r in response.json()['requests']]
