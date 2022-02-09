@@ -113,10 +113,10 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['proposal'] = forms.ChoiceField(choices=self.proposal_choices(),initial='SOAR2022A-002')
-        self.fields['instrument_type'] = forms.ChoiceField(choices=self.instrument_choices(), initial=self.instrument_choices()[0][0], label='')
+        self.fields['instrument_type'] = forms.ChoiceField(choices=self.instrument_choices(), initial='SOAR_GHTS_REDCAM', label='')
         self.fields['grating'] = forms.ChoiceField(choices=self.grating_choices(), initial='400_SYGY', label='')
         self.fields['filter'] = forms.ChoiceField(choices=list(self.filter_choices()), initial=list(self.filter_choices())[0][0], label='')
-        self.fields['readout'] = forms.ChoiceField(choices=self.readout_choices(), label='')
+        self.fields['readout'] = forms.ChoiceField(choices=self.readout_choices(), initial='GHTS_R_400m1_2x2', label='')
 
         for field_name in ['start', 'end', 'name']:
             self.fields[field_name].widget = forms.HiddenInput()

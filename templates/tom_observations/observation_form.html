@@ -38,4 +38,35 @@
       </div>
     </div>
 </div>
+<script>
+var facility = '{{ form.facility.value }}';
+if (facility === 'SOAR') {
+  var cameraSelect = document.getElementById('id_instrument_type');
+  var readoutSelect = document.getElementById('id_readout');
+  cameraSelect.addEventListener("change", function () {
+    var camera = cameraSelect.value;
+    if (camera.includes('BLUE')) {
+      readoutSelect.value = 'GHTS_B_400m1_2x2';
+      for (i = 0; i < readoutSelect.length; i++) {
+	var readout = readoutSelect[i];
+	if (readout.value.includes('R')) {
+	  readout.style.visibility = 'hidden';
+	} else {
+	  readout.style.visibility = 'visible';
+        }
+      }
+    } else {
+      readoutSelect.value = 'GHTS_R_400m1_2x2';
+      for (i = 0; i < readoutSelect.length; i++) {
+	var readout = readoutSelect[i];
+	if (readout.value.includes('B')) {
+	  readout.style.visibility = 'hidden';
+	} else {
+	  readout.style.visibility = 'visible';
+	}
+      }
+    }
+  });
+}
+</script>
 {% endblock %}
