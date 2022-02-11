@@ -7,6 +7,7 @@ from sqlalchemy.ext.automap import automap_base
 import json
 from contextlib import contextmanager
 import os
+import datetime
 
 from django.core.management.base import BaseCommand
 from tom_observations.models import ObservationGroup
@@ -22,14 +23,14 @@ _SNEX1_DB = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=u
 
 engine1 = create_engine(_SNEX1_DB)
 
-def get_comments(targetid, tablename, notes, users):
+def get_comments(targetid, tablename, notes, users, days_ago):
     
     content_dict = {'targets': ContentType.objects.get(model='target').id,
                     'obsrequests': ContentType.objects.get(model='observationgroup').id,
                     'spec': ContentType.objects.get(model='reduceddatum').id}
     
     with get_session(db_address=_SNEX1_DB) as db_session:
-        comments = db_session.query(notes).filter(and_(notes.targetid==targetid, notes.tablename==tablename))
+        comments = db_session.query(notes).filter(and_(notes.targetid==targetid, notes.tablename==tablename, notes.datecreated > days_ago))
         for comment in comments:
 
             usr = db_session.query(users).filter(users.id==comment.userid).first()
@@ -48,7 +49,6 @@ def get_comments(targetid, tablename, notes, users):
                         site_id=2, #TODO: Why?
                         user_id=snex2_user.id
                     )
-                print(newcomment)
                 newcomment.save()
             
             elif tablename == 'obsrequests':
@@ -67,7 +67,6 @@ def get_comments(targetid, tablename, notes, users):
                             site_id=2, #TODO: Why?
                             user_id=snex2_user.id
                         )
-                    print(newcomment)
                     newcomment.save()
 
             elif tablename == 'spec':
@@ -91,7 +90,6 @@ def get_comments(targetid, tablename, notes, users):
                             site_id=2, #TODO: Why?
                             user_id=snex2_user.id
                         )
-                    print(newcomment)
                     #newcomment.save()
    
     print('Done ingesting comments for target {} and table {}'.format(targetid, tablename))
@@ -104,16 +102,23 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--tablename', help='Ingest comments for this table')
         parser.add_argument('--targetid', help='Ingest comments only for this target')
+        parser.add_argument('--days_ago', help='Ingest people interested/uninterested from this many days ago')
 
     def handle(self, *args, **options):
         
         notes = load_table('notes', db_address=_SNEX1_DB)
         users = load_table('users', db_address=_SNEX1_DB)
+
+        if not options['days_ago']:
+            days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=9999)
+999
+        else:
+            days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=int(options['days_ago']))
         
         if options['targetid']:
-            get_comments(options['targetid'], options['tablename'], notes, users)
+            get_comments(options['targetid'], options['tablename'], notes, users, days_ago)
 
         else:
             targetids = [t.id for t in Target.objects.all()]
             for targetid in targetids:
-                get_comments(targetid, options['tablename'], notes, users)
+                get_comments(targetid, options['tablename'], notes, users, days_ago)
