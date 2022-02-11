@@ -111,9 +111,9 @@ class Command(BaseCommand):
 
         if not options['days_ago']:
             days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=9999)
-999
+        
         else:
-            days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=int(options['days_ago']))
+            days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=float(options['days_ago']))
         
         if options['targetid']:
             get_comments(options['targetid'], options['tablename'], notes, users, days_ago)
