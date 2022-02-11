@@ -30,7 +30,10 @@ def get_comments(targetid, tablename, notes, users, days_ago):
                     'spec': ContentType.objects.get(model='reduceddatum').id}
     
     with get_session(db_address=_SNEX1_DB) as db_session:
-        comments = db_session.query(notes).filter(and_(notes.targetid==targetid, notes.tablename==tablename, notes.datecreated > days_ago))
+        if targetid == 'all':
+            comments = db_session.query(notes).filter(and_(notes.tablename==tablename, notes.datecreated > days_ago))
+        else:
+            comments = db_session.query(notes).filter(and_(notes.targetid==targetid, notes.tablename==tablename, notes.datecreated > days_ago))
         for comment in comments:
 
             usr = db_session.query(users).filter(users.id==comment.userid).first()
