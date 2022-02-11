@@ -35,10 +35,11 @@ def get_comments(targetid, tablename, notes, users, days_ago):
 
             usr = db_session.query(users).filter(users.id==comment.userid).first()
             snex2_user = User.objects.get(username=usr.name)
+            target_id = comment.targetid
             
             if tablename == 'targets':
                 newcomment = Comment(
-                        object_pk=comment.tableid,
+                        object_pk=target_id,
                         user_name=snex2_user.username,
                         user_email=snex2_user.email,
                         comment=comment.note,
@@ -49,7 +50,7 @@ def get_comments(targetid, tablename, notes, users, days_ago):
                         site_id=2, #TODO: Why?
                         user_id=snex2_user.id
                     )
-                newcomment.save()
+                #newcomment.save()
             
             elif tablename == 'obsrequests':
                 # Need to get the observationgroup id given its name
