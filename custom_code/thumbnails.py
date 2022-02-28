@@ -388,8 +388,10 @@ def make_thumb(files, grow=1.0, sky=None, sig=None, x=900, y=900, width=250, hei
     outfiles = []
     for filename in files:
         # See if fits file needs to be funpacked
+        unpacked = False
         if not os.path.exists(filename):
             r = os.system('funpack -D '+filename+'.fz')
+            unpacked = True
 
         # load in the image data
         thumb = ImageThumb(filename, skip=skip, grow=grow, verbose=True, region=region)
@@ -423,6 +425,9 @@ def make_thumb(files, grow=1.0, sky=None, sig=None, x=900, y=900, width=250, hei
         f = open(outfile, 'wb')
         im.save(f, 'WEBP')
         f.close()
+
+        if unpacked:
+            r = os.system('fpack -D -Y '+filename)
 
         outfiles.append(newfile)
 
