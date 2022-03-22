@@ -800,12 +800,12 @@ def observation_summary(context, target=None, time='previous'):
     observations = observations.order_by('start')
 
     if time == 'ongoing':
-        cadences = DynamicCadence.objects.filter(active=True, observation_group__in=ObservationGroup.objects.filter(name__in=[o.parameters['name'] for o in observations]))
+        cadences = DynamicCadence.objects.filter(active=True, observation_group__in=ObservationGroup.objects.filter(name__in=[o.parameters.get('name', '') for o in observations]))
     
     else:
         if time == 'pending':
             observations = observations.filter(observation_id='template pending')
-        cadences = DynamicCadence.objects.filter(active=False, observation_group__in=ObservationGroup.objects.filter(name__in=[o.parameters['name'] for o in observations]))
+        cadences = DynamicCadence.objects.filter(active=False, observation_group__in=ObservationGroup.objects.filter(name__in=[o.parameters.get('name', '') for o in observations]))
     
     parameters = []
     for cadence in cadences:
