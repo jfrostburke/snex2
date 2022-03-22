@@ -451,7 +451,7 @@ def display_output(selected_rows,
                 
                 if not bin_factor:
                     bin_factor = 1
-                binned_wavelength, binned_flux = bin_spectra(wavelength, median_flux, int(bin_factor))
+                binned_wavelength, binned_flux = bin_spectra(shifted_wavelength, median_flux, int(bin_factor))
                 
                 scatter_obj = go.Scatter(
                     x=binned_wavelength,
