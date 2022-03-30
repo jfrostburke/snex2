@@ -218,18 +218,20 @@ def generic_lightcurve_plot(target, user):
             continue
         if isinstance(value, str):
             value = json.loads(value)
+
+        filt = filter_translate.get(value.get('filter', ''), '')
    
-        photometry_data.setdefault(value.get('filter', ''), {})
-        photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-        photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-        photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))        
+        photometry_data.setdefault(filt, {})
+        photometry_data[filt].setdefault('time', []).append(rd.timestamp)
+        photometry_data[filt].setdefault('magnitude', []).append(value.get('magnitude',None))
+        photometry_data[filt].setdefault('error', []).append(value.get('error', None))
 
     plot_data = [
         go.Scatter(
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
             marker=dict(color=get_color(filter_name, filter_translate)),
-            name=filter_translate[filter_name],
+            name=filter_translate.get(filter_name, ''),
             error_y=dict(
                 type='data',
                 array=filter_values['error'],
@@ -1518,18 +1520,20 @@ def lightcurve_fits(target, user, filt=False, days=None):
             continue
         if isinstance(value, str):
             value = json.loads(value)
+
+        current_filt = filter_translate.get(value.get('filter', ''), '')
    
-        photometry_data.setdefault(value.get('filter', ''), {})
-        photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-        photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-        photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))        
+        photometry_data.setdefault(current_filt, {})
+        photometry_data[current_filt].setdefault('time', []).append(rd.timestamp)
+        photometry_data[current_filt].setdefault('magnitude', []).append(value.get('magnitude',None))
+        photometry_data[current_filt].setdefault('error', []).append(value.get('error', None))        
 
     plot_data = [
         go.Scatter(
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
             marker=dict(color=get_color(filter_name, filter_translate)),
-            name=filter_translate[filter_name],
+            name=filter_translate.get(filter_name, ''),
             error_y=dict(
                 type='data',
                 array=filter_values['error'],

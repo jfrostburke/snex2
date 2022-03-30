@@ -334,15 +334,21 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
             ### Get subtracted or unsubtracted data
             if value.get('background_subtracted', '') == True:
                 if value.get('subtraction_algorithm', '') in selected_algorithm and value.get('template_source', '') in selected_template and reduction_type == 'manual':
-                    subtracted_photometry_data.setdefault(value.get('filter', ''), {})
-                    subtracted_photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-                    subtracted_photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-                    subtracted_photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
+                    
+                    subtracted_filt = filter_translate.get(value.get('filter', ''), '')
+
+                    subtracted_photometry_data.setdefault(subtracted_filt, {})
+                    subtracted_photometry_data[subtracted_filt].setdefault('time', []).append(rd.timestamp)
+                    subtracted_photometry_data[subtracted_filt].setdefault('magnitude', []).append(value.get('magnitude',None))
+                    subtracted_photometry_data[subtracted_filt].setdefault('error', []).append(value.get('error', None))
             elif value.get('reduction_type', '')==reduction_type:
-                photometry_data.setdefault(value.get('filter', ''), {})
-                photometry_data[value.get('filter', '')].setdefault('time', []).append(rd.timestamp)
-                photometry_data[value.get('filter', '')].setdefault('magnitude', []).append(value.get('magnitude',None))
-                photometry_data[value.get('filter', '')].setdefault('error', []).append(value.get('error', None))
+
+                filt = filter_translate.get(value.get('filter', ''), '')
+
+                photometry_data.setdefault(filt, {})
+                photometry_data[filt].setdefault('time', []).append(rd.timestamp)
+                photometry_data[filt].setdefault('magnitude', []).append(value.get('magnitude',None))
+                photometry_data[filt].setdefault('error', []).append(value.get('error', None))
 
     if subtracted_value == 'Unsubtracted':
         selected_photometry = photometry_data
@@ -353,7 +359,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
             marker=dict(color=get_color(filter_name, filter_translate)),
-            name=filter_translate[filter_name],
+            name=filter_translate.get(filter_name, ''),
             error_y=dict(
                 type='data',
                 array=filter_values['error'],
