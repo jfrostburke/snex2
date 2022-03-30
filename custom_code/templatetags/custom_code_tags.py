@@ -171,11 +171,7 @@ def get_24hr_airmass(target, interval, airmass_limit):
     return plot_data
 
 
-def get_color(filter_name):
-    filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
-        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
-        'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2', 
-        'UVW1': 'UVW1'}
+def get_color(filter_name, filter_translate):
     colors = {'U': 'rgb(59,0,113)',
         'B': 'rgb(0,87,255)',
         'V': 'rgb(120,255,0)',
@@ -200,6 +196,10 @@ def generic_lightcurve_plot(target, user):
     for the different light curve applications SNEx2 uses
     """
     
+    filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
+        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
+        'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2', 
+        'UVW1': 'UVW1'}
     photometry_data = {}
 
     if settings.TARGET_PERMISSIONS_ONLY:
@@ -228,13 +228,13 @@ def generic_lightcurve_plot(target, user):
         go.Scatter(
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
-            marker=dict(color=get_color(filter_name)),
-            name=filter_name,
+            marker=dict(color=get_color(filter_name, filter_translate)),
+            name=filter_translate[filter_name],
             error_y=dict(
                 type='data',
                 array=filter_values['error'],
                 visible=True,
-                color=get_color(filter_name)
+                color=get_color(filter_name, filter_translate)
             )
         ) for filter_name, filter_values in photometry_data.items()] 
 
@@ -1496,6 +1496,10 @@ def image_slideshow(context, target):
 @register.inclusion_tag('custom_code/lightcurve_collapse.html')
 def lightcurve_fits(target, user, filt=False, days=None):
     
+    filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
+        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
+        'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2', 
+        'UVW1': 'UVW1'}
     plot_data = generic_lightcurve_plot(target, user)     
     photometry_data = {}
 
@@ -1524,13 +1528,13 @@ def lightcurve_fits(target, user, filt=False, days=None):
         go.Scatter(
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
-            marker=dict(color=get_color(filter_name)),
-            name=filter_name,
+            marker=dict(color=get_color(filter_name, filter_translate)),
+            name=filter_translate[filter_name],
             error_y=dict(
                 type='data',
                 array=filter_values['error'],
                 visible=True,
-                color=get_color(filter_name)
+                color=get_color(filter_name, filter_translate)
             )
         ) for filter_name, filter_values in photometry_data.items()] 
      
@@ -1635,6 +1639,10 @@ def lightcurve_fits(target, user, filt=False, days=None):
 @register.inclusion_tag('custom_code/lightcurve_collapse.html')
 def lightcurve_with_extras(target, user):
     
+    filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
+        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
+        'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2', 
+        'UVW1': 'UVW1'}
     plot_data = generic_lightcurve_plot(target, user)         
 
     layout = go.Layout(
@@ -1660,7 +1668,7 @@ def lightcurve_with_extras(target, user):
                     go.Scatter(
                         x=[Time(float(jd), format='jd', scale='utc').isot],
                         y=[float(value['mag'])], mode='markers',
-                        marker=dict(color=get_color(value['filt']), size=12, symbol=symbols[key]),
+                        marker=dict(color=get_color(value['filt'], filter_translate), size=12, symbol=symbols[key]),
                         name=names[key]
                     )
                 )

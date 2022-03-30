@@ -255,11 +255,7 @@ def update_template_value(selected_subtraction):
          Input('plot-width', 'value'),
          Input('plot-height', 'value')])
 def update_graph(selected_telescope, subtracted_value, selected_algorithm, selected_template, selected_photometry_type, reduction_type, final_reduction_value, selected_paper, selected_groups, value, width, height):
-    def get_color(filter_name):
-        filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
-            'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
-            'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2',
-            'UVW1': 'UVW1'}
+    def get_color(filter_name, filter_translate):
         colors = {'U': 'rgb(59,0,113)',
             'B': 'rgb(0,87,255)',
             'V': 'rgb(120,255,0)',
@@ -279,6 +275,10 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
 
     logger.info('Plotting dash lightcurve for target %s', value)
     target_id = value
+    filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
+        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
+        'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2',
+        'UVW1': 'UVW1'}
     photometry_data = {}
     subtracted_photometry_data = {}
     datumextras = ReducedDatumExtra.objects.filter(target_id=target_id, key='upload_extras', data_type='photometry')
@@ -352,13 +352,13 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
         go.Scatter(
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
-            marker=dict(color=get_color(filter_name)),
-            name=filter_name,
+            marker=dict(color=get_color(filter_name, filter_translate)),
+            name=filter_translate[filter_name],
             error_y=dict(
                 type='data',
                 array=filter_values['error'],
                 visible=True,
-                color=get_color(filter_name)
+                color=get_color(filter_name, filter_translate)
             )
         ) for filter_name, filter_values in selected_photometry.items()]
 
