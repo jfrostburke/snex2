@@ -1273,7 +1273,7 @@ def reference_status(target):
 
 
 @register.inclusion_tag('custom_code/interested_persons.html')
-def interested_persons(target, user):
+def interested_persons(target, user, page):
     interested_persons_query = InterestedPersons.objects.filter(target=target)
     interested_persons = [u.user.get_full_name() for u in interested_persons_query]
     try:
@@ -1292,8 +1292,15 @@ def interested_persons(target, user):
     return {'target': target,
             'interested_persons': interested_persons,
             'interesting_list_id': interesting_list_id,
-            'user': current_user_name
+            'user': current_user_name,
+            'page': page
         }
+
+
+@register.inclusion_tag('custom_code/partials/target_interest_button.html')
+def target_interest_button(target, user, page):
+    context = interested_persons(target, user, page)
+    return context
 
 
 @register.filter

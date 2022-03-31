@@ -77,7 +77,7 @@
       <div class="autocomplete">
         <form action="/name-search/" method="get">
           <input class="addTargetInput" id="addTargetInput-{{ interesting_group_id }}" type="text" placeholder="Search for a target to add">
-          <input type="button" value="Add" onclick="addTarget('{{ group.id }}', 'interesting_list')">
+	  <input type="button" value="Add" onclick="addTarget('{{ interesting_group_id }}', 'interesting_list')">
           <input class="hidden" style="display: none;" name="groupID" value="{{ interesting_group_id }}">
         </form>
         <div class="replaceableContent" id="replaceable-content-{{ interesting_group_id }}">
@@ -136,8 +136,9 @@
             <th style="width: 5%; cursor: pointer;">Redshift</th>
             <th style="width: 10%; cursor: pointer;">Science Interests</th>
             <th style="width: 5%; cursor: pointer;">Active Cadences?</th>
-            <th style="width: 20%; cursor: pointer;">Comments</th>
+            <th style="width: 10%; cursor: pointer;">Comments</th>
             <th style="width: 10%; cursor: pointer;">Papers</th>
+	    <th class="sorttable_nosort" style="width: 10%; curson: pointer;">Change Interest</th>
           </tr>
         </thead>
         <tbody>
@@ -156,6 +157,7 @@
             <td>{{ target.active_cadences }}</td>
             <td>{{ target.description }}</td>
             <td>{% papers_list target %}</td>
+	    <td>{% target_interest_button target user "interestlist" %}</td>
           </tr>
         {% endfor %}
         </tbody>
@@ -208,6 +210,51 @@ $(document).ready(function() {
     }
   });
 });
+var endpoint = '/name-search/';
+var delay_by_in_ms = 700;
+var scheduled_function = false;
+$('.addTargetInput').on('keyup', function() {
+    var request_parameters = {
+            name: $(this).val()
+    };
+    var spectra_input = this;
+    var cl = spectra_input.closest(".autocomplete");
+    var targets_div = cl.querySelectorAll(".replaceableContent")[0];
+
+    if (scheduled_function) {
+        clearTimeout(scheduled_function)
+    }
+
+    scheduled_function = setTimeout(ajax_call, delay_by_in_ms, endpoint, request_parameters)
+
+    function ajax_call(endpoint, request_parameters) {
+      $.getJSON(endpoint, request_parameters)
+        .done(response => {
+          var oldlist = document.getElementById('autocomplete-items');
+          if ( oldlist ) {
+            oldlist.remove();
+          }
+            targets_div.insertAdjacentHTML('afterend', response['html_from_view'])
+          })
+  }
+});
+function fillName(clickedName) {
+  var t = document.getElementById(clickedName);
+  var spectra_input = t.closest(".autocomplete").querySelectorAll(".addTargetInput")[0];
+  spectra_input.value = clickedName;
+};
+
+function addTarget(groupId, listType) {
+  var nameInput = document.getElementById("addTargetInput-"+groupId).value;
+  $.ajax({
+    url: '{% url "add-target-to-group" %}',
+    data: {'target_name': nameInput,
+           'group_id': groupId,
+           'list': listType
+      },
+    dataType: 'json',
+  });
+};
 function switchTargetTable() {
   var slider = document.getElementById('slider');
   var sliderLabel = document.getElementById('slider-label');
