@@ -20,7 +20,7 @@
   <table class="table">
     <thead class="thead-light">
       <tr>
-	<th><br /><p></p></th>
+	<!--th><br /><p></p></th-->
         <th>Name<br /><p></p></th>
         <th>Coordinates<br /><p></p></th>
 	<th>Redshift<br /><p></p></th>
@@ -31,11 +31,26 @@
     <tbody>
     {% for target in brokertargets %}
       <tr>
-	<td><input type="checkbox" name="selected-target" value="{{ target.id }}" onClick="single_select()"/></td>
-	<td>{{ target.name }}</td>
+	<!--td><input type="checkbox" name="selected-target" value="{{ target.id }}" onClick="single_select()"/></td-->
+	<td rowspan=2>
+          <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{target.name}}">+</button>
+	  {% if 'ZTF' in target.name %}
+	  <a target="_blank" href="https://alerce.online/object/{{ target.name }}">{{ target.name }}</a>
+	  {% else %}
+	  <a target="_blank">{{ target.name }}</a>
+	  {% endif %}
+        </td>
 	<td>{{ target.coords }}</td>
+	{% if target.redshift %}
 	<td>{{ target.redshift }} ({{ target.redshift_source}})</td>
+	{% else %}
+	<td>None</td>
+	{% endif %}
+	{% if target.classification %}
         <td>{{ target.classification }}</td>
+	{% else %}
+	<td>None</td>
+	{% endif %}
 	<td>{{ target.status }}</td>
       </tr>
       <tr>

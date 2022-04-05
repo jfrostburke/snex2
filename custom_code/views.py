@@ -1272,9 +1272,9 @@ class BrokerTargetView(FilterView):
         context = super().get_context_data(**kwargs)
         #jd_now = Time(datetime.utcnow()).jd
         #TNS_URL = "https://www.wis-tns.org/object/"
-        #for target in context['object_list']:
+        for target in context['object_list']:
         #    logger.info('Getting context data for TNS Target %s', target)
-        #    target.coords = make_coords(target.ra, target.dec)
+            target.coords = make_coords(target.ra, target.dec)
         #    target.mag_lnd = make_lnd(target.lnd_maglim,
         #        target.lnd_filter, target.lnd_jd, jd_now)
         #    target.mag_recent = make_magrecent(target.all_phot, jd_now)

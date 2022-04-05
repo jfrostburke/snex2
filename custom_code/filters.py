@@ -110,9 +110,9 @@ class BrokerTargetForm(forms.Form):
 class BrokerTargetFilter(django_filters.FilterSet):
     
     status_choices = [
-        ('new', 'New'),
-        ('interesting', 'Interesting'),
-        ('uninteresting', 'Uninteresting')
+        ('New', 'New'),
+        ('Interesting', 'Interesting'),
+        ('Uninteresting', 'Uninteresting')
     ]
     
     name = django_filters.CharFilter(field_name='name', lookup_expr='icontains', label='')
