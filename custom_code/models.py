@@ -200,47 +200,56 @@ class InterestedPersons(models.Model):
     )
 
 
-#class BrokerTarget(models.Model):
-#    
-#    name = models.CharField(
-#        max_length=100, default='', verbose_name='Name', help_text='The internal name of the target'
-#    )
-#    
-#    ra = models.FloatField(
-#        verbose_name='Right Ascension', help_text='Right Ascension, in degrees.'
-#    )
-#    
-#    dec = models.FloatField(
-#        verbose_name='Declination', help_text='Declination, in degrees.'
-#    )
-#    
-#    redshift = models.FloatField(
-#        verbose_name='Redshift', help_text='Redshift.',
-#        blank=True, null=True
-#    )
-#
-#    redshift_source = models.CharField(
-#        max_length=100, blank=True, null=True, verbose_name='Redshift Source', help_text='The source for this redshift, usually either TNS or Sherlock'
-#    )
-#    
-#    classification = models.CharField(
-#        max_length=100, default='', verbose_name='Target classification', help_text='The classification of this target, e.g. SN Ia.',
-#        blank=True, null=True
-#    )
-#
-#    tns_target = models.ForeignKey(
-#        TNSTarget, blank=True, null=True, help_text='The TNS Target associated with this target, if one exists'
-#    )
-#
-#    stream_name = models.CharField(
-#        max_length=100, blank=True, default='', verbose_name='Stream Name', 
-#        help_text='Name of the stream that returned this target'
-#    )
-#
-#    phot = models.TextField(
-#        verbose_name='All photometry', help_text='All photometry', null=True, blank=True
-#    )
-#
-#    status = models.CharField(
-#        max_length=100, default='', verbose_name='Status', help_text='The status of this target'
-#    )
+class BrokerTarget(models.Model):
+    
+    name = models.CharField(
+        max_length=100, default='', verbose_name='Name', help_text='The internal name of the target'
+    )
+    
+    ra = models.FloatField(
+        verbose_name='Right Ascension', help_text='Right Ascension, in degrees.'
+    )
+    
+    dec = models.FloatField(
+        verbose_name='Declination', help_text='Declination, in degrees.'
+    )
+    
+    redshift = models.FloatField(
+        verbose_name='Redshift', help_text='Redshift.',
+        blank=True, null=True
+    )
+
+    redshift_source = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name='Redshift Source', help_text='The source for this redshift, usually either TNS or Sherlock'
+    )
+    
+    classification = models.CharField(
+        max_length=100, default='', verbose_name='Target classification', help_text='The classification of this target, e.g. SN Ia.',
+        blank=True, null=True
+    )
+
+    tns_target = models.ForeignKey(
+        TNSTarget, blank=True, null=True, help_text='The TNS Target associated with this target, if one exists', on_delete=models.SET_NULL
+    )
+
+    stream_name = models.CharField(
+        max_length=100, blank=True, default='', verbose_name='Stream Name', 
+        help_text='Name of the stream that returned this target'
+    )
+
+    detections = models.TextField(
+        verbose_name='All photometry', help_text='All photometry', null=True, blank=True
+    )
+
+    nondetections = models.TextField(
+        verbose_name='All nondetections', help_text='All nondetections', null=True, blank=True
+    )
+
+    status = models.CharField(
+        max_length=100, default='', verbose_name='Status', help_text='The status of this target'
+    )
+
+    created = models.DateTimeField(
+        auto_now_add=True, verbose_name='Time Created',
+        help_text='The time which this target was created in the TOM database.'
+    )
