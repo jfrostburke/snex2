@@ -1267,17 +1267,22 @@ class BrokerTargetView(FilterView):
     context_object_name = 'brokertargets'
     strict = False
     filterset_class = BrokerTargetFilter
+    ordering = ['-created']
+
+    def get_filterset_kwargs(self, filterset_class):
+        ### Initially filter so only new targets are displayed
+        kwargs = super(BrokerTargetView, self).get_filterset_kwargs(filterset_class)
+        if kwargs['data'] is None:
+            kwargs['data'] = {'status': 'New'}
+        elif 'status' not in kwargs['data']:
+            kwargs['data']['status'] = 'New'
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        #jd_now = Time(datetime.utcnow()).jd
         #TNS_URL = "https://www.wis-tns.org/object/"
         for target in context['object_list']:
-        #    logger.info('Getting context data for TNS Target %s', target)
             target.coords = make_coords(target.ra, target.dec)
-        #    target.mag_lnd = make_lnd(target.lnd_maglim,
-        #        target.lnd_filter, target.lnd_jd, jd_now)
-        #    target.mag_recent = make_magrecent(target.all_phot, jd_now)
         #    target.link = TNS_URL + target.name
         return context
 

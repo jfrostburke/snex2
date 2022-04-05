@@ -1777,3 +1777,77 @@ def test_display_thumbnail(context, target):
 
     return {'top_images': top_images,
             'bottom_images': bottom_images}
+
+
+@register.inclusion_tag('custom_code/lightcurve_collapse.html')
+def broker_target_lightcurve(target):
+
+    filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
+        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
+        'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2',
+        'UVW1': 'UVW1'}
+     
+    photometry_data = {}
+    nondetection_data = {}
+    
+    detections = json.loads(target.detections)
+
+    for filt in detections:
+        if not detections[filt]:
+            continue
+
+        photometry_data.setdefault(filt, {})
+
+        for mjd, mag in detections[filt].items():
+            photometry_data[filt].setdefault('time', []).append(Time(mjd, format='mjd').to_value('iso'))
+            photometry_data[filt].setdefault('magnitude', []).append(mag)
+
+    plot_data = [
+        go.Scatter(
+            x=filter_values['time'],
+            y=filter_values['magnitude'], mode='markers',
+            marker=dict(color=get_color(filter_name, filter_translate)),
+            name=filter_translate.get(filter_name, ''),
+        ) for filter_name, filter_values in photometry_data.items()] 
+
+
+    nondetections = json.loads(target.nondetections)
+
+    for filt in nondetections:
+        if not nondetections[filt]:
+            continue
+        nondetection_data.setdefault(filt, {})
+
+        for mjd, mag in nondetections[filt].items():
+            nondetection_data[filt].setdefault('time', []).append(Time(mjd, format='mjd').to_value('iso'))
+            nondetection_data[filt].setdefault('magnitude', []).append(mag)
+
+    plot_data += [
+        go.Scatter(
+            x=filter_values['time'],
+            y=filter_values['magnitude'], mode='markers',
+            marker=dict(color=get_color(filter_name, filter_translate), symbol='arrow-down'),
+            name=filter_translate.get(filter_name, '') + ' upper limit',
+        ) for filter_name, filter_values in nondetection_data.items()] 
+
+    layout = go.Layout(
+        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        margin=dict(l=30, r=10, b=10, t=40),
+        hovermode='closest',
+        plot_bgcolor='white',
+        height=300,
+        width=500
+    )
+
+
+    if plot_data:
+      return {
+          'target': target,
+          'plot': offline.plot(go.Figure(data=plot_data, layout=layout), output_type='div', show_link=False)
+      }
+    else:
+        return {
+            'target': target,
+            'plot': 'No photometry for this target yet.'
+        }

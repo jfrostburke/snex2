@@ -23,6 +23,7 @@
 	<!--th><br /><p></p></th-->
         <th>Name<br /><p></p></th>
         <th>Coordinates<br /><p></p></th>
+        <th>Name of Stream<br /><p></p></th>
 	<th>Redshift<br /><p></p></th>
 	<th>Classification<br /><p></p></th>
 	<th>Status<br /><p></p></th>
@@ -41,6 +42,7 @@
 	  {% endif %}
         </td>
 	<td>{{ target.coords }}</td>
+	<td>{{ target.stream_name }}</td>
 	{% if target.redshift %}
 	<td>{{ target.redshift }} ({{ target.redshift_source}})</td>
 	{% else %}
@@ -54,10 +56,11 @@
 	<td>{{ target.status }}</td>
       </tr>
       <tr>
-        <td colspan=4 style="border-top:none;">
+        <td colspan=6 style="border-top:none;">
           <div class="collapse" id="show-both-{{target.name}}">
             <div style="display: inline-block;">{% aladin_collapse target %}</div>
             <div style="display: inline-block;">{% airmass_collapse target %}</div>
+	    <div style="display: inline-block;">{% broker_target_lightcurve target %}</div>
           </div>
         </td>
       </tr>
