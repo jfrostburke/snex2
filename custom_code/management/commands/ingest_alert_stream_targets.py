@@ -49,6 +49,10 @@ class Command(BaseCommand):
         targets_to_ingest = q.candidates
 
         for name in targets_to_ingest:
+            ### First, see if target is already in the database
+            brokertargetquery = BrokerTarget.objects.filter(name=name)
+            if brokertargetquery.first(): # Target exists
+                continue
             coords = q.coords[name]
             ra = coords[0]
             dec = coords[1]
@@ -77,4 +81,4 @@ class Command(BaseCommand):
             )
             newbrokertarget.save()
 
-    logger.info('Finished ingesting targets from automatic broker queries')
+        logger.info('Finished ingesting targets from automatic broker queries')

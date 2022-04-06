@@ -1388,3 +1388,19 @@ class InterestingTargetsView(ListView):
         logger.info('Finished getting context data for personal interesting targets')
         context['interesting_group_id'] = TargetList.objects.get(name='Interesting Targets').id
         return context
+
+
+def change_broker_target_status_view(request):
+    try:
+        target_id = request.GET.get('target_id', '')
+        brokertarget = BrokerTarget.objects.get(id=target_id)
+        new_status = request.GET.get('new_status')
+        brokertarget.status = new_status
+        brokertarget.save()
+
+        context = {'update': 'Success'}
+    
+    except:
+        context = {'update': 'Failed'} 
+    
+    return HttpResponse(json.dumps(context), content_type='application/json')

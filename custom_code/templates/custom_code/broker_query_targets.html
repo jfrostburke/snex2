@@ -53,7 +53,26 @@
 	{% else %}
 	<td>None</td>
 	{% endif %}
-	<td>{{ target.status }}</td>
+	<td colspan=2>
+	  <select name="status" id="status-{{target.id}}" style="background-color: white;">
+	    {% if target.status == 'New' %}
+	    <option value="New" selected>New</option>
+	    {% else %}
+	    <option value="New">New</option>
+	    {% endif %}
+	    {% if target.status == 'Interesting' %}
+	    <option value="Interesting" selected>Interesting</option>
+	    {% else %}
+	    <option value="Interesting">Interesting</option>
+	    {% endif %}
+	    {% if target.status == 'Uninteresting' %}
+	    <option value="Uninteresting" selected>Uninteresting</option>
+	    {% else %}
+	    <option value="Uninteresting">Uninteresting</option>
+	    {% endif %}
+	  </select>
+	  <button id="update-btn-{{target.id}}" class="btn btn-primary" onclick="updateStatus('{{ target.id }}')">Save Changes</button>
+	</td>
       </tr>
       <tr>
         <td colspan=6 style="border-top:none;">
@@ -69,4 +88,20 @@
   </table>
   {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
 </div>
+<script>
+function updateStatus(targetId) {
+  var newStatus = document.getElementById('status-'+targetId).value;
+  $.ajax({
+    url: '{% url "change-broker-target-status" %}',
+    data: {'target_id': targetId,
+	   'new_status': newStatus},
+    datatype: 'json',
+    success: function(response) {
+      if (response.update === 'Success') {
+        document.getElementById('update-btn-'+targetId).innerHTML = 'Saved';
+      }
+    }
+  })
+}
+</script>
 {% endblock %}
