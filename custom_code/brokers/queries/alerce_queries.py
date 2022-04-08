@@ -64,9 +64,9 @@ class AlerceQuery:
             
             for det in detections:
                 if det['fid'] == 1:
-                    g_dets[str(det['mjd'])] = det['magpsf']
+                    g_dets[str(det['mjd'])] = [det['magpsf'], det['sigmapsf']]
                 else:
-                    r_dets[str(det['mjd'])] = det['magpsf']
+                    r_dets[str(det['mjd'])] = [det['magpsf'], det['sigmapsf']]
             
             try:
                 nondetections = json.loads(lc.text)['non_detections']
@@ -99,8 +99,8 @@ class BasicAlerceQuery(AlerceQuery):
                 self.candidates.remove(name)
                 continue
 
-            g_mags = current_phot['g'].values()
-            r_mags = current_phot['r'].values()
+            g_mags = [p[0] for p in current_phot['g'].values()]
+            r_mags = [p[0] for p in current_phot['r'].values()]
 
             if not any([g < mag_lower for g in g_mags]) and not any([r < mag_lower for r in r_mags]):
                 self.candidates.remove(name)

@@ -1798,9 +1798,10 @@ def broker_target_lightcurve(target):
 
         photometry_data.setdefault(filt, {})
 
-        for mjd, mag in detections[filt].items():
+        for mjd, phot in detections[filt].items():
             photometry_data[filt].setdefault('time', []).append(Time(mjd, format='mjd').to_value('iso'))
-            photometry_data[filt].setdefault('magnitude', []).append(mag)
+            photometry_data[filt].setdefault('magnitude', []).append(phot[0])
+            photometry_data[filt].setdefault('magerr', []).append(phot[1])
 
     plot_data = [
         go.Scatter(
@@ -1808,6 +1809,12 @@ def broker_target_lightcurve(target):
             y=filter_values['magnitude'], mode='markers',
             marker=dict(color=get_color(filter_name, filter_translate)),
             name=filter_translate.get(filter_name, ''),
+            error_y=dict(
+                type='data',
+                array=filter_values['magerr'],
+                visible=True,
+                color=get_color(filter_name, filter_translate)
+            )
         ) for filter_name, filter_values in photometry_data.items()] 
 
 
