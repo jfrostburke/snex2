@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class LasairIrisQuery:
 
-    token = os.environ['LASAIR_IRIS_TOKEN'] #TODO: Add this to docker-compose.yml 
+    token = os.environ['LASAIR_IRIS_TOKEN']
 
     def __init__(self, stream_name, ncandidates, days_ago):
         self.stream_name = stream_name
