@@ -1275,6 +1275,7 @@ class BrokerTargetView(FilterView):
         if kwargs['data'] is None:
             kwargs['data'] = {'status': 'New'}
         elif 'status' not in kwargs['data']:
+            kwargs['data']._mutable = True
             kwargs['data']['status'] = 'New'
         return kwargs
 

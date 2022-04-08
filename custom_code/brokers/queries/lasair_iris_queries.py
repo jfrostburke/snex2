@@ -1,4 +1,4 @@
-#from lasair import LasairError, lasair_client as lasair ### TODO: add lasair to the SNEx2 requirements
+from lasair import LasairError, lasair_client as lasair
 import os
 import json
 from astropy.time import Time
@@ -17,7 +17,7 @@ class LasairIrisQuery:
         self.ncandidates = ncandidates
         self.days_ago = days_ago
         
-        self.candidates, self.coords, self.redshifts, tnsnames, classes = self.get_candidates(self)
+        self.candidates, self.coords, self.redshifts, self.tnsnames, self.classes = self.get_candidates(self)
         self.det, self.nondet = self.get_photometry(self)
 
 
@@ -56,7 +56,7 @@ class LasairIrisQuery:
             except Exception as e:
                 logger.warning('Getting candidates failed, response was {}'.format(e))
             
-            return ztfnames, coords, redshifts, tnsnames, classes
+        return ztfnames, coords, redshifts, tnsnames, classes
 
 
     def get_photometry(self, *args, **kwargs):
@@ -72,9 +72,9 @@ class LasairIrisQuery:
             r_nondets = {}
             for epoch in lc[0]:
                 if epoch['fid'] == 1 and epoch.get('magpsf', ''):
-                    g_dets[str(epoch['jd'] - 2400000.5)] = epoch['magpsf']
+                    g_dets[str(epoch['jd'] - 2400000.5)] = [epoch['magpsf'], epoch['sigmapsf']]
                 elif epoch['fid'] == 2 and epoch.get('magpsf', ''):
-                    r_dets[str(epoch['jd'] - 2400000.5)] = epoch['magpsf']
+                    r_dets[str(epoch['jd'] - 2400000.5)] = [epoch['magpsf'], epoch['sigmapsf']]
                 elif epoch['fid'] == 1:
                     g_nondets[str(epoch['jd'] - 2400000.5)] = epoch['diffmaglim']
                 else:
@@ -87,4 +87,3 @@ class LasairIrisQuery:
                              'r': r_nondets}
 
         return phot, nondets
-
