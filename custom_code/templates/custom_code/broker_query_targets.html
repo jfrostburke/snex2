@@ -31,8 +31,7 @@
     </thead>
     <tbody>
     {% for target in brokertargets %}
-      <tr>
-	<!--td><input type="checkbox" name="selected-target" value="{{ target.id }}" onClick="single_select()"/></td-->
+      <tr id="top-row-{{target.id}}">
 	<td rowspan=2>
           <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{target.name}}">+</button>
 	  {% if 'ZTF' in target.name %}
@@ -74,7 +73,7 @@
 	  <button id="update-btn-{{target.id}}" class="btn btn-primary" onclick="updateStatus('{{ target.id }}')">Save Changes</button>
 	</td>
       </tr>
-      <tr>
+      <tr id="bottom-row-{{target.id}}">
         <td colspan=6 style="border-top:none;">
           <div class="collapse" id="show-both-{{target.name}}">
             <div style="display: inline-block;">{% aladin_collapse target %}</div>
@@ -99,6 +98,10 @@ function updateStatus(targetId) {
     success: function(response) {
       if (response.update === 'Success') {
         document.getElementById('update-btn-'+targetId).innerHTML = 'Saved';
+	if (newStatus === 'Uninteresting') {
+          document.getElementById('top-row-'+targetId).style.display = 'none';
+	  document.getElementById('bottom-row-'+targetId).style.display = 'none';
+	}
       }
     }
   })
