@@ -59,5 +59,5 @@ urlpatterns = [
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),
     path('django_plotly_dash/', include('django_plotly_dash.urls')),
-    path('__debug__/', include('debug_toolbar.urls')),
+    #path('__debug__/', include('debug_toolbar.urls')),
 ]
