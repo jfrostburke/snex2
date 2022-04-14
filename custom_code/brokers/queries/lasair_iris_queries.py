@@ -41,7 +41,8 @@ class LasairIrisQuery:
                 name = result['objectId']
                 ztfnames.append(name)
                 coords[name] = [float(result['ramean']), float(result['decmean'])]
-
+                
+                #NOTE: TNS crossmatch not currently working with my Lasair Iris queries
                 if result.get('tns_z'):
                     redshifts[name] = {'z': float(result['tns_z']), 'source': 'TNS'}
                 elif result.get('sherlock_z'):

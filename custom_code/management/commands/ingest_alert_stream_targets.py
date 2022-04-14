@@ -141,7 +141,7 @@ class Command(BaseCommand):
                 q = BasicAlerceQuery(query['parameters']['days_ago'], query['parameters']['ndet'])
                 valid = q.validate_candidates(19.0, 2.0)
             
-            elif query['name'] == 'Young Blue SNe':
+            elif query['name'] in ['Young Blue SNe', 'Rapidly Rising SNe']:
                 q = LasairIrisQuery(query['parameters']['stream_name'], query['parameters']['ncandidates'], query['parameters']['days_ago'])
             
             ingest_targets(q, query['name'])

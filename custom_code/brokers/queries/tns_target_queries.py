@@ -21,7 +21,7 @@ class TNSTargetQuery:
 
 
     def get_candidates(self, *args, **kwargs):
-        jdnow = Time(datetime.datetime.utcnow()).jd
+        jdnow = Time(datetime.utcnow()).jd
         jdmin = jdnow - self.days_since_discovery
         tnstargets = TNSTargets.objects.filter(disc_jd > jdmin)
 
