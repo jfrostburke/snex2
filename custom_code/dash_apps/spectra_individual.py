@@ -17,6 +17,7 @@ from tom_dataproducts.models import ReducedDatum
 from tom_targets.models import Target, TargetExtra
 from custom_code.templatetags.custom_code_tags import bin_spectra
 from django.db.models import Q
+from django.templatetags.static import static
 import matplotlib.pyplot as plt
 import logging
 
@@ -25,6 +26,7 @@ logger = logging.getLogger(__name__)
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 
 app = DjangoDash(name='Spectra_Individual', id='spectrum_id')   # replaces dash.Dash
+app.css.append_css({'external_url': static('tom_targets/css/targets_snexclone.css')})
 
 params = [
     'Redshift', 'Velocity (km/s)'
@@ -191,11 +193,11 @@ app.layout = html.Div([
         style={'fontSize': 18}
     ),
     html.Div([
-        dbc.Input(id='spectra-compare-input', type='text', placeholder='Search for target', value='', style={'display': 'none'}),
-        html.Div(
+        html.Form(
+            autoComplete='off',
             children=[ 
                 dcc.Dropdown(
-                    options=[{'label': target.name, 'value': target.name} for target in Target.objects.all()],
+                    options=[{'label': '', 'value': ''}],
                     value='',
                     placeholder='Search for a target',
                     id='spectra-compare-dropdown',
@@ -207,6 +209,33 @@ app.layout = html.Div([
         )
     ])
 ], style={'padding-bottom': '0px'})
+
+@app.callback(
+    Output('spectra-compare-dropdown', 'options'),
+    [Input('spectra-compare-dropdown', 'search_value'),
+     State('spectra-compare-dropdown', 'value')])
+def get_target_list(value, existing, *args, **kwargs):
+    if existing:
+        target_match_list = Target.objects.filter(name=existing)
+        if not target_match_list.first():
+            target_match_list = Target.objects.filter(aliases__name__icontains=existing)
+            names = []
+            for target in target_match_list:
+                names += [{'label': n, 'value': n} for n in target.names if n==existing]
+                return names
+        else:
+            return [{'label': target.name, 'value': target.name} for target in target_match_list]
+    
+    elif value:
+        target_match_list = Target.objects.filter(Q(name__icontains=value) | Q(aliases__name__icontains=value)).distinct()
+        print('Targets found')
+    else:
+        target_match_list = Target.objects.none()
+        print('No targets found')
+    names = [{'label': '', 'value': ''}]
+    for target in target_match_list:
+        names += [{'label': n, 'value': n} for n in target.names]
+    return names
 
 @app.callback(
     Output('table-container-div', 'style'),

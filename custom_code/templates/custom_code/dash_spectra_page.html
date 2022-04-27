@@ -1,8 +1,8 @@
 {% load plotly_dash %}
 {% for entry in plot_list %}
-  <div style="margin-bottom: -650px;">
-    <div class="col">{{ entry.time }}</div>
-    <div class="col">
+  <div class="row" style="margin-bottom: -250px;">
+    <div class="col-md-2">{{ entry.time }}</div>
+    <div class="col-md-10">
       {% plotly_app name="Spectra_Individual" ratio=1.0 initial_arguments=entry.dash_context %}
     </div>
   </div>

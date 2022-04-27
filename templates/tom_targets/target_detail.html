@@ -107,7 +107,7 @@ $(document).ready(function(){
     <a class="nav-link" id="photometry-tab" href="#photometry" role="tab" data-toggle="tab" style="color: #174460;">Photometry</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" id="spectroscopy-tab" href="#spectroscopy" role="tab" data-toggle="tab" style="color: #174460;">Spectroscopy</a>
+    <a class="nav-link" id="spectroscopy-tab" href="#spectroscopy" role="tab" data-toggle="tab" style="color: #174460;" onclick='load_spectra_page(); this.onclick=null;'>Spectroscopy</a>
   </li>
 </ul>
 <div class="row" style="padding-top: 10px;">
@@ -197,7 +197,7 @@ $(document).ready(function(){
       </div>
       <div class="tab-pane" id="spectroscopy">
         {% dash_spectra object %}
-        {% dash_spectra_page object %}
+        {#% dash_spectra_page object %#}
       </div>
     </div>
   </div>
@@ -213,6 +213,17 @@ function load_lightcurve_details() {
     success: function(response) {
       var plot = response.lightcurve_plot;
       $('#lc-primary').html(plot);
+    }
+  });
+}
+function load_spectra_page() {
+  $.ajax({
+    url: '{% url "load-spectra-page" %}',
+    data: {'target_id': {{ target.id }}},
+    dataType: 'json',
+    success: function(response) {
+      var spectra_page = document.getElementById('spectroscopy');
+      spectra_page.insertAdjacentHTML('afterend', response['html_from_view'])
     }
   });
 }

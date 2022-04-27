@@ -14,11 +14,13 @@ import json
 from django_plotly_dash import DjangoDash
 from tom_dataproducts.models import ReducedDatum
 from custom_code.templatetags.custom_code_tags import bin_spectra
+from django.templatetags.static import static
 import matplotlib.pyplot as plt
 
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 
 app = DjangoDash(name='Spectra', id='target_id')   # replaces dash.Dash
+app.css.append_css({'external_url': static('tom_targets/css/targets_snexclone.css')})
 
 params = [
     'Redshift', 'Velocity (km/s)'

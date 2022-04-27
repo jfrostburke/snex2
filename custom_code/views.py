@@ -40,7 +40,7 @@ from plotly import offline
 import plotly.graph_objs as go
 from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
-from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras, get_best_name
+from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras, get_best_name, dash_spectra_page
 from custom_code.hooks import _get_tns_params
 from custom_code.thumbnails import make_thumb
 
@@ -874,6 +874,30 @@ def search_name_view(request):
 
         return JsonResponse(data=data_dict, safe=False)
     return render(request, 'tom_targets/target_grouping.html', context=context)
+
+
+def async_spectra_page_view(request):
+    target_id = request.GET.get('target_id')
+    if target_id:
+        target = Target.objects.get(id=target_id)
+        response = dash_spectra_page({'request': request}, target)
+        if 'dash_context' in response.keys():
+            context = {'plot_list': [],
+                       'request': request
+            }
+        else:
+            context = {'plot_list': response['plot_list'],
+                       'request': request
+            }
+
+        html = render_to_string(
+            template_name='custom_code/dash_spectra_page.html',
+            context=context
+        )
+        data_dict = {'html_from_view': html}
+
+        return JsonResponse(data=data_dict, safe=False)
+    return ''
 
 
 def add_target_to_group_view(request):
