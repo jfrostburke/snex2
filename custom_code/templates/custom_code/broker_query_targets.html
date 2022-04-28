@@ -27,6 +27,7 @@
 	<th>Redshift<br /><p></p></th>
 	<th>Classification<br /><p></p></th>
 	<th>Status<br /><p></p></th>
+	<th><br /><p></p></th>
       </tr>
     </thead>
     <tbody>
@@ -71,6 +72,9 @@
 	    {% endif %}
 	  </select>
 	  <button id="update-btn-{{target.id}}" class="btn btn-primary" onclick="updateStatus('{{ target.id }}')">Save Changes</button>
+	</td>
+	<td>	
+	  <a class="button" style="background-color: green; color: white; padding-top: 0.375rem; padding-right: 0.75rem; padding-bottom: 0.375rem; padding-left: 0.75rem;" href="{% url "create-target" %}?name={{target.name}}&ra={{target.ra}}&dec={{target.dec}}">Add Target</a>
 	</td>
       </tr>
       <tr id="bottom-row-{{target.id}}">
