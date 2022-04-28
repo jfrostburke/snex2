@@ -266,6 +266,13 @@ class CustomTargetCreateView(TargetCreateView):
         run_hook('target_post_save', target=self.object, created=True)
         return redirect(self.get_success_url())
 
+    def get_initial(self):
+        return {
+            'type': self.get_target_type(),
+            'groups': Group.objects.filter(name__in=settings.DEFAULT_GROUPS),
+            **dict(self.request.GET.items())
+        }
+
 
 class CustomDataProductUploadView(DataProductUploadView):
 

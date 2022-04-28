@@ -15,6 +15,15 @@ class CustomTargetCreateForm(SiderealTargetCreateForm):
 
     sciencetags = forms.ModelMultipleChoiceField(ScienceTags.objects.all().order_by(Lower('tag')), widget=forms.CheckboxSelectMultiple, label='Science Tags')
 
+    def __init__(self, *args, **kwargs):
+        super(CustomTargetCreateForm, self).__init__(*args, **kwargs)
+        if not settings.TARGET_PERMISSIONS_ONLY:
+            self.fields['groups'] = forms.ModelMultipleChoiceField(
+                    Group.objects.all(),
+                    required=False,
+                    widget=forms.CheckboxSelectMultiple,
+                    label='Visible to')
+
     def save(self, commit=True):
         instance = super().save(commit=commit)
         if commit:
