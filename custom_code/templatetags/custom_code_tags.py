@@ -184,6 +184,8 @@ def get_color(filter_name, filter_translate):
         'UVW2': '#FE0683',
         'UVM2': '#BF01BC',
         'UVW1': '#8B06FF',
+        'cyan': 'rgb(0,128,128)',
+        'orange': 'rgb(250,128,114)',
         'other': 'rgb(0,0,0)'}
     try: color = colors[filter_translate[filter_name]]
     except: color = colors['other']
@@ -1785,7 +1787,7 @@ def broker_target_lightcurve(target):
     filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
         'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
         'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2',
-        'UVW1': 'UVW1'}
+        'UVW1': 'UVW1', 'cyan': 'cyan', 'orange': 'orange'}
      
     photometry_data = {}
     nondetection_data = {}
@@ -1808,7 +1810,7 @@ def broker_target_lightcurve(target):
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
             marker=dict(color=get_color(filter_name, filter_translate)),
-            name=filter_translate.get(filter_name, ''),
+            name=filter_translate.get(filter_name, filter_name),
             error_y=dict(
                 type='data',
                 array=filter_values['magerr'],
@@ -1834,7 +1836,7 @@ def broker_target_lightcurve(target):
             x=filter_values['time'],
             y=filter_values['magnitude'], mode='markers',
             marker=dict(color=get_color(filter_name, filter_translate), symbol='arrow-down'),
-            name=filter_translate.get(filter_name, '') + ' upper limit',
+            name=filter_translate.get(filter_name, filter_name) + ' upper limit',
         ) for filter_name, filter_values in nondetection_data.items()] 
 
     layout = go.Layout(

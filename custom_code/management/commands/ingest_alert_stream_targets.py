@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 import logging
 import requests
+import time
 import json
 from tom_targets.templatetags.targets_extras import deg_to_sexigesimal
 from custom_code.models import TNSTarget, BrokerTarget
@@ -130,11 +131,80 @@ def ingest_targets(q, stream_name):
         )
         newbrokertarget.save()
 
+        time.sleep(6) # To avoid spamming the TNS API endpoint
+
 
 class Command(BaseCommand):
     help = 'Ingests targets found by broker queries into SNEx2'
 
     def handle(self, *args, **options):
+        ### Search for new data for existing targets that are new or interesting
+        brokertargetlist = BrokerTarget.objects.filter(status__in=['New', 'Interesting'])
+        for obj in brokertargetlist:
+            
+            ### First the ZTF data
+            if 'ZTF' in obj.name or 'ztf' in obj.name:
+                filters = {1: 'g', 2: 'r', 3: 'i'}
+                url = 'http://api.alerce.online/ztf/v1/objects/{}/lightcurve'.format(obj.name)
+                try:
+                    r = requests.get(url, headers={'accept': 'application/json'})
+                    results = json.loads(r.text)['detections']
+                    det = json.loads(obj.detections)
+                    
+                    for alert in results:
+                        if all([key in alert for key in ['mjd', 'magpsf', 'fid', 'sigmapsf']]):
+                            mjd = str(alert['mjd'])
+                            filt = filters[alert['fid']]
+                            det.setdefault(filt, {})
+                            if mjd not in det[filt].keys():
+                                det[filt][mjd] = [float(alert['magpsf']), float(['sigmapsf'])]
+                    
+                    obj.detections = json.dumps(det)
+                    obj.save()
+
+                except:
+                    logger.info('Getting MARS ZTF photometry failed for {}'.format(obj.name))
+
+            ### Now the TNS data
+            search_url = "https://www.wis-tns.org/api/get/search"
+            obj_url = "https://www.wis-tns.org/api/get/object"
+            api_key = os.environ['TNS_APIKEY']
+            tns_id = os.environ['TNS_APIID']
+
+            json_list = {'ra': deg_to_sexigesimal(obj.ra, 'hms'), 'dec': deg_to_sexigesimal(obj.dec, 'dms'), 'radius': '5', 'units': 'arcsec', 'internal_name': obj.name}
+            obj_list = requests.post(search_url, headers={'User-Agent': 'tns_marker{"tns_id":'+str(tns_id)+', "type":"bot", "name":"SNEx_Bot1"}'}, data={'api_key': api_key, 'data': json.dumps(json_list)})
+            obj_list = json.loads(obj_list.text)['data']['reply']
+            if obj_list:
+                tns_name = obj_list[0]['objname']
+
+                class_json_list = {'objname': tns_name, 'photometry': 1, 'spectra': 0, 'classification': 0}
+                obj_data = requests.post(obj_url, headers={'User-Agent': 'tns_marker{"tns_id":'+str(tns_id)+', "type":"bot", "name":"SNEx_Bot1"}'}, data={'api_key': api_key, 'data': json.dumps(class_json_list)})
+                obj_data = json.loads(obj_data.text)['data']['reply']
+                
+                det = json.loads(obj.detections)
+                nondet = json.loads(obj.nondetections)
+                for phot in obj_data['photometry']:
+                    filt = phot['filters']['name']
+                    mjd = str(phot['jd']-2400000.5)
+                    if phot.get('flux'):
+                        det.setdefault(filt, {})
+                        fluxerr = phot.get('fluxerr')
+                        if not fluxerr:
+                            fluxerr = 0.0
+                        if mjd not in det[filt].keys():
+                            det[filt][mjd] = [float(phot['flux']), float(fluxerr)]
+                    elif phot.get('limflux'):
+                        nondet.setdefault(filt, {})
+                        if mjd not in nondet[filt].keys():
+                            nondet[filt][mjd] = float(phot['limflux'])
+                obj.detections = json.dumps(det)
+                obj.nondetections = json.dumps(nondet)
+                obj.save()
+
+            time.sleep(6)
+
+        logger.info('Finished ingesting new data for existing targets')
+        
         ### Get the targets from the queries
         for query in QUERIES:
             if query['name'] == 'Basic Two Day Nondetections':
