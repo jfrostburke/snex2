@@ -13,7 +13,10 @@
     width: 50px;
 }
 .exposure-row {
-    width: 350px;
+    width: 325px;
+}
+.btn {
+    width: 90%;
 }
 .pessto-table {
     display: none;
@@ -27,20 +30,20 @@
 {% endif %}
   <thead>
     <tr>
-      <th>View</th>
-      <th>Target</th>
-      <th>Facility and Proposal</th>
-      <th>Observation Type</th>
-      <th>Instrument</th>
-      <th>Cadence</th>
-      <th>IPP</th>
-      <th>Max Airmass</th>
-      <th>Exposures</th>
-      <th>Reminder in</th>
-      <th>Start</th>
-      <th>Reminder</th>
-      <th>Classification</th>
-      <th>Redshift</th>
+      <th style="width: 5%;">View</th>
+      <th style="width: 5%;">Target</th>
+      <th style="width: 5%;">Facility and Proposal</th>
+      <th style="width: 5%;">Observation Type</th>
+      <th style="width: 5%;">Instrument</th>
+      <th style="width: 5%;">Cadence</th>
+      <th style="width: 5%;">IPP</th>
+      <th style="width: 5%;">Max Airmass</th>
+      <th style="width: 20%;">Exposures</th>
+      <th style="width: 15%;">Reminder in</th>
+      <th style="width: 7.5%;">Start</th>
+      <th style="width: 7.5%;">Reminder</th>
+      <th style="width: 5%;">Classification</th>
+      <th style="width: 5%;">Redshift</th>
     </tr>
   </thead>
   <tbody>
@@ -56,7 +59,13 @@
       {% if parameter.observation_type == "Phot" %}
       <form method="post" class="form" id="scheduling-form-{{ parameter.observation_id }}">
 	{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,U,B,V,R,I,u,gp,rp,ip,zs,w,reminder' %}
-	<td>{{ form.cadence_frequency }}</td>
+	<td>
+	  <div class="row">{{ form.cadence_frequency }}</div>
+	  <!--div class="row" style="width: 100px;">
+	    <input type="checkbox" id="delay-start-{{ parameter.observation_id }}">
+	    <label for="delay-start-{{ parameter.observation_id }}">Delay Start By</label>
+	  </div-->
+	</td>
 	<td>{{ form.ipp_value }}</td>
 	<td>{{ form.max_airmass }}</td>
 	<td>
@@ -82,9 +91,10 @@
 	  <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'approved')" class="btn" style="background-color: green; color: white;" value="Approve Sequence" id="approve-{{ parameter.observation_id }}" readonly>
           <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'rejected')" class="btn" style="background-color: red; color: white;" value="Reject Sequence" id="reject-{{ parameter.observation_id }}" readonly>
 	  {% else %}
-	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
 	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: green; color: white;" value="Continue As-is" id="continue-{{ parameter.observation_id }}" readonly>
 	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: red; color: white;" value="Stop Sequence" id="stop-{{ parameter.observation_id }}" readonly>
+	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
+	  <div>and delay start by {{ form.delay_start }} days</div>
 	  {% endif %}
           {% endbuttons %}
 	  </div>
@@ -109,9 +119,10 @@
 	  <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'approved')" class="btn" style="background-color: green; color: white;" value="Approve Sequence" id="approve-{{ parameter.observation_id }}" readonly>
           <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'rejected')" class="btn" style="background-color: red; color: white;" value="Reject Sequence" id="reject-{{ parameter.observation_id }}" readonly>
 	  {% else %}
-	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
 	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: green; color: white;" value="Continue As-is" id="continue-{{ parameter.observation_id }}" readonly>
 	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: red; color: white;" value="Stop Sequence" id="stop-{{ parameter.observation_id }}" readonly>
+	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
+	  <div>and delay start by {{ form.delay_start }} days</div>
 	  {% endif %}
           {% endbuttons %}
 	  </div>

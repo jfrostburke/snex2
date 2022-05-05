@@ -16,6 +16,12 @@
 #muscat-div {
     display: none;
 }
+#div_phot_delay_amount {
+    display: none;
+}
+#div_spec_delay_amount {
+    display: none;
+}
 </style>
 <div class="row">
   <div class="col-md-6">
@@ -62,4 +68,20 @@ $("#spec_cadence_frequency").keyup(function() {
   var newreminder = 2*parseFloat(cadence) + 0.7;
   document.getElementById("spec_reminder").value = newreminder;
 });
+$("#phot_delay_start").click(function() {
+  var delayAmount = document.getElementById("div_phot_delay_amount");
+  if (delayAmount.style.display === "block") {
+    delayAmount.style.display = "none";
+  } else {
+    delayAmount.style.display = "block";
+  }
+})
+$("#spec_delay_start").click(function() {
+  var delayAmount = document.getElementById("div_spec_delay_amount");
+  if (delayAmount.style.display === "block") {
+    delayAmount.style.display = "none";
+  } else {
+    delayAmount.style.display = "block";
+  }
+})
 </script>

@@ -63,6 +63,9 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
     ipp_value = forms.FloatField(label='IPP', min_value=0.5, max_value=2.0, initial=1.0)
     observation_mode = forms.ChoiceField(choices=(('NORMAL', 'Normal'), ('RAPID_RESPONSE', 'Rapid-Response'), ('TIME_CRITICAL', 'Time-Critical')), label='Observation Mode')
     reminder = forms.FloatField(required=True, min_value=0.0, initial=6.7, label='Reminder in')
+    comment = forms.CharField(required=False, label='Comments', widget=forms.Textarea(attrs={'cols': 30, 'rows': 3}))
+    delay_start = forms.BooleanField(required=False, label='Delay Start By')
+    delay_amount = forms.FloatField(initial=0.0, min_value=0, label='', required=False)
     
     def __init__(self, *args, **kwargs):
         super(LCOPhotometricSequenceForm, self).__init__(*args, **kwargs)
@@ -144,6 +147,12 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
                 Column(AppendedText('cadence_frequency', 'Days')),
                 css_class='form-row'
             ),
+            Div(
+                Column(),
+                Column('delay_start'),
+                Column(AppendedText('delay_amount', 'Days')),
+                css_class='form-row'
+            ),
             Layout('facility', 'target_id', 'observation_type'),
             self.layout(),
             self.button_layout()
@@ -158,11 +167,12 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
             - Adds the cadence strategy to the form if "repeat" was the selected "cadence_type". If "once" was
               selected, the observation is submitted as a single observation.
         """
-        #TODO: Make sure that my conversion from days to hours works, reminders work,
-        #      and look into implementing a "delay start by" option like in SNEx
         cleaned_data = super().clean()
         now = datetime.datetime.utcnow()
-        cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
+        if cleaned_data.get('delay_start'):
+            cleaned_data['start'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['delay_amount']), '%Y-%m-%dT%H:%M:%S')
+        else:
+            cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
         cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24), '%Y-%m-%dT%H:%M:%S')
         cleaned_data['reminder'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['reminder']), '%Y-%m-%dT%H:%M:%S')
         return cleaned_data
@@ -197,6 +207,7 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
         return Div(
             Div(
                 filter_layout,
+                Row('comment'),
                 css_class='col-md-6'
             ),
             Div(
@@ -326,6 +337,9 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
                                      widget=forms.TextInput(attrs={'placeholder': 'Seconds'}),
                                      initial=1800)
     reminder = forms.FloatField(required=True, min_value=0.0, initial=6.7, label='Reminder in')
+    comment = forms.CharField(required=False, label='Comments', widget=forms.Textarea(attrs={'cols': 30, 'rows': 3}))
+    delay_start = forms.BooleanField(required=False, label='Delay Start By')
+    delay_amount = forms.FloatField(initial=0.0, min_value=0, label='', required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -379,6 +393,12 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
                 Column(AppendedText('cadence_frequency', 'Days')),
                 css_class='form-row'
             ),
+            Div(
+                Column(),
+                Column('delay_start'),
+                Column(AppendedText('delay_amount', 'Days')),
+                css_class='form-row'
+            ),
             Layout('facility', 'target_id', 'observation_type'),
             self.layout(),
             self.button_layout()
@@ -388,7 +408,10 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
         cleaned_data = super().clean()
         self.cleaned_data['instrument_type'] = '2M0-FLOYDS-SCICAM'  # SNEx only submits spectra to FLOYDS
         now = datetime.datetime.utcnow()
-        cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
+        if cleaned_data.get('delay_start'):
+            cleaned_data['start'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['delay_amount']), '%Y-%m-%dT%H:%M:%S')
+        else:
+            cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
         cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24), '%Y-%m-%dT%H:%M:%S')
         cleaned_data['reminder'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['reminder']), '%Y-%m-%dT%H:%M:%S')
 
@@ -418,24 +441,9 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
                 Row('observation_mode'),
                 Row('ipp_value'),
                 Row(AppendedText('reminder', 'days')),
+                Row('comment'),
                 css_class='col-md-6'
             ),
-            
-            #Row('exposure_count'),
-            #Row('exposure_time'),
-            #Row('max_airmass'),
-            #Row(PrependedText('min_lunar_distance', '>')),
-            #Row('site'),
-            #Row('filter'),
-            #Row('acquisition_radius'),
-            #Row('guider_mode'),
-            #Row('guider_exposure_time'),
-            #Row('proposal'),
-            #Row('observation_mode'),
-            #Row('ipp_value'),
-            #Row(AppendedText('reminder', 'days')),
-            #groups,
-
         css_class='form-row')
 
 class SnexLCOFacility(LCOFacility):
@@ -450,14 +458,10 @@ class SnexLCOFacility(LCOFacility):
     def submit_observation(self, observation_payload):
         response = make_request(
             'POST',
-            #PORTAL_URL + '/api/requestgroups/validate/',
             PORTAL_URL + '/api/requestgroups/',
             json=observation_payload,
             headers=self._portal_headers()
         )
-        #print('Made request')
-        #import pdb
-        #pdb.set_trace()
         return [r['id'] for r in response.json()['requests']]
 
     def validate_observation(self, observation_payload):
@@ -467,8 +471,5 @@ class SnexLCOFacility(LCOFacility):
             json=observation_payload,
             headers=self._portal_headers()
         )
-        #print('Validating observation')
-        #import pdb
-        #pdb.set_trace()
         return response.json()['errors']
 

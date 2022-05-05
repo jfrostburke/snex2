@@ -247,6 +247,7 @@ class PhotSchedulingForm(forms.Form):
     max_airmass = forms.FloatField(min_value=0.0, label='')
     reminder = forms.FloatField(min_value=0.0, label='')
     filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+    delay_start = forms.FloatField(min_value=0.0, initial=0.0, label='')
     
     def __init__(self, *args, **kwargs):
         super(PhotSchedulingForm, self).__init__(*args, **kwargs)
@@ -272,6 +273,7 @@ class SpecSchedulingForm(forms.Form):
     max_airmass = forms.FloatField(min_value=0.0, label='')
     reminder = forms.FloatField(min_value=0.0, label='')
     exposure_time = forms.IntegerField(min_value=1, label='')
+    delay_start = forms.FloatField(min_value=0.0, initial=0.0, label='')
     
     def __init__(self, *args, **kwargs):
         super(SpecSchedulingForm, self).__init__(*args, **kwargs)

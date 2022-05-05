@@ -573,7 +573,11 @@ def scheduling_view(request):
         observing_parameters['target_id'] = form_data['target_id']
         
         now = datetime.utcnow()
-        observing_parameters['start'] = datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
+        if not request.GET.get('delay_start', ''):
+            delay_amount = 0.0
+        else:
+            delay_amount = float(request.GET['delay_start'])
+        observing_parameters['start'] = datetime.strftime(now + timedelta(days=delay_amount), '%Y-%m-%dT%H:%M:%S')
         observing_parameters['end'] = datetime.strftime(now + timedelta(hours=float(request.GET['cadence_frequency'])*24), '%Y-%m-%dT%H:%M:%S')
 
         if request.GET['observation_type'] == 'IMAGING':
@@ -1083,7 +1087,17 @@ class CustomObservationCreateView(ObservationCreateView):
            group_names.append(group.name)
         
         # Run the hook to add the sequence to SNEx1
-        snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names, userid=self.request.user.id)
+        if form.cleaned_data.get('comment') and (len(records) > 1 or form.cleaned_data.get('cadence_strategy')):
+            save_comments(form.cleaned_data['comment'], observation_group.id, self.request.user.id)
+            snex_id = run_hook('sync_sequence_with_snex1', 
+                               form.serialize_parameters(), 
+                               group_names, 
+                               userid=self.request.user.id, 
+                               comment=form.cleaned_data['comment'], 
+                               targetid=target.id)
+            
+        else:
+            snex_id = run_hook('sync_sequence_with_snex1', form.serialize_parameters(), group_names, userid=self.request.user.id)
         
         # Change the name of the observation group, if one was created
         if len(records) > 1 or form.cleaned_data.get('cadence_strategy'):
