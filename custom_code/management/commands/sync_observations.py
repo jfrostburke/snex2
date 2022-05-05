@@ -16,6 +16,7 @@ from django.core.management.base import BaseCommand
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
 from tom_targets.models import Target
 from custom_code.management.commands.ingest_observations import get_session, load_table, update_permissions, get_snex2_params
+from custom_code.models import ScienceTags, TargetTags
 from django.contrib.auth.models import Group, User
 from django_comments.models import Comment
 from guardian.shortcuts import assign_perm
@@ -72,6 +73,8 @@ class Command(BaseCommand):
         ### Define our db tables as Classes
         obsrequests = load_table('obsrequests', db_address=_SNEX1_DB)
         obslog = load_table('obslog', db_address=_SNEX1_DB)
+        obstags = load_table('obsrequests_tags', db_address=_SNEX1_DB)
+        tags = load_table('tags', db_address=_SNEX1_DB)
         Groups = load_table('groups', db_address=_SNEX1_DB)
         users = load_table('users', db_address=_SNEX1_DB)
         notes = load_table('notes', db_address=_SNEX1_DB)
@@ -362,7 +365,15 @@ class Command(BaseCommand):
                             if int(obs.groupidcode) is not None:
                                 update_permissions(int(obs.groupidcode), template, snex1_groups) #View obs record
                             newobsgroup.observation_records.add(template)
-                            
+
+                            ### Add observation science tag to the target in SNEx2, if it doesn't already exist
+                            obstagids = [t.tagid for t in db_session.query(obstags).filter(obstags.requestsid==requestsid).all()]
+                            taglist = [x.tag for x in db_session.query(tags).filter(tags.id.in_(obstagids)).all()]
+                            for t in taglist:
+                                snex2_tag = ScienceTags.objects.filter(tag=t).first()
+                                if snex2_tag:
+                                    newtag, created = TargetTags.objects.get_or_create(target_id=target_id, tag_id=int(snex2_tag.id))
+
                         ### Add the new observation record, if it exists in SNEx1 but not SNEx2
                         if tracknumber_count > 0 and observation_id > 0 and not in_snex2:
                             
