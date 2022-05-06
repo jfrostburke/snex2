@@ -21,10 +21,15 @@
 .pessto-table {
     display: none;
 }
+.dlt40-table {
+    display: none;
+}
 </style>
 {% for parameter in parameters %}
-{% if parameter.proposal == 'SUPA2021B-001' %}
+{% if 'SUPA202' in parameter.proposal %}
 <table class="table pessto-table">
+{% elif parameter.proposal == 'LCO2022A-013' %}
+<table class="table dlt40-table">
 {% else %}
 <table class="table">
 {% endif %}
@@ -58,7 +63,7 @@
       <td>{{ parameter.instrument }}</td>
       {% if parameter.observation_type == "Phot" %}
       <form method="post" class="form" id="scheduling-form-{{ parameter.observation_id }}">
-	{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,U,B,V,R,I,u,gp,rp,ip,zs,w,reminder' %}
+	{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,U,B,V,R,I,u,gp,rp,ip,zs,w,reminder,delay_start' %}
 	<td>
 	  <div class="row">{{ form.cadence_frequency }}</div>
 	  <!--div class="row" style="width: 100px;">
@@ -199,7 +204,7 @@ function modify_sequence(clickedId) {
     var beginComment = prompt('Any comment for this sequence:', '');
     var commentObj = {'cancel':cancelComment, 'begin':beginComment};
   } else {
-    commentObj = {'none': ''};
+    var commentObj = {'none': ''};
   }
   var commentJSON = JSON.stringify(commentObj);
   $.ajax({

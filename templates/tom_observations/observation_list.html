@@ -27,8 +27,14 @@
     </div>
     <div class="row">
       <div class="col-md-6">
-	<input type="checkbox" id="checkbox-pessto" onclick="showPESSTO()" value="Show ePESSTO Sequences">
+	<input type="checkbox" id="checkbox-pessto" onclick="showTable('pessto')" value="Show ePESSTO Sequences">
 	<label for="checkbox-pessto">Show ePESSTO Sequences</label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6">
+	<input type="checkbox" id="checkbox-dlt40" onclick="showTable('dlt40')" value="Show DLT40 Sequences">
+	<label for="checkbox-dlt40">Show DLT40 Sequences</label>
       </div>
     </div>
     {% with filter.qs|order_by_pending_requests as pending_requests %}
@@ -60,14 +66,13 @@
   </div>
 </div>
 <script>
-function showPESSTO() {
-  var pesstoSequences = document.getElementsByClassName('pessto-table');
-  for (var i = 0; i < pesstoSequences.length; i++) {
-    console.log(pesstoSequences[i].style.display);
-    if (pesstoSequences[i].style.display != 'block') {
-      pesstoSequences[i].style.display = 'block';
+function showTable(groupname) {
+  var sequences = document.getElementsByClassName(groupname+'-table');
+  for (var i = 0; i < sequences.length; i++) {
+    if (sequences[i].style.display != 'block') {
+      sequences[i].style.display = 'block';
     } else {
-      pesstoSequences[i].style.display = 'none';
+      sequences[i].style.display = 'none';
     }
   }
 }
