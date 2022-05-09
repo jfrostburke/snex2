@@ -59,13 +59,26 @@ $(function () {
 
 $("#phot_cadence_frequency").keyup(function() {
   var cadence = document.getElementById("phot_cadence_frequency").value;
-  var newreminder = 2*parseFloat(cadence) + 0.7;
+  var delayamount = document.getElementById("phot_delay_amount").value;
+  var newreminder = 2*parseFloat(cadence) + parseFloat(delayamount) + 0.7;
   document.getElementById("phot_reminder").value = newreminder;
 });
-
+$("#phot_delay_amount").keyup(function() {
+  var cadence = document.getElementById("phot_cadence_frequency").value;
+  var delayamount = document.getElementById("phot_delay_amount").value;
+  var newreminder = 2*parseFloat(cadence) + parseFloat(delayamount) + 0.7;
+  document.getElementById("phot_reminder").value = newreminder;
+});
 $("#spec_cadence_frequency").keyup(function() {
   var cadence = document.getElementById("spec_cadence_frequency").value;
-  var newreminder = 2*parseFloat(cadence) + 0.7;
+  var delayamount = document.getElementById("spec_delay_amount").value;
+  var newreminder = 2*parseFloat(cadence) + parseFloat(delayamount) + 0.7;
+  document.getElementById("spec_reminder").value = newreminder;
+});
+$("#spec_delay_amount").keyup(function() {
+  var cadence = document.getElementById("spec_cadence_frequency").value;
+  var delayamount = document.getElementById("spec_delay_amount").value;
+  var newreminder = 2*parseFloat(cadence) + parseFloat(delayamount) + 0.7;
   document.getElementById("spec_reminder").value = newreminder;
 });
 $("#phot_delay_start").click(function() {
