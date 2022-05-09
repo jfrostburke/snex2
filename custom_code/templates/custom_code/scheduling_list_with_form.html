@@ -212,7 +212,11 @@ function modify_sequence(clickedId) {
     data: $(theformstr).serialize() + "&button=" + clickedId + "&comment=" + commentJSON,
     dataType: 'json',
     success: function(response) {
-      document.getElementById(clickedId).value = response.success;
+      if (response.hasOwnProperty('failure')) {
+	alert(response.failure)
+      } else {
+        document.getElementById(clickedId).value = response.success;
+      }
     }
   });
 }

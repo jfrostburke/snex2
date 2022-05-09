@@ -549,10 +549,6 @@ def scheduling_view(request):
     if 'modify' in request.GET['button']:
         obs_id = int(float(request.GET['observation_id']))
         obs = ObservationRecord.objects.get(id=obs_id)
-        canceled = cancel_observation(obs)
-        if not canceled:
-            response_data = {'failure': 'Error'}
-            return HttpResponse(json.dumps(response_data), content_type='application/json')
 
         ## Get the new observation parameters
         form_data = {'name': request.GET['name'],
@@ -596,6 +592,24 @@ def scheduling_view(request):
             form_data['cadence'] = cadence 
         form_data['observing_parameters'] = observing_parameters
 
+        # Make sure at least one of the observing parameters changed
+        dict_keys = ['ipp_value', 'max_airmass', 'cadence_frequency', 'U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w', 'exposure_time']
+        modified = False
+        for key in dict_keys:
+            if key in observing_parameters.keys() and key in obs.parameters.keys():
+                if observing_parameters[key] != obs.parameters[key]:
+                    modified = True
+                    break
+        if not modified:
+            response_data = {'failure': 'Sequence parameters were not modified, please modify one and try again'}
+            return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+        # Cancel the old observation
+        canceled = cancel_observation(obs)
+        if not canceled:
+            response_data = {'failure': 'Canceling the previous sequence failed, please try again'}
+            return HttpResponse(json.dumps(response_data), content_type='application/json')
+        
         # Submission follows how observation requests are submitted in TOM view
         facility = get_service_class(obs.facility)()
         form = facility.get_form(form_data['observation_type'])(observing_parameters)
@@ -603,7 +617,8 @@ def scheduling_view(request):
             observation_ids = facility.submit_observation(form.observation_payload())
         else:
             logger.error(msg=f'Unable to submit next cadenced observation: {form.errors}')
-            raise Exception(f'Unable to submit next cadenced observation: {form.errors}')
+            return HttpResponse(json.dumps({'failure': 'Unable to submit next cadenced observation'}), content_type='application/json')
+            #raise Exception(f'Unable to submit next cadenced observation: {form.errors}')
 
         # Creation of corresponding ObservationRecord objects for the observations
         new_observations = []
