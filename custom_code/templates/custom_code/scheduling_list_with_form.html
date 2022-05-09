@@ -107,7 +107,7 @@
       </form>
       {% else %}
       <form method="post" class="form" id="scheduling-form-{{ parameter.observation_id }}">
-	{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,exposure_time,reminder' %}
+	{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,exposure_time,reminder,delay_start' %}
 	<td>{{ form.cadence_frequency }}</td>
 	<td>{{ form.ipp_value }}</td>
 	<td>{{ form.max_airmass }}</td>
