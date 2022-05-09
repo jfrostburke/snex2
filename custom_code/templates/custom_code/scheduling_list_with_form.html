@@ -87,7 +87,7 @@
 	  <div class="exposure-row">{{ form.zs.label }}{{ form.zs }}</div>
 	  <div class="exposure-row">{{ form.w.label }}{{ form.w }}</div>
 	</td>
-	<td>
+	<td style="padding-right: 40px;">
 	  <div class="row">{{ form.reminder }} days</div>
 	  <div class="row">
 	  {% csrf_token %}
@@ -115,7 +115,7 @@
 	  <div class="exposure-row">Exposure Time</div>
 	  <div class="exposure-row">{{ form.exposure_time }}</div>
 	</td>
-	<td>
+	<td style="padding-right: 40px;">
 	  <div class="row">{{ form.reminder }} days</div>
 	  <div class="row">
 	  {% csrf_token %}
@@ -248,7 +248,16 @@ function approveRejectSequence(observationId, decision) {
 $(".cadence-input").keyup(function() {
   var t = this;
   var table = t.closest(".table");
-  var newreminder = 2*parseFloat(t.value) + 0.7;
+  var delay_start = table.querySelectorAll('input[name="delay_start"]')[0];
+  var newreminder = 2*parseFloat(t.value) + parseFloat(delay_start.value) + 0.7;
+  var reminder = table.querySelectorAll('input[name="reminder"]')[0];
+  reminder.value = newreminder;
+});
+$(".delay-start-input").keyup(function() {
+  var t = this;
+  var table = t.closest(".table");
+  var cadence_input = table.querySelectorAll('input[name="cadence_frequency"]')[0];
+  var newreminder = 2*parseFloat(cadence_input.value) + parseFloat(t.value) + 0.7;
   var reminder = table.querySelectorAll('input[name="reminder"]')[0];
   reminder.value = newreminder;
 });
