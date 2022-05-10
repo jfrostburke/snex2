@@ -1,7 +1,15 @@
 {% load plotly_dash %}
 {% for entry in plot_list %}
   <div class="row" style="margin-bottom: -250px;">
-    <div class="col-md-2">{{ entry.time }}</div>
+    <div class="col-md-2">
+      <div class="row"><b>{{ entry.time }}</b></div>
+      <div class="row">Telescope: {{ entry.spec_extras.telescope }} {{ entry.spec_extras.site }}</div>
+      <div class="row">Instrument: {{ entry.spec_extras.instrument }}</div>
+      <div class="row">Exposure Time: {{ entry.spec_extras.exptime|floatformat:0 }}s</div>
+      <div class="row">Slit: {{ entry.spec_extras.slit }}"</div>
+      <div class="row">Airmass: {{ entry.spec_extras.airmass|floatformat:2 }}</div>
+      <div class="row">Reduced by: {{ entry.spec_extras.reducer }}</div>
+    </div>
     <div class="col-md-10">
       {% plotly_app name="Spectra_Individual" ratio=1.0 initial_arguments=entry.dash_context %}
     </div>

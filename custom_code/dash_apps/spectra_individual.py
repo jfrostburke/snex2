@@ -228,10 +228,8 @@ def get_target_list(value, existing, *args, **kwargs):
     
     elif value:
         target_match_list = Target.objects.filter(Q(name__icontains=value) | Q(aliases__name__icontains=value)).distinct()
-        print('Targets found')
     else:
         target_match_list = Target.objects.none()
-        print('No targets found')
     names = [{'label': '', 'value': ''}]
     for target in target_match_list:
         names += [{'label': n, 'value': n} for n in target.names]

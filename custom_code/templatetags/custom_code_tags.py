@@ -1207,12 +1207,30 @@ def dash_spectra_page(context, target):
         if max(flux) > max_flux: max_flux = max(flux)
         if min(flux) < min_flux: min_flux = min(flux)
 
+        snex_id_row = ReducedDatumExtra.objects.filter(data_type='spectroscopy', key='snex_id', value__icontains='"snex2_id": {}'.format(spectrum.id)).first()
+        if snex_id_row:
+            snex1_id = json.loads(snex_id_row.value)['snex_id']
+            spec_extras_row = ReducedDatumExtra.objects.filter(data_type='spectroscopy', key='spec_extras', value__icontains='"snex_id": {}'.format(snex1_id)).first()
+            if spec_extras_row:
+                spec_extras = json.loads(spec_extras_row.value)
+                if spec_extras.get('instrument', '') == 'en06':
+                    spec_extras['site'] = '(OGG 2m)'
+                    spec_extras['instrument'] += ' (FLOYDS)'
+                elif spec_extras.get('instrument', '') == 'en12':
+                    spec_extras['site'] = '(COJ 2m)'
+                    spec_extras['instrument'] += ' (FLOYDS)'
+            else:
+                spec_extras = {}
+        else:
+            spec_extras = {}
+
         plot_list.append({'dash_context': {'spectrum_id': {'value': spectrum.id},
                                            'target_redshift': {'value': z},
                                            'min-flux': {'value': min_flux},
                                            'max-flux': {'value': max_flux}
                                         },
-                          'time': str(spectrum.timestamp)
+                          'time': str(spectrum.timestamp).split('+')[0],
+                          'spec_extras': spec_extras
                         })
 
     return {'plot_list': plot_list,
