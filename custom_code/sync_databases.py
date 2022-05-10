@@ -387,6 +387,7 @@ def update_spec(action, db_address=_SNEX2_DB):
                             for key in ['telescope', 'instrument', 'exptime', 'slit', 'airmass', 'reducer']:
                                 if getattr(spec_row, key):
                                     spec_extras[key] = getattr(spec_row, key)
+                            spec_extras['snex_id'] = int(id_)
                             spec_extras_row = Datum_Extra(data_type='spectroscopy', key='spec_extras', value=json.dumps(spec_extras), target_id=targetid)
                             db_session.add(spec_extras_row)
 
