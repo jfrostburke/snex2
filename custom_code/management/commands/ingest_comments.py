@@ -94,7 +94,7 @@ def get_comments(targetid, tablename, notes, users, days_ago):
                             site_id=2, #TODO: Why?
                             user_id=snex2_user.id
                         )
-                    #newcomment.save()
+                    newcomment.save()
    
     print('Done ingesting comments for target {} and table {}'.format(targetid, tablename))
 
