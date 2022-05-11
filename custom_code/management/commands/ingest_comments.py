@@ -75,7 +75,7 @@ def get_comments(targetid, tablename, notes, users, days_ago):
 
             elif tablename == 'spec':
                 # Need to get reduceddatum id from the reduceddatumextra table
-                rdes = ReducedDatumExtra.objects.filter(data_type='spectroscopy', target_id=int(comment.targetid))
+                rdes = ReducedDatumExtra.objects.filter(data_type='spectroscopy', key='snex_id', target_id=int(comment.targetid))
                 snex2_id = False
                 for rde in rdes:
                     if int(comment.tableid) == json.loads(rde.value)['snex_id']:
