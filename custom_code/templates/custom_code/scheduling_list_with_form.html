@@ -73,7 +73,7 @@
 	</td>
 	<td>{{ form.ipp_value }}</td>
 	<td>{{ form.max_airmass }}</td>
-	<td>
+	<td rowspan="3">
 	  <div class="exposure-row">Exposure Time Exposures Block No.</div>
 	  <div class="exposure-row">{{ form.U.label }}{{ form.U }}</div>
 	  <div class="exposure-row">{{ form.B.label }}{{ form.B }}</div>
@@ -87,7 +87,7 @@
 	  <div class="exposure-row">{{ form.zs.label }}{{ form.zs }}</div>
 	  <div class="exposure-row">{{ form.w.label }}{{ form.w }}</div>
 	</td>
-	<td style="padding-right: 40px;">
+	<td style="padding-right: 40px;" rowspan="3">
 	  <div class="row">{{ form.reminder }} days</div>
 	  <div class="row">
 	  {% csrf_token %}
@@ -111,11 +111,11 @@
 	<td>{{ form.cadence_frequency }}</td>
 	<td>{{ form.ipp_value }}</td>
 	<td>{{ form.max_airmass }}</td>
-	<td>
+	<td rowspan="2">
 	  <div class="exposure-row">Exposure Time</div>
 	  <div class="exposure-row">{{ form.exposure_time }}</div>
 	</td>
-	<td style="padding-right: 40px;">
+	<td style="padding-right: 40px;" rowspan="3">
 	  <div class="row">{{ form.reminder }} days</div>
 	  <div class="row">
 	  {% csrf_token %}
@@ -134,7 +134,7 @@
 	</td>
       </form>
       {% endif %}
-      <td>
+      <td rowspan="3">
 	<div class="row">{{ parameter.start }}</div>
 	<div class="row">{{ parameter.comment }}</div>
       </td>
