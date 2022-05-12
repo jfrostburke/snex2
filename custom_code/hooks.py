@@ -620,3 +620,40 @@ def change_interest_in_snex1(targetid, username, status):
     
     logger.info('Synced {} interested in target {} with SNEx1'.format(username, targetid))
 
+
+def sync_comment_with_snex1(comment, tablename, userid, targetid, snex1_rowid):
+    '''
+    Hook to sync an observation sequence submitted through SNEx2 
+    to the obsrequests table in the SNEx1 database
+    '''
+
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+
+    with _get_session(db_address=_snex1_address) as db_session:
+        Notes = _load_table('notes', db_address=_snex1_address)
+        Users = _load_table('users', db_address=_snex1_address)
+        
+        if userid != 67:
+            try:
+                # Get SNEx1 id corresponding to this user
+                snex2_user = User.objects.get(id=userid)
+                snex1_user = db_session.query(Users).filter(Users.name==snex2_user.username).first()
+                snex1_userid = snex1_user.id
+            except:
+                snex1_userid = 67
+        else:
+            snex1_userid = 67
+ 
+        newcomment = Notes(
+                targetid=targetid,
+                note=comment,
+                tablename=tablename,
+                tableid=snex1_rowid,
+                posttime=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
+                userid=snex1_userid,
+                datecreated=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+        )
+        db_session.add(newcomment)
+        db_session.commit()
+
+    logger.info('Synced comment for table {} from user {}'.format(tablename, userid)) 

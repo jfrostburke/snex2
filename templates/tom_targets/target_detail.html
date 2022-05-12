@@ -235,6 +235,21 @@ function display_obs() {
     x.style.display = "none";
   }
 }
+function savecomment(spectrumId) {
+  var comment = document.getElementById("comment-"+spectrumId).value;
+  $.ajax({
+    url: '{% url "save-comment" %}',
+    data: {'comment': comment,
+           'object_id': spectrumId,
+           'user_id': {{ user.id }},
+	   'tablename': 'spec',
+    },
+    dataType: 'json',
+    success: function() {
+      document.getElementById("comment-"+spectrumId).insertAdjacentHTML('beforebegin', '<div class="row">{{ user.username }}: ' + comment +'</div>');
+    }
+  })
+}
 $(document).ready (function() {
   var parentElt = document.getElementById("plotly-lc-div");
   var childElt = parentElt.firstElementChild;

@@ -1207,7 +1207,7 @@ def dash_spectra_page(context, target):
         if max(flux) > max_flux: max_flux = max(flux)
         if min(flux) < min_flux: min_flux = min(flux)
 
-        snex_id_row = ReducedDatumExtra.objects.filter(data_type='spectroscopy', key='snex_id', value__icontains='"snex2_id": {}'.format(spectrum.id)).first()
+        snex_id_row = ReducedDatumExtra.objects.filter(data_type='spectroscopy', target_id=target_id, key='snex_id', value__icontains='"snex2_id": {}'.format(spectrum.id)).first()
         if snex_id_row:
             snex1_id = json.loads(snex_id_row.value)['snex_id']
             spec_extras_row = ReducedDatumExtra.objects.filter(data_type='spectroscopy', key='spec_extras', value__icontains='"snex_id": {}'.format(snex1_id)).first()
@@ -1219,6 +1219,12 @@ def dash_spectra_page(context, target):
                 elif spec_extras.get('instrument', '') == 'en12':
                     spec_extras['site'] = '(COJ 2m)'
                     spec_extras['instrument'] += ' (FLOYDS)'
+
+                content_type_id = ContentType.objects.get(model='reduceddatum').id
+                comments = Comment.objects.filter(object_pk=spectrum.id, content_type_id=content_type_id).order_by('id')
+                comment_list = ['{}: {}'.format(User.objects.get(username=comment.user_name).first_name, comment.comment) for comment in comments]
+                spec_extras['comments'] = comment_list
+            
             else:
                 spec_extras = {}
         else:
@@ -1230,9 +1236,9 @@ def dash_spectra_page(context, target):
                                            'max-flux': {'value': max_flux}
                                         },
                           'time': str(spectrum.timestamp).split('+')[0],
-                          'spec_extras': spec_extras
+                          'spec_extras': spec_extras,
+                          'spectrum': spectrum
                         })
-
     return {'plot_list': plot_list,
             'request': request}
 

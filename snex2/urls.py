@@ -17,8 +17,7 @@ from django.contrib import admin
 from django.urls import path
 
 from django.urls import include
-
-from custom_code.views import TargetListView, CustomTargetCreateView, CustomDataProductUploadView, CustomDataProductDeleteView, target_redirect_view, add_tag_view, save_target_tag_view, targetlist_collapse_view, save_dataproduct_groups_view, change_target_known_to_view, change_interest_view, search_name_view, add_target_to_group_view, remove_target_from_group_view, change_observing_priority_view, CustomObservationListView, make_tns_request_view, fit_lightcurve_view, save_lightcurve_params_view, CustomObservationCreateView, query_swift_observations_view, load_lightcurve_view, make_thumbnail_view, InterestingTargetsView, async_spectra_page_view
+from custom_code.views import *
 from custom_code.api_views import CustomDataProductViewSet
 from rest_framework.routers import DefaultRouter
 from custom_code.dash_apps import lightcurve, spectra, spectra_individual
@@ -54,6 +53,7 @@ urlpatterns = [
     path('make-thumbnail/', make_thumbnail_view, name='make-thumbnail'),
     path('interesting-targets/', InterestingTargetsView.as_view(), name='interesting-targets'),
     path('load-spectra-page/', async_spectra_page_view, name='load-spectra-page'),
+    path('save-comment/', save_comments_view, name='save-comment'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),

@@ -301,7 +301,8 @@ HOOKS = {
     'update_reminder_in_snex1': 'custom_code.hooks.update_reminder_in_snex1',
     'approve_sequence_in_snex1': 'custom_code.hooks.approve_sequence_in_snex1',
     'find_images_from_snex1': 'custom_code.hooks.find_images_from_snex1',
-    'change_interest_in_snex1': 'custom_code.hooks.change_interest_in_snex1'
+    'change_interest_in_snex1': 'custom_code.hooks.change_interest_in_snex1',
+    'sync_comment_with_snex1': 'custom_code.hooks.sync_comment_with_snex1'
 }
 
 BROKERS = {

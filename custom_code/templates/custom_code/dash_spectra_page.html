@@ -9,6 +9,13 @@
       <div class="row">Slit: {{ entry.spec_extras.slit }}"</div>
       <div class="row">Airmass: {{ entry.spec_extras.airmass|floatformat:2 }}</div>
       <div class="row">Reduced by: {{ entry.spec_extras.reducer }}</div>
+      {% for comment in entry.spec_extras.comments %}
+      <div class="row">{{ comment }}</div>
+      {% endfor %}
+      <div class="row">
+	<input id="comment-{{ entry.spectrum.id }}" type="text" name="comment" placeholder="Add a comment">
+	<input onclick="savecomment({{ entry.spectrum.id }})" type="submit" class="btn btn-primary btn-post" name="submit" value="Submit">
+      </div>
     </div>
     <div class="col-md-10">
       {% plotly_app name="Spectra_Individual" ratio=1.0 initial_arguments=entry.dash_context %}

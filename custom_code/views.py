@@ -414,23 +414,59 @@ class PaperCreateView(FormView):
         return HttpResponseRedirect('/targets/{}/'.format(target.id))
 
 
-def save_comments(comment, obsgroup_id, user):
+def save_comments(comment, object_id, user, tablename='observationgroup'):
 
-    content_type_id = ContentType.objects.get(model='observationgroup').id
+    try:
+        if tablename == 'observationgroup':
+            content_type_id = ContentType.objects.get(model='observationgroup').id
+        else:
+            tablename_dict = {'spec': 'reduceddatum',
+                              'target': 'targets'}
+            snex2_model = tablename_dict[tablename]
+            content_type_id = ContentType.objects.get(model=snex2_model).id
 
-    newcomment = Comment(
-        object_pk=obsgroup_id,
-        user_name=user.username,
-        user_email=user.email,
-        comment=comment,
-        submit_date=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
-        is_public=True,
-        is_removed=False,
-        content_type_id=content_type_id,
-        site_id=2,
-        user_id=user.id
-    )
-    newcomment.save()
+        newcomment = Comment(
+            object_pk=object_id,
+            user_name=user.username,
+            user_email=user.email,
+            comment=comment,
+            submit_date=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
+            is_public=True,
+            is_removed=False,
+            content_type_id=content_type_id,
+            site_id=2,
+            user_id=user.id
+        )
+        newcomment.save()
+        return True
+    except:
+        return False
+
+
+def save_comments_view(request):
+    comment = request.GET['comment']
+    object_id = int(request.GET['object_id'])
+    user_id = int(request.GET['user_id'])
+    tablename = request.GET['tablename']
+
+    user = User.objects.get(id=user_id)
+
+    saved = save_comments(comment, object_id, user, tablename=tablename)
+
+    if saved:
+        if tablename == 'spec':
+            ### Save comment in SNEx1 as well
+            spec = ReducedDatum.objects.get(id=object_id)
+            target_id = int(spec.target_id)
+            snex_id_row = ReducedDatumExtra.objects.filter(data_type='spectroscopy', key='snex_id', target_id=target_id, value__icontains='"snex2_id": {}'.format(object_id)).first()
+            if snex_id_row:
+                snex1_id = json.loads(snex_id_row.value)['snex_id']
+                run_hook('sync_comment_with_snex1', comment, 'spec', user_id, target_id, snex1_id)
+        
+        return HttpResponse(json.dumps({'success': 'Saved'}))
+    
+    else:
+        return HttpResponse(json.dumps({'failure': 'Failed to save'}))
 
 
 def cancel_observation(obs):
