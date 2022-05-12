@@ -603,14 +603,12 @@ def scheduling_view(request):
         observing_parameters['facility'] = obs.facility
         observing_parameters['name'] = form_data['name']
         observing_parameters['target_id'] = form_data['target_id']
+        observing_parameters['delay_start'] = True
+        observing_parameters['delay_amount'] = float(request.GET['delay_start'])
         
         now = datetime.utcnow()
-        if not request.GET.get('delay_start', ''):
-            delay_amount = 0.0
-        else:
-            delay_amount = float(request.GET['delay_start'])
-        observing_parameters['start'] = datetime.strftime(now + timedelta(days=delay_amount), '%Y-%m-%dT%H:%M:%S')
-        observing_parameters['end'] = datetime.strftime(now + timedelta(hours=float(request.GET['cadence_frequency'])*24), '%Y-%m-%dT%H:%M:%S')
+        observing_parameters['start'] = datetime.strftime(now + timedelta(days=float(request.GET['delay_start'])), '%Y-%m-%dT%H:%M:%S')
+        observing_parameters['end'] = datetime.strftime(now + timedelta(hours=float(request.GET['cadence_frequency'])*24+float(request.GET['delay_start'])*24), '%Y-%m-%dT%H:%M:%S')
 
         if request.GET['observation_type'] == 'IMAGING':
             filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']

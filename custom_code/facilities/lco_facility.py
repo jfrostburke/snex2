@@ -171,9 +171,10 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
         now = datetime.datetime.utcnow()
         if cleaned_data.get('delay_start'):
             cleaned_data['start'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['delay_amount']), '%Y-%m-%dT%H:%M:%S')
+            cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24+cleaned_data['delay_amount']*24), '%Y-%m-%dT%H:%M:%S')
         else:
             cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
-        cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24), '%Y-%m-%dT%H:%M:%S')
+            cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24), '%Y-%m-%dT%H:%M:%S')
         cleaned_data['reminder'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['reminder']), '%Y-%m-%dT%H:%M:%S')
         return cleaned_data
 
@@ -410,9 +411,10 @@ class SnexSpectroscopicSequenceForm(LCOSpectroscopicSequenceForm):
         now = datetime.datetime.utcnow()
         if cleaned_data.get('delay_start'):
             cleaned_data['start'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['delay_amount']), '%Y-%m-%dT%H:%M:%S')
+            cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24+cleaned_data['delay_amount']*24), '%Y-%m-%dT%H:%M:%S')
         else:
             cleaned_data['start'] = datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')
-        cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24), '%Y-%m-%dT%H:%M:%S')
+            cleaned_data['end'] = datetime.datetime.strftime(now + datetime.timedelta(hours=cleaned_data['cadence_frequency']*24), '%Y-%m-%dT%H:%M:%S')
         cleaned_data['reminder'] = datetime.datetime.strftime(now + datetime.timedelta(days=cleaned_data['reminder']), '%Y-%m-%dT%H:%M:%S')
 
         return cleaned_data
