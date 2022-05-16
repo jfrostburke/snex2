@@ -63,81 +63,8 @@ columns = [{'id': p, 'name': p} for p in params]
 columns.append({'id': 'Element', 'name': 'Element', 'editable': False})
 columns.insert(0, columns.pop())
 
-elem_input_array = []
-for elem in list(elements.keys())[:9]:
-    row = html.Tr([
-        html.Td(
-            dbc.Checkbox(id='standalone-checkbox-'+elem.replace(' ', '-'))
-        ),
-        html.Td(
-            elem
-        ),
-        html.Td(
-           dbc.Badge(
-               '__',#elem,
-               color=elements[elem]['color']
-            )
-        ),
-        html.Td(
-            dbc.Input(
-                id='z-'+elem.replace(' ', '-'),
-                value=0,
-                type='number',
-                min=0,
-                max=10,
-                step=0.0000001,
-                placeholder='z'
-            )
-        ),
-        html.Td(
-            dbc.Input(
-                id='v-'+elem.replace(' ', '-'),
-                type='number',
-                placeholder='Velocity (km/s)',
-                value=0
-            )
-        )
-    ])
-    elem_input_array.append(row)
-table_body_one =[html.Tbody(elem_input_array)]
-
-elem_input_array = []
-for elem in list(elements.keys())[9:]:
-    row = html.Tr([
-        html.Td(
-            dbc.Checkbox(id='standalone-checkbox-'+elem.replace(' ', '-'))
-        ),
-        html.Td(
-            elem
-        ),
-        html.Td(
-           dbc.Badge(
-               '__',#elem,
-               color=elements[elem]['color']
-            )
-        ),
-        html.Td(
-            dbc.Input(
-                id='z-'+elem.replace(' ', '-'),
-                value=0,
-                type='number',
-                min=0,
-                max=10,
-                step=0.0000001,
-                placeholder='z'
-            )
-        ),
-        html.Td(
-            dbc.Input(
-                id='v-'+elem.replace(' ', '-'),
-                type='number',
-                placeholder='Velocity (km/s)',
-                value=0
-            )
-        )
-    ])
-    elem_input_array.append(row)
-table_body_two =[html.Tbody(elem_input_array)]
+table_body_one =[html.Tbody([])]
+table_body_two =[html.Tbody([])]
 
 app.layout = html.Div([
     dcc.Graph(id='table-editing-simple-output',
@@ -210,6 +137,7 @@ app.layout = html.Div([
     ])
 ], style={'padding-bottom': '0px'})
 
+
 @app.callback(
     Output('spectra-compare-dropdown', 'options'),
     [Input('spectra-compare-dropdown', 'search_value'),
@@ -235,6 +163,7 @@ def get_target_list(value, existing, *args, **kwargs):
         names += [{'label': n, 'value': n} for n in target.names]
     return names
 
+
 @app.callback(
     Output('table-container-div', 'style'),
     [Input('line-plotting-checklist', 'value')])
@@ -243,6 +172,7 @@ def show_table(value, *args, **kwargs):
         return {'display': 'block'}
     else:
         return {'display': 'none'}
+
 
 @app.callback(
     Output('spectra-compare-results', 'style'),
@@ -254,25 +184,43 @@ def show_compare(value, *args, **kwargs):
         return {'display': 'none'}
 
 
-line_plotting_input = [Input('standalone-checkbox-'+elem.replace(' ', '-'), 'checked') for elem in elements]
-line_plotting_input += [Input('v-'+elem.replace(' ', '-'), 'value') for elem in elements]
-line_plotting_input += [Input('z-'+elem.replace(' ', '-'), 'value') for elem in elements]
+line_plotting_input = [Input('standalone-checkbox-'+elem.replace(' ', '-'), 'checked') for elem in elements]+[Input('standalone-checkbox-custom1', 'checked'), Input('standalone-checkbox-custom2', 'checked')]
+line_plotting_input += [Input('v-'+elem.replace(' ', '-'), 'value') for elem in elements]+[Input('v-custom1', 'value'), Input('v-custom2', 'value')]
+line_plotting_input += [Input('z-'+elem.replace(' ', '-'), 'value') for elem in elements]+[Input('z-custom1', 'value'), Input('z-custom2', 'value')]
+line_plotting_input += [Input('lambda-custom1', 'value'), Input('lambda-custom2', 'value')]
 @app.callback(
     Output('checked-rows', 'children'),
     line_plotting_input)
 def checked_boxes(*args, **kwargs):
-
     all_rows = [item for item in line_plotting_input if 'standalone-checkbox' in item.component_id]
-    velocity_rows = [item for item in line_plotting_input if 'v-' in item.component_id]
-    redshift_rows = [item for item in line_plotting_input if 'z-' in item.component_id]
     
     checked_rows = []
     for i in range(len(all_rows)):
-        if args[i]:
+        if args[i] and i < len(all_rows) - 2:
             elem = list(elements.keys())[i]
-            checked_rows.append(json.dumps({elem: {'redshift': args[i+2*len(all_rows)],
-                                                   'velocity': args[i+len(all_rows)]
+            checked_rows.append(json.dumps({elem: {'waves': elements[elem]['waves'],
+                                                   'redshift': args[i+2*len(all_rows)],
+                                                   'velocity': args[i+len(all_rows)],
+                                                   'color': elements[elem]['color']
                                                 } 
+                                            })
+                                        )
+        elif args[i] and i == len(all_rows) - 2:
+            # Custom wavelength entry
+            checked_rows.append(json.dumps({'custom1': {'waves': [args[-2]],
+                                                        'redshift': args[i+2*len(all_rows)],
+                                                        'velocity': args[i+len(all_rows)],
+                                                        'color': '#c7b299'
+                                                    }
+                                            })
+                                        )
+        elif args[i] and i == len(all_rows) - 1:
+            # Custom wavelength entry
+            checked_rows.append(json.dumps({'custom2': {'waves': [args[-1]],
+                                                        'redshift': args[i+2*len(all_rows)],
+                                                        'velocity': args[i+len(all_rows)],
+                                                        'color': '#837565'
+                                                    }
                                             })
                                         )
     return checked_rows
@@ -283,7 +231,7 @@ def checked_boxes(*args, **kwargs):
     [Input('target_redshift', 'value')])
 def change_redshift(z, *args, **kwargs):
     elem_input_array = []
-    for elem in list(elements.keys())[:9]:
+    for elem in list(elements.keys())[:10]:
         row = html.Tr([
             html.Td(
                 dbc.Checkbox(id='standalone-checkbox-'+elem.replace(' ', '-'))
@@ -312,16 +260,17 @@ def change_redshift(z, *args, **kwargs):
                 dbc.Input(
                     id='v-'+elem.replace(' ', '-'),
                     type='number',
-                    placeholder='Velocity (km/s)',
-                    value=0
-                )
+                    placeholder='v = 0 (km/s)',
+                    #value=0
+                ),
+                colSpan=2,
             )
         ])
         elem_input_array.append(row)
     table_body_one = [html.Tbody(elem_input_array)]
     
     elem_input_array = []
-    for elem in list(elements.keys())[9:]:
+    for elem in list(elements.keys())[10:]:
         row = html.Tr([
             html.Td(
                 dbc.Checkbox(id='standalone-checkbox-'+elem.replace(' ', '-'))
@@ -350,12 +299,97 @@ def change_redshift(z, *args, **kwargs):
                 dbc.Input(
                     id='v-'+elem.replace(' ', '-'),
                     type='number',
-                    placeholder='Velocity (km/s)',
-                    value=0
-                )
+                    placeholder='v = 0 (km/s)',
+                    #value=0
+                ),
+                colSpan=2,
             )
         ])
         elem_input_array.append(row)
+    elem_input_array.append(
+        html.Tr([
+            html.Td(
+                dbc.Checkbox(id='standalone-checkbox-custom1')
+            ),
+            html.Td(
+                html.Div([
+                    dbc.Badge(
+                        '__',
+                        color='#c7b299'
+                    ),
+                    dbc.Input(
+                        id='lambda-custom1',
+                        type='number',
+                        min=0,
+                        max=1e5,
+                        step=0.1,
+                        placeholder='Wavelength'
+                    )
+                ]),
+                colSpan=2
+            ),
+            html.Td(
+                dbc.Input(
+                    id='z-custom1',
+                    type='number',
+                    min=0,
+                    max=10,
+                    step=0.00000001,
+                    placeholder='z',
+                    value=z
+                )
+            ),
+            html.Td(
+                dbc.Input(
+                    id='v-custom1',
+                    type='number',
+                    placeholder='v = 0 (km/s)',
+                )
+            )
+        ])
+    )
+    elem_input_array.append(
+        html.Tr([
+            html.Td(
+                dbc.Checkbox(id='standalone-checkbox-custom2')
+            ),
+            html.Td(
+                html.Div([
+                    dbc.Badge(
+                        '__',
+                        color='#837565'
+                    ),
+                    dbc.Input(
+                        id='lambda-custom2',
+                        type='number',
+                        min=0,
+                        max=1e5,
+                        step=0.1,
+                        placeholder='Wavelength'
+                    )
+                ]),
+                colSpan=2
+            ),
+            html.Td(
+                dbc.Input(
+                    id='z-custom2',
+                    type='number',
+                    min=0,
+                    max=10,
+                    step=0.00000001,
+                    placeholder='z',
+                    value=z
+                )
+            ),
+            html.Td(
+                dbc.Input(
+                    id='v-custom2',
+                    type='number',
+                    placeholder='v = 0 (km/s)',
+                )
+            )
+        ])
+    )
     table_body_two = [html.Tbody(elem_input_array)]
     return [dbc.Row([
                 dbc.Table(
@@ -372,6 +406,7 @@ def change_redshift(z, *args, **kwargs):
                 )
             ])
         ]
+
 
 @app.expanded_callback(
     Output('table-editing-simple-output', 'figure'),
@@ -566,21 +601,23 @@ def display_output(selected_rows,
         graph_data['data'].append(scatter_obj)
     
     for row in selected_rows:
-        for elem, row_extras in json.loads(row).items():
-            z = row_extras['redshift']
-            if not z:
-                z = 0
-            v = row_extras['velocity']
-            if not v:
-                v = 0
-            try:
-                v_over_c = float(v/(3e5))
-            except:
-                v_over_c = 0
+        (elem, row_extras), = json.loads(row).items()
+        z = row_extras['redshift']
+        if not z:
+            z = 0
+        v = row_extras['velocity']
+        if not v:
+            v = 0
+        try:
+            v_over_c = float(v/(3e5))
+        except:
+            v_over_c = 0
+        lambda_rest = row_extras['waves']
+        if not lambda_rest[0]:
+            continue
         x = []
         y = []
         
-        lambda_rest = elements[elem]['waves']
         if compare_target:
             max_flux = max([max(d['y']) for d in graph_data['data'] if d['name'] not in elements.keys()])
             min_flux = min([min(d['y']) for d in graph_data['data'] if d['name'] not in elements.keys()])
@@ -595,13 +632,18 @@ def display_output(selected_rows,
             y.append(max_flux)
             y.append(None)
 
+        try:
+            color = row_extras['color']
+        except:
+            color = 'black'
+
         graph_data['data'].append(
             go.Scatter(
                 x=x,
                 y=y,
                 name=elem,
                 mode='lines',
-                line=dict(color=elements[elem]['color'])
+                line={'color': color},
             )
         )
     return graph_data
