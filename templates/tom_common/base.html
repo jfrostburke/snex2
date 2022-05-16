@@ -47,7 +47,7 @@
             <a class="nav-link" href="{% url 'alerts:list' %}" style="font-family: 'Montserrat', sans-serif;">Alerts</a>
           </li>
           <li class="nav-item {% if request.resolver_match.namespace == 'observations' %}active{% endif %}">
-              <a class="nav-link" href="{% url 'scheduling' %}" style="font-family: 'Montserrat', sans-serif;">Observations</a>
+              <a class="nav-link" href="{% url 'scheduling' %}" style="font-family: 'Montserrat', sans-serif;">Scheduling</a>
           </li>
           <li class="nav-item {% if request.resolver_match.namespace == 'dataproducts' %}active{% endif %}">
               <a class="nav-link" href="{% url 'tom_dataproducts:list' %}" style="font-family: 'Montserrat', sans-serif;">Data</a>
