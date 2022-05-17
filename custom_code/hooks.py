@@ -628,7 +628,7 @@ def sync_paper_with_snex1(paper):
     _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
 
     with _get_session(db_address=_snex1_address) as db_session:
-        papers = load_table('papers', db_address=_snex1_address)
+        papers = _load_table('papers', db_address=_snex1_address)
 
         status_dict = {'in prep': 'inprep',
                        'submitted': 'submitted',
