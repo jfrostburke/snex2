@@ -588,7 +588,7 @@ def find_images_from_snex1(targetid, allimages=False):
 
 def change_interest_in_snex1(targetid, username, status):
     '''
-    Hook to change the an interested person
+    Hook to change the status of an interested person
     in SNEx1
     '''
     _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
@@ -621,6 +621,34 @@ def change_interest_in_snex1(targetid, username, status):
     logger.info('Synced {} interested in target {} with SNEx1'.format(username, targetid))
 
 
+def sync_paper_with_snex1(paper):
+    '''
+    Hook to ingest a paper into SNEx1
+    '''
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+
+    with _get_session(db_address=_snex1_address) as db_session:
+        papers = load_table('papers', db_address=_snex1_address)
+
+        status_dict = {'in prep': 'inprep',
+                       'submitted': 'submitted',
+                       'published': 'published'
+                    }
+
+        targetid = paper.target
+        reference = paper.last_name + 'et al.'
+        status = status_dict[paper.status]
+        contents = paper.description
+        datecreated = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+
+        newpaper = papers(targetid=targetid, reference=reference, status=status, contents=contents, datecreated=datecreated)
+        db_session.add(newpaper)
+
+        db_session.commit()
+    
+    logger.info('Synced paper {} with SNEx1'.format(paper.id))
+
+
 def sync_comment_with_snex1(comment, tablename, userid, targetid, snex1_rowid):
     '''
     Hook to sync an observation sequence submitted through SNEx2 
@@ -644,16 +672,18 @@ def sync_comment_with_snex1(comment, tablename, userid, targetid, snex1_rowid):
         else:
             snex1_userid = 67
  
-        newcomment = Notes(
-                targetid=targetid,
-                note=comment,
-                tablename=tablename,
-                tableid=snex1_rowid,
-                posttime=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
-                userid=snex1_userid,
-                datecreated=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-        )
-        db_session.add(newcomment)
-        db_session.commit()
+        existing_comment = db_session.query(Notes).filter(and_(Notes.targetid==targetid, Notes.note==comment, Notes.tablename==tablename, Notes.tableid==snex1_rowid)).first()
+        if not existing_comment:
+            newcomment = Notes(
+                    targetid=targetid,
+                    note=comment,
+                    tablename=tablename,
+                    tableid=snex1_rowid,
+                    posttime=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S'),
+                    userid=snex1_userid,
+                    datecreated=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+            )
+            db_session.add(newcomment)
+            db_session.commit()
 
     logger.info('Synced comment for table {} from user {}'.format(tablename, userid)) 

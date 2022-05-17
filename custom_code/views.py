@@ -9,6 +9,8 @@ from django.views.generic.detail import DetailView
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django_comments.models import Comment
+from django_comments.signals import comment_was_posted
+from django.dispatch import receiver
 
 from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter#, BrokerTargetFilter
@@ -410,6 +412,7 @@ class PaperCreateView(FormView):
                 description=description
             )
         paper.save()
+        run_hook('sync_paper_with_snex1', paper)
         
         return HttpResponseRedirect('/targets/{}/'.format(target.id))
 
@@ -1470,3 +1473,16 @@ class InterestingTargetsView(ListView):
         logger.info('Finished getting context data for personal interesting targets')
         context['interesting_group_id'] = TargetList.objects.get(name='Interesting Targets').id
         return context
+
+
+@receiver(comment_was_posted)
+def target_comment_receiver(sender, **kwargs):
+    posted_comment = kwargs['comment']
+    comment = posted_comment.comment
+    content_type = ContentType.objects.get(id=posted_comment.content_type_id).model
+    if content_type == 'target':
+        tablename = 'targets'
+        target_id = int(posted_comment.object_pk)
+        user_id = int(posted_comment.user_id)
+        if not settings.DEBUG:
+            run_hook('sync_comment_with_snex1', comment, tablename, user_id, target_id, target_id)

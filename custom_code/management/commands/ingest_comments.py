@@ -41,6 +41,10 @@ def get_comments(targetid, tablename, notes, users, days_ago):
             target_id = comment.targetid
             
             if tablename == 'targets':
+                # Check if it already exists in SNEx2
+                old_comment = Comment.objects.filter(object_pk=target_id, comment=comment.note, content_type_id=content_dict[tablename]).first()
+                if old_comment:
+                    continue
                 newcomment = Comment(
                         object_pk=target_id,
                         user_name=snex2_user.username,
@@ -82,6 +86,10 @@ def get_comments(targetid, tablename, notes, users, days_ago):
                         snex2_id = json.loads(rde.value)['snex2_id']
                         break
                 if snex2_id:
+                    # Check if it already exists in SNEx2
+                    old_comment = Comment.objects.filter(object_pk=snex2_id, comment=comment.note, content_type_id=content_dict[tablename]).first()
+                    if old_comment:
+                        continue
                     newcomment = Comment(
                             object_pk=snex2_id,
                             user_name=snex2_user.username,

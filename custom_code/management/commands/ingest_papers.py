@@ -55,6 +55,11 @@ class Command(BaseCommand):
                 
                 if paper_to_add.datecreated > days_ago and paper_to_add.lastmodified > days_ago:
                     # Paper was just added, so ingest it into SNEx2  
+                    # But first, check if it was added to SNEx2 originally
+                    oldpaper = Papers.objects.filter(target=target, author_last_name=author_last_name).first()
+                    if oldpaper:
+                        continue
+
                     description = paper_to_add.contents
                     
                     status = status_dict[paper_to_add.status]
