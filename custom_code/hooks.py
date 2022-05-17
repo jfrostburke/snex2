@@ -635,8 +635,8 @@ def sync_paper_with_snex1(paper):
                        'published': 'published'
                     }
 
-        targetid = paper.target
-        reference = paper.author_last_name + 'et al.'
+        targetid = paper.target_id
+        reference = paper.author_last_name + ' et al.'
         status = status_dict[paper.status]
         contents = paper.description
         datecreated = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
