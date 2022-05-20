@@ -278,7 +278,7 @@ def targetname_post_save(targetname, created):
             Names = _load_table('targetnames', db_address=_snex1_address)
 
             targetid = int(targetname.target_id) # Get the targetid of our saved entry
-            name = targetname.value # Get the new classification
+            name = targetname.name 
             if created:
                db_session.add(Names(targetid=targetid, name=name, datecreated=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')))
                db_session.commit()
