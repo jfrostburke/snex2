@@ -466,7 +466,9 @@ def update_target(action, db_address=_SNEX2_DB):
                     db_session.query(Targetname).filter(targetname_criteria).update({'name': t_name})
 
                 elif action=='insert':
-                    db_session.add(Targetname(name=t_name, target_id=n_id, created=datetime.datetime.utcnow(), modified=datetime.datetime.utcnow()))
+                    existing_name = db_session.query(Targetname).filter(Targetname.name==t_name, Targetname.target_id==n_id).first()
+                    if not existing_name:
+                        db_session.add(Targetname(name=t_name, target_id=n_id, created=datetime.datetime.utcnow(), modified=datetime.datetime.utcnow()))
 
                 #elif action=='delete': #Currently doesn't work, need to fix?
                 #    name_delete = db_session.query(Targetname).filter(targetname_criteria).first()

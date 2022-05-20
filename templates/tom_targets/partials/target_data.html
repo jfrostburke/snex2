@@ -35,6 +35,17 @@
       }),
       contentType: "application/JSON",
       dataType: "json",
+      success: function() {
+	$.ajax({
+	  url: '{% url "sync_targetextra" %}',
+	  data: {"newdata": JSON.stringify({
+		  "targetid": targetid,
+		  "key": "name",
+		  "value": newname})
+	  },
+	  dataType: "json"
+	})
+      },
       error: function(e) {
         console.log(e);
       }

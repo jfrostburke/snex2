@@ -13,6 +13,7 @@ from astropy import units as u
 from datetime import datetime, date, timedelta
 import numpy as np
 from django.contrib.auth.models import User
+from django.conf import settings
 
 from sqlalchemy import create_engine, pool, and_
 from sqlalchemy.orm import sessionmaker
@@ -142,119 +143,146 @@ def target_post_save(target, created):
  
     logger.info('Target post save hook: %s created: %s', target, created)
     
-    ### Add the last nondetection and first detection from TNS, if it exists
-    tns_results = _get_tns_params(target)
-    if tns_results.get('success', ''):
-        nondet_date = tns_results['nondetection'].split()[0]
-        nondet_jd = tns_results['nondetection'].split()[1].replace('(', '').replace(')', '')
-        nondet_value = json.dumps({
-            'date': nondet_date,
-            'jd': nondet_jd,
-            'mag': tns_results['nondet_mag'],
-            'filt': tns_results['nondet_filt'],
-            'source': 'TNS'
-        })
-        
-        old_params = TargetExtra.objects.filter(target=target, key='last_nondetection')
-        for old_param in old_params:
-            old_param.delete()
-        
-        te = TargetExtra(
-            target=target,
-            key='last_nondetection',
-            value=nondet_value
-        )
-        te.save()
+    if created:
+        ### Add the last nondetection and first detection from TNS, if it exists
+        tns_results = _get_tns_params(target)
+        if tns_results.get('success', ''):
+            nondet_date = tns_results['nondetection'].split()[0]
+            nondet_jd = tns_results['nondetection'].split()[1].replace('(', '').replace(')', '')
+            nondet_value = json.dumps({
+                'date': nondet_date,
+                'jd': nondet_jd,
+                'mag': tns_results['nondet_mag'],
+                'filt': tns_results['nondet_filt'],
+                'source': 'TNS'
+            })
+            
+            old_params = TargetExtra.objects.filter(target=target, key='last_nondetection')
+            for old_param in old_params:
+                old_param.delete()
+            
+            te = TargetExtra(
+                target=target,
+                key='last_nondetection',
+                value=nondet_value
+            )
+            te.save()
 
-        det_date = tns_results['detection'].split()[0]
-        det_jd = tns_results['detection'].split()[1].replace('(', '').replace(')', '')
-        det_value = json.dumps({
-            'date': det_date,
-            'jd': det_jd,
-            'mag': tns_results['det_mag'],
-            'filt': tns_results['det_filt'],
-            'source': 'TNS'
-        })
-        
-        old_params = TargetExtra.objects.filter(target=target, key='first_detection')
-        for old_param in old_params:
-            old_param.delete()
-        
-        te = TargetExtra(
-            target=target,
-            key='first_detection',
-            value=det_value
-        )
-        te.save()
+            det_date = tns_results['detection'].split()[0]
+            det_jd = tns_results['detection'].split()[1].replace('(', '').replace(')', '')
+            det_value = json.dumps({
+                'date': det_date,
+                'jd': det_jd,
+                'mag': tns_results['det_mag'],
+                'filt': tns_results['det_filt'],
+                'source': 'TNS'
+            })
+            
+            old_params = TargetExtra.objects.filter(target=target, key='first_detection')
+            for old_param in old_params:
+                old_param.delete()
+            
+            te = TargetExtra(
+                target=target,
+                key='first_detection',
+                value=det_value
+            )
+            te.save()
 
-    ### Ingest ZTF data, if a ZTF target
-    get_ztf_data(target)
+        ### Ingest ZTF data, if a ZTF target
+        get_ztf_data(target)
   
-    gaia_name = next((name for name in target.names if 'Gaia' in name), None)
-    if gaia_name:
-        base_url = 'http://gsaweb.ast.cam.ac.uk/alerts/alert'
-        lightcurve_url = f'{base_url}/{gaia_name}/lightcurve.csv'
+        gaia_name = next((name for name in target.names if 'Gaia' in name), None)
+        if gaia_name:
+            base_url = 'http://gsaweb.ast.cam.ac.uk/alerts/alert'
+            lightcurve_url = f'{base_url}/{gaia_name}/lightcurve.csv'
 
-        response = requests.get(lightcurve_url)
-        data = response._content.decode('utf-8').split('\n')[2:-2]
+            response = requests.get(lightcurve_url)
+            data = response._content.decode('utf-8').split('\n')[2:-2]
 
-        jd = [x.split(',')[1] for x in data]
-        mag = [x.split(',')[2] for x in data]
+            jd = [x.split(',')[1] for x in data]
+            mag = [x.split(',')[2] for x in data]
 
-        for i in reversed(range(len(mag))):
-            try:
-                datum_mag = float(mag[i])
-                datum_jd = Time(float(jd[i]), format='jd', scale='utc')
-                value = {
-                    'magnitude': datum_mag,
-                    'filter': 'G_Gaia',
-                    'error': 0 # for now
-                }
-                rd, created = ReducedDatum.objects.get_or_create(
-                    timestamp=datum_jd.to_datetime(timezone=TimezoneInfo()),
-                    value=value,
-                    source_name=target.name,
-                    source_location=lightcurve_url,
-                    data_type='photometry',
-                    target=target)
-                rd.save()
-            except:
-                pass
+            for i in reversed(range(len(mag))):
+                try:
+                    datum_mag = float(mag[i])
+                    datum_jd = Time(float(jd[i]), format='jd', scale='utc')
+                    value = {
+                        'magnitude': datum_mag,
+                        'filter': 'G_Gaia',
+                        'error': 0 # for now
+                    }
+                    rd, created = ReducedDatum.objects.get_or_create(
+                        timestamp=datum_jd.to_datetime(timezone=TimezoneInfo()),
+                        value=value,
+                        source_name=target.name,
+                        source_location=lightcurve_url,
+                        data_type='photometry',
+                        target=target)
+                    rd.save()
+                except:
+                    pass
 
-#  ### Craig custom code starts here:
-#  ### ----------------------------------
-#    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-#
-#    with _get_session(db_address=_snex1_address) as db_session:
-#        Targets = _load_table('targets', db_address=_snex1_address)
-#        Targetnames = _load_table('targetnames', db_address=_snex1_address)
-#        if created == True: 
-#            # Insert into SNex 1 db
-#            db_session.add(Targets(ra0=target__ra, dec0=target__dec, lastmodified=target__modified, datecreated=target__created))
-#            db_session.add(Targetnames(targetid=target__id, name=target__name, datecreated=target__created, lastmodified=target__modified))
-#        elif created == False:
-#            # Update in SNex 1 db
-#            db_session.query(Targets).filter(target__id==Targets__id).update({'ra0': target__ra, 'dec0': target__dec, 'lastmodified': target__modified, 'datecreated': target__created})
-#            db_session.add(Targetnames(targetid=target__id, name=target__name, datecreated=target__created, lastmodified=target__modified))
-#        db_session.commit()
+    #  ### Craig custom code starts here:
+    #  ### ----------------------------------
+    #    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    #
+    #    with _get_session(db_address=_snex1_address) as db_session:
+    #        Targets = _load_table('targets', db_address=_snex1_address)
+    #        Targetnames = _load_table('targetnames', db_address=_snex1_address)
+    #        if created == True: 
+    #            # Insert into SNex 1 db
+    #            db_session.add(Targets(ra0=target__ra, dec0=target__dec, lastmodified=target__modified, datecreated=target__created))
+    #            db_session.add(Targetnames(targetid=target__id, name=target__name, datecreated=target__created, lastmodified=target__modified))
+    #        elif created == False:
+    #            # Update in SNex 1 db
+    #            db_session.query(Targets).filter(target__id==Targets__id).update({'ra0': target__ra, 'dec0': target__dec, 'lastmodified': target__modified, 'datecreated': target__created})
+    #            db_session.add(Targetnames(targetid=target__id, name=target__name, datecreated=target__created, lastmodified=target__modified))
+    #        db_session.commit()
 
 def targetextra_post_save(targetextra, created):
+    '''
+    Hook to sync target classifications and redshifts
+    with SNEx1
+    '''
+    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    
+    if not settings.DEBUG:
+        with _get_session(db_address=_snex1_address) as db_session:
+            Targets = _load_table('targets', db_address=_snex1_address)
+            Classifications = _load_table('classifications', db_address=_snex1_address)
+
+            if targetextra.key == 'classification': # Update the classification in the targets table in the SNex 1 db
+                targetid = targetextra.target_id # Get the targetid of our saved entry
+                classification = targetextra.value # Get the new classification
+                classification_query = db_session.query(Classifications).filter(Classifications.name==classification).first()
+                if classification_query:
+                    # Get the corresponding id from the classifications table
+                    classificationid = classification_query.id
+                    db_session.query(Targets).filter(Targets.id==targetid).update({'classificationid': classificationid}) # Update the classificationid in the targets table
+
+            elif targetextra.key == 'redshift': # Now update the targets table with the redshift info
+                db_session.query(Targets).filter(Targets.id==targetextra.target_id).update({'redshift': targetextra.float_value})
+            db_session.commit()
     logger.info('targetextra post save hook: %s created: %s', targetextra, created)
-#    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-#
-#    with _get_session(db_address=_snex1_address) as db_session:
-#        Targets = _load_table('targets', db_address=_snex1_address)
-#        Classifications = _load_table('classifications', db_address=_snex1_address)
-#
-#        if targetextra.key == 'classification': # Update the classification in the targets table in the SNex 1 db
-#            targetid = targetextra__target_id # Get the targetid of our saved entry
-#            classification = targetextra__value # Get the new classification
-#            classificationid = db_session.query(Classifications).filter(Classifications__name==classification).first().id # Get the corresponding id from the classifications table
-#            db_session.query(Targets).filter(Targets__id==targetid).update({'classificationid': classificationid}) # Update the classificationid in the targets table
-#
-#        elif targetextra.key == 'redshift': # Now update the targets table with the redshift info
-#            db_session.query(Targets).filter(Targets__id==targetextra__target_id).update({'redshift': targetextra__float_value})
-#        db_session.commit()
+
+
+def targetname_post_save(targetname, created):
+    '''
+    Hook to sync target name with SNEx1
+    '''
+    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+
+    if not settings.DEBUG:
+        with _get_session(db_address=_snex1_address) as db_session:
+            Names = _load_table('targetnames', db_address=_snex1_address)
+
+            targetid = int(targetname.target_id) # Get the targetid of our saved entry
+            name = targetname.value # Get the new classification
+            if created:
+               db_session.add(Names(targetid=targetid, name=name, datecreated=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')))
+               db_session.commit()
+    logger.info('targetname post save hook: %s created: %s', targetextra, created)
 
 
 def sync_observation_with_snex1(snex_id, params, requestgroup_id):

@@ -73,6 +73,14 @@ $(document).ready(function(){
 	}),
 	contentType: "application/json",
 	dataType: "json",
+	success: function() {
+	  newdata['targetid'] = targetid;
+          $.ajax({
+            url: '{% url "sync_targetextra" %}',
+            data: {'newdata': JSON.stringify(newdata)},
+            dataType: 'json'
+          })
+        },
 	error: function(e) {
 	  console.log(e);
 	}

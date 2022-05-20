@@ -54,6 +54,7 @@ urlpatterns = [
     path('interesting-targets/', InterestingTargetsView.as_view(), name='interesting-targets'),
     path('load-spectra-page/', async_spectra_page_view, name='load-spectra-page'),
     path('save-comment/', save_comments_view, name='save-comment'),
+    path('sync-targetextra/', sync_targetextra_view, name='sync_targetextra'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),

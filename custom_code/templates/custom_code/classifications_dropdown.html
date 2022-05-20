@@ -78,6 +78,16 @@
       }),
       contentType: "application/json",
       dataType: "json",
+      success: function() {
+	newdata['targetid'] = targetid;
+	$.ajax({
+	  url: '{% url "sync_targetextra" %}',
+	  type: "GET",
+	  data: {"newdata": JSON.stringify(newdata)},
+	  contentType: "application/json",
+	  dataType: "json",
+	})
+      },
       error: function(e) {
         console.log(e);
       }

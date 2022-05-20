@@ -295,6 +295,7 @@ HOOKS = {
     'target_post_save': 'custom_code.hooks.target_post_save',
     'observation_change_state': 'tom_common.hooks.observation_change_state',
     'targetextra_post_save': 'custom_code.hooks.targetextra_post_save',
+    'targetname_post_save': 'custom_code.hooks.targetname_post_save',
     'sync_observation_with_snex1': 'custom_code.hooks.sync_observation_with_snex1',
     'sync_sequence_with_snex1': 'custom_code.hooks.sync_sequence_with_snex1',
     'cancel_sequence_in_snex1': 'custom_code.hooks.cancel_sequence_in_snex1',

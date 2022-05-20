@@ -14,7 +14,7 @@ from django.dispatch import receiver
 
 from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter#, BrokerTargetFilter
-from tom_targets.models import TargetList, Target, TargetExtra
+from tom_targets.models import TargetList, Target, TargetExtra, TargetName
 from tom_targets.templatetags.targets_extras import target_extra_field
 from guardian.mixins import PermissionListMixin
 from guardian.models import GroupObjectPermission
@@ -1473,6 +1473,21 @@ class InterestingTargetsView(ListView):
         logger.info('Finished getting context data for personal interesting targets')
         context['interesting_group_id'] = TargetList.objects.get(name='Interesting Targets').id
         return context
+
+
+def sync_targetextra_view(request):
+    newdata = json.loads(request.GET.get('newdata'))
+    if newdata['key'] != 'name':
+        if newdata.get('id'):
+            te = TargetExtra.objects.get(id=newdata['id'])
+            run_hook('targetextra_post_save', te, False)
+        else:
+            te = TargetExtra.objects.get(key=newdata['key'], target_id=newdata['targetid'])
+            run_hook('targetextra_post_save', te, True)
+    else:
+        name = TargetName.objects.get(target_id=newdata['targetid'], name=newdata['value'])
+        run_hook('targetname_post_save', name, True)
+    return HttpResponse(json.dumps({'success': 'Synced'}), content_type='application/json')
 
 
 @receiver(comment_was_posted)
