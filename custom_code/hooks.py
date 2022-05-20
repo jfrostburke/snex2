@@ -245,7 +245,7 @@ def targetextra_post_save(targetextra, created):
     Hook to sync target classifications and redshifts
     with SNEx1
     '''
-    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
     
     if not settings.DEBUG:
         with _get_session(db_address=_snex1_address) as db_session:
@@ -271,7 +271,7 @@ def targetname_post_save(targetname, created):
     '''
     Hook to sync target name with SNEx1
     '''
-    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
 
     if not settings.DEBUG:
         with _get_session(db_address=_snex1_address) as db_session:
