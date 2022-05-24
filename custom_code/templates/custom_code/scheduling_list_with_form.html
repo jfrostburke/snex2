@@ -34,7 +34,11 @@ input[type=number]::-webkit-outer-spin-button {
 </style>
 {% for parameter in parameters %}
 <form method="post" class="form" id="scheduling-form-{{ parameter.observation_id }}">
+{% if parameter.observation_type == "Phot" %}
 {% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,U,B,V,R,I,u,gp,rp,ip,zs,w,reminder,delay_start' %}
+{% else %}
+{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,exposure_time,reminder,delay_start' %}
+{% endif %}
 {% if 'SUPA202' in parameter.proposal %}
 <table class="table pessto-table">
 {% elif parameter.proposal == 'LCO2022A-013' %}
@@ -112,8 +116,6 @@ input[type=number]::-webkit-outer-spin-button {
 	  </div>
 	</td>
       {% else %}
-      <form method="post" class="form" id="scheduling-form-{{ parameter.observation_id }}">
-	{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,exposure_time,reminder,delay_start' %}
 	<td>{{ form.cadence_frequency }}</td>
 	<td>{{ form.ipp_value }}</td>
 	<td>{{ form.max_airmass }}</td>
@@ -138,7 +140,6 @@ input[type=number]::-webkit-outer-spin-button {
           {% endbuttons %}
 	  </div>
 	</td>
-      </form>
       {% endif %}
       <td rowspan="3">
 	<div class="row">{{ parameter.start }}</div>
