@@ -282,7 +282,7 @@ def targetname_post_save(targetname, created):
             if created:
                db_session.add(Names(targetid=targetid, name=name, datecreated=datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')))
                db_session.commit()
-    logger.info('targetname post save hook: %s created: %s', targetextra, created)
+    logger.info('targetname post save hook: %s created: %s', targetname, created)
 
 
 def sync_observation_with_snex1(snex_id, params, requestgroup_id):
