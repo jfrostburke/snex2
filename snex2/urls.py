@@ -53,6 +53,7 @@ urlpatterns = [
     path('make-thumbnail/', make_thumbnail_view, name='make-thumbnail'),
     path('interesting-targets/', InterestingTargetsView.as_view(), name='interesting-targets'),
     path('load-spectra-page/', async_spectra_page_view, name='load-spectra-page'),
+    path('load-upcoming-reminders/', async_scheduling_page_view, name='load-upcoming-reminders'),
     path('save-comment/', save_comments_view, name='save-comment'),
     path('sync-targetextra/', sync_targetextra_view, name='sync_targetextra'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),

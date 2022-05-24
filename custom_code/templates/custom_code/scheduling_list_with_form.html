@@ -24,8 +24,17 @@
 .dlt40-table {
     display: none;
 }
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    margin: 0;
+}
 </style>
 {% for parameter in parameters %}
+<form method="post" class="form" id="scheduling-form-{{ parameter.observation_id }}">
+{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,U,B,V,R,I,u,gp,rp,ip,zs,w,reminder,delay_start' %}
 {% if 'SUPA202' in parameter.proposal %}
 <table class="table pessto-table">
 {% elif parameter.proposal == 'LCO2022A-013' %}
@@ -62,8 +71,6 @@
       <td>{{ parameter.observation_type }}</td>
       <td>{{ parameter.instrument }}</td>
       {% if parameter.observation_type == "Phot" %}
-      <form method="post" class="form" id="scheduling-form-{{ parameter.observation_id }}">
-	{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,U,B,V,R,I,u,gp,rp,ip,zs,w,reminder,delay_start' %}
 	<td>
 	  <div class="row">{{ form.cadence_frequency }}</div>
 	  <!--div class="row" style="width: 100px;">
@@ -104,7 +111,6 @@
           {% endbuttons %}
 	  </div>
 	</td>
-      </form>
       {% else %}
       <form method="post" class="form" id="scheduling-form-{{ parameter.observation_id }}">
 	{% bootstrap_form form exclude='cadence_frequency,ipp_value,max_airmass,exposure_time,reminder,delay_start' %}
@@ -186,79 +192,10 @@
     </script>
   </tbody>
 </table>
+</form>
 {% empty %}
 <div class="row">
     No observations yet. You might want to create an observation from one of
     <a href="{% url 'tom_targets:list' %}">your saved targets</a>.
 </div>
 {% endfor %}
-<script>
-function modify_sequence(clickedId) {
-  var thenum = clickedId.replace( /^\D+/g, '');
-  var theformstr = '#scheduling-form-' + thenum;
-  if (clickedId.includes('stop')) {
-    var cancelComment = prompt('Reason for stopping observations:', '');
-    var commentObj = {'cancel':cancelComment};
-  } else if (clickedId.includes('modify')) {
-    var cancelComment = prompt('Reason for stopping observations:', '');
-    var beginComment = prompt('Any comment for this sequence:', '');
-    var commentObj = {'cancel':cancelComment, 'begin':beginComment};
-  } else {
-    var commentObj = {'none': ''};
-  }
-  var commentJSON = JSON.stringify(commentObj);
-  $.ajax({
-    url: '{% url "custom_code:scheduling" %}',
-    data: $(theformstr).serialize() + "&button=" + clickedId + "&comment=" + commentJSON,
-    dataType: 'json',
-    success: function(response) {
-      if (response.hasOwnProperty('failure')) {
-	alert(response.failure)
-      } else {
-        document.getElementById(clickedId).value = response.success;
-      }
-    }
-  });
-}
-function approveRejectSequence(observationId, decision) {
-  if (decision === 'rejected') {
-      var cancelComment=prompt('Reason for stopping observations:', '');
-      var comment = {'cancel': cancelComment};
-      var commentJSON = JSON.stringify(comment);
-  } else {
-      var commentJSON = JSON.stringify({});
-  }
-  $.ajax({
-    url: '{% url "custom_code:approve-or-reject-observation" %}',
-    data: {'pk': observationId,
-           'comment': commentJSON,
-           'status': decision},
-    dataType: 'json',
-    success: function(response) {
-      if (response.success === 'Modified') {
-        if (decision === 'rejected') {
-          document.getElementById('reject-' + observationId).value = 'Rejected';
-        } else {
-          document.getElementById('approve-' + observationId).value = 'Approved';
-        }
-      }
-    }
-  })
-}
-$(".cadence-input").keyup(function() {
-  var t = this;
-  var table = t.closest(".table");
-  var delay_start = table.querySelectorAll('input[name="delay_start"]')[0];
-  var newreminder = 2*parseFloat(t.value) + parseFloat(delay_start.value) + 0.7;
-  var reminder = table.querySelectorAll('input[name="reminder"]')[0];
-  reminder.value = newreminder;
-});
-$(".delay-start-input").keyup(function() {
-  var t = this;
-  var table = t.closest(".table");
-  var cadence_input = table.querySelectorAll('input[name="cadence_frequency"]')[0];
-  var newreminder = 2*parseFloat(cadence_input.value) + parseFloat(t.value) + 0.7;
-  var reminder = table.querySelectorAll('input[name="reminder"]')[0];
-  reminder.value = newreminder;
-});
-</script>

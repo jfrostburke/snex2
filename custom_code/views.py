@@ -42,7 +42,7 @@ from plotly import offline
 import plotly.graph_objs as go
 from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
-from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras, get_best_name, dash_spectra_page
+from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras, get_best_name, dash_spectra_page, scheduling_list_with_form
 from custom_code.hooks import _get_tns_params
 from custom_code.thumbnails import make_thumb
 
@@ -771,9 +771,36 @@ def scheduling_view(request):
 
     elif 'continue' in request.GET['button']:
         logger.info('Continuing Sequence as-is')
-        ## Only update the reminder parameter in ObservationRecord
         observation_id = int(float(request.GET['observation_id']))
         obs = ObservationRecord.objects.get(id=observation_id)
+        
+        ## Check to make sure no parameters were updated
+        observing_parameters = {}
+        observing_parameters['ipp_value'] = float(request.GET['ipp_value'])
+        observing_parameters['max_airmass'] = float(request.GET['max_airmass'])
+        observing_parameters['cadence_frequency'] = float(request.GET['cadence_frequency'])
+        
+        if request.GET['observation_type'] == 'IMAGING':
+            filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+            for f in filters:
+                if f+'_0' in request.GET.keys() and float(request.GET[f+'_0'][0]) > 0.0:
+                    observing_parameters[f] = [float(request.GET[f+'_0']), int(float(request.GET[f+'_1'])), int(float(request.GET[f+'_2']))]
+
+        elif request.GET['observation_type'] == 'SPECTRA':
+            observing_parameters['exposure_time'] = int(float(request.GET['exposure_time']))
+        
+        dict_keys = ['ipp_value', 'max_airmass', 'cadence_frequency', 'U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w', 'exposure_time']
+        modified = False
+        for key in dict_keys:
+            if key in observing_parameters.keys() and key in obs.parameters.keys():
+                if observing_parameters[key] != obs.parameters[key]:
+                    modified = True
+                    break
+        if modified:
+            response_data = {'failure': 'Sequence parameters were modified. If this was intentional, please press the "Modify Sequence" button instead.'}
+            return HttpResponse(json.dumps(response_data), content_type='application/json')
+
+        ## Only update the reminder parameter in ObservationRecord
         next_reminder = float(request.GET['reminder'])
         obs_parameters = obs.parameters
         now = datetime.now()
@@ -954,6 +981,26 @@ def async_spectra_page_view(request):
 
         return JsonResponse(data=data_dict, safe=False)
     return ''
+
+
+def async_scheduling_page_view(request):
+    obs_ids = json.loads(request.GET['obs_ids'])
+    all_html = ''
+    for obs_id in obs_ids:
+        obs = ObservationRecord.objects.get(id=obs_id)
+        response = scheduling_list_with_form({'request': request}, obs, case='nonpending')
+
+        html = render_to_string(
+            template_name='custom_code/scheduling_list_with_form.html',
+            context=response,
+            request=request
+        )
+
+        all_html += html
+
+    data_dict = {'html_from_view': all_html}
+    
+    return JsonResponse(data=data_dict, safe=False)
 
 
 def add_target_to_group_view(request):
