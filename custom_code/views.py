@@ -1,6 +1,7 @@
 from django_filters.views import FilterView
 from django.shortcuts import redirect, render
-from django.db.models import Q #
+from django.db.models import Q, DateTimeField, FloatField, F, ExpressionWrapper
+from django.db.models.functions import Cast
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.views.generic import View
 from django.views.generic.list import ListView
@@ -23,6 +24,7 @@ from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.conf import settings
+from django.contrib.postgres.fields.jsonb import KeyTextTransform
 
 import os
 from urllib.parse import urlencode
@@ -697,6 +699,25 @@ def scheduling_view(request):
                 assign_perm('tom_observations.delete_observationrecord', groups, record)
         
         ### Sync with SNEx1
+        ## Run hook to cancel old sequence in SNEx1
+        try:
+            obs_group = obs.observationgroup_set.first()
+            snex_id = int(obs_group.name)
+            
+            # Get comments, if any
+            comments = json.loads(request.GET['comment'])
+            if comments.get('cancel', ''):
+                save_comments(comments['cancel'], obs_group.id, request.user)
+                run_hook('cancel_sequence_in_snex1',
+                         snex_id,
+                         comment=comments['cancel'],
+                         tableid=snex_id,
+                         userid=request.user.id,
+                         targetid=obs.target_id)
+            else:
+                run_hook('cancel_sequence_in_snex1', snex_id, userid=request.user.id)
+        except:
+            logger.info('This sequence was not in SNEx1 or was not canceled') 
         
         # Get the group ids to pass to SNEx1
         group_names = []
@@ -748,27 +769,7 @@ def scheduling_view(request):
                 requestgroup_id = int(requestgroups['results'][0]['id'])
 
             run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id)
-        
-        ## Run hook to cancel old sequence in SNEx1
-        try:
-            obs_group = obs.observationgroup_set.first()
-            snex_id = int(obs_group.name)
-            
-            # Get comments, if any
-            comments = json.loads(request.GET['comment'])
-            if comments.get('cancel', ''):
-                save_comments(comments['cancel'], obs_group.id, request.user)
-                run_hook('cancel_sequence_in_snex1', 
-                         snex_id, 
-                         comment=comments['cancel'],
-                         tableid=snex_id,
-                         userid=request.user.id,
-                         targetid=obs.target_id)
-            else:
-                run_hook('cancel_sequence_in_snex1', snex_id, userid=request.user.id) 
-        except:
-            logger.info('This sequence was not in SNEx1 or was not canceled')
- 
+         
         response_data = {'success': 'Modified'}
                          #'data': json.dumps(form_data)}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
@@ -1111,6 +1112,52 @@ class CustomObservationListView(ObservationListView):
             obsrecordlist = []
         obsrecordlist_ids = [o.id for o in obsrecordlist if o is not None and self.request.user in get_users_with_perms(o)]
         return ObservationRecord.objects.filter(id__in=obsrecordlist_ids)
+
+
+#class ObservationListExtrasView(ListView):
+#    """
+#    View that displays all active sequences by either IPP or urgency
+#    """
+#    template_name = 'custom_code/observation_list_extras.html'
+#    paginate_by = 10
+#    model = ObservationRecord
+#    strict = False
+#    context_object_name = 'observation_list'
+#
+#    def get_queryset(self, *args, **kwargs):
+#        """
+#        Get all active cadences and order their observation records in order of IPP
+#        """
+#        try:
+#            obsrecordlist = [c.observation_group.observation_records.order_by('-created').first() for c in DynamicCadence.objects.filter(active=True)]
+#        except Exception as e:
+#            logger.info(e)
+#            obsrecordlist = []
+#        obsrecordlist_ids = [o.id for o in obsrecordlist if o is not None and self.request.user in get_users_with_perms(o)]
+#        obsrecords = ObservationRecord.objects.filter(id__in=obsrecordlist_ids)
+#
+#        val = self.kwargs['key']
+#        
+#        if val == 'ipp':
+#            obsrecords = obsrecords.annotate(ipp=KeyTextTransform('ipp_value', 'parameters'))
+#            return obsrecords.order_by('-ipp')
+#        
+#        elif val == 'urgency':
+#            obsrecords = obsrecords.filter(status='COMPLETED')
+#            now = datetime.utcnow()
+#            recent_obs = obsrecords.annotate(days_since=now-Cast(KeyTextTransform('start', 'parameters'), DateTimeField()))
+#            recent_obs = recent_obs.annotate(cadence=KeyTextTransform('cadence_frequency', 'parameters'))
+#            recent_obs = recent_obs.filter(cadence__gt=0.0)
+#            recent_obs = recent_obs.annotate(urgency=ExpressionWrapper(F('days_since')/(Cast(KeyTextTransform('cadence_frequency', 'parameters'), FloatField())), DateTimeField()))
+#            return recent_obs.order_by('-urgency')
+#
+#    
+#    def get_context_data(self, *args, **kwargs):
+#        
+#        context = super().get_context_data(*args, **kwargs)
+#        context['value'] = self.kwargs['key'].upper()
+#        return context
+
 
 class CustomObservationCreateView(ObservationCreateView):
 

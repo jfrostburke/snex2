@@ -231,7 +231,7 @@ function load_spectra_page() {
     dataType: 'json',
     success: function(response) {
       var spectra_page = document.getElementById('spectroscopy');
-      spectra_page.insertAdjacentHTML('afterend', response['html_from_view'])
+      spectra_page.insertAdjacentHTML('beforeend', response['html_from_view'])
     }
   });
 }
