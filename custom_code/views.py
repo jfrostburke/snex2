@@ -503,11 +503,15 @@ def observation_sequence_cancel_view(request):
     
     obsr_id = int(float(request.GET['pk']))
     obsr = ObservationRecord.objects.get(id=obsr_id)
-    canceled = cancel_observation(obsr)
-    
-    if not canceled:
-        response_data = {'failure': 'Error'}
-        return HttpResponse(json.dumps(response_data), content_type='application/json')
+    # obsr is the template observation record, so need to get the most recent one from this sequence to cancel
+    last_obs = obsr.observationgroup_set.first().observation_records.all().exclude(observation_id__contains='template').order_by('-id').first()
+
+    if last_obs:
+        canceled = cancel_observation(last_obs)
+        
+        if not canceled:
+            response_data = {'failure': 'Error'}
+            return HttpResponse(json.dumps(response_data), content_type='application/json')
     
     ## Run hook to cancel old sequence in SNEx1
     try:
