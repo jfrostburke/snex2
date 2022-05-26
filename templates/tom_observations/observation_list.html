@@ -118,15 +118,18 @@ function loadUpcomingReminders() {
   })
 }
 function modify_sequence(clickedId) {
+  var oldval = document.getElementById(clickedId).value;
+  document.getElementById(clickedId).value = 'Loading...';
   var thenum = clickedId.replace( /^\D+/g, '');
   var theformstr = '#scheduling-form-' + thenum;
   if (clickedId.includes('stop')) {
     var cancelComment = prompt('Reason for stopping observations:', '');
     var commentObj = {'cancel':cancelComment};
   } else if (clickedId.includes('modify')) {
-    var cancelComment = prompt('Reason for stopping observations:', '');
-    var beginComment = prompt('Any comment for this sequence:', '');
-    var commentObj = {'cancel':cancelComment, 'begin':beginComment};
+    var cancelComment = prompt('Reason for modifying this sequence:', '');
+    //var beginComment = prompt('Any comment for this sequence:', '');
+    //var commentObj = {'cancel':cancelComment, 'begin':beginComment};
+    var commentObj = {'cancel':cancelComment};
   } else {
     var commentObj = {'none': ''};
   }
@@ -137,7 +140,8 @@ function modify_sequence(clickedId) {
     dataType: 'json',
     success: function(response) {
       if (response.hasOwnProperty('failure')) {
-        alert(response.failure)
+        alert(response.failure);
+	document.getElementById(clickedId).value = oldval;
       } else {
         document.getElementById(clickedId).value = response.success;
       }

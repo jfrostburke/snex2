@@ -702,22 +702,22 @@ def scheduling_view(request):
         
         # Run the hook to add the sequence to SNEx1
         # Get comments, if any
-        comments = json.loads(request.GET['comment'])
-        if comments.get('begin', '') and (len(new_observations) > 1 or form_data.get('cadence')):
-            save_comments(comments['begin'], observation_group.id, request.user)
-            snex_id = run_hook(
-                        'sync_sequence_with_snex1', 
-                        form.serialize_parameters(),
-                        group_names,
-                        userid=request.user.id,
-                        comment=comments['begin'],
-                        targetid=int(float(request.GET['target_id'])))
-        else:
-            snex_id = run_hook(
-                    'sync_sequence_with_snex1', 
-                    form.serialize_parameters(), 
-                    group_names, 
-                    userid=request.user.id)
+        #comments = json.loads(request.GET['comment'])
+        #if comments.get('begin', '') and (len(new_observations) > 1 or form_data.get('cadence')):
+        #    save_comments(comments['begin'], observation_group.id, request.user)
+        #    snex_id = run_hook(
+        #                'sync_sequence_with_snex1', 
+        #                form.serialize_parameters(),
+        #                group_names,
+        #                userid=request.user.id,
+        #                comment=comments['begin'],
+        #                targetid=int(float(request.GET['target_id'])))
+        #else:
+        snex_id = run_hook(
+                'sync_sequence_with_snex1', 
+                form.serialize_parameters(), 
+                group_names, 
+                userid=request.user.id)
         
         # Change the name of the observation group, if one was created
         if len(new_observations) > 1 or form_data.get('cadence'):

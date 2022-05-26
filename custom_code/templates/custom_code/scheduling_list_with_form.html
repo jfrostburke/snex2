@@ -48,8 +48,10 @@ input[type=number]::-webkit-outer-spin-button {
 {% endif %}
   <thead>
     <tr>
-      <th style="width: 5%;">View</th>
+      <th style="width: 5%;">Track this Sequence</th>
       <th style="width: 5%;">Target</th>
+      <th style="width: 5%;">Classification</th>
+      <th style="width: 5%;">Redshift</th>
       <th style="width: 5%;">Facility and Proposal</th>
       <th style="width: 5%;">Observation Type</th>
       <th style="width: 5%;">Instrument</th>
@@ -60,14 +62,30 @@ input[type=number]::-webkit-outer-spin-button {
       <th style="width: 15%;">Reminder in</th>
       <th style="width: 7.5%;">Start</th>
       <th style="width: 7.5%;">Reminder</th>
-      <th style="width: 5%;">Classification</th>
-      <th style="width: 5%;">Redshift</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td><a class="btn btn-success" href="{% url 'custom_code:observationgroup-detail' parameter.obsgroup_id %}">Details</a></td>
-      <td><a href="{% url 'tom_targets:detail' parameter.target.id %}" title="{{ parameter.target.id }}">{{ parameter.names|join:", " }}</a></td>
+      <td><a class="btn btn-success" href="{% url 'custom_code:observationgroup-detail' parameter.obsgroup_id %}" target="_blank">Details</a></td>
+      <td><a href="{% url 'tom_targets:detail' parameter.target.id %}" title="{{ parameter.target.id }}" target="_blank">{{ parameter.names|join:", " }}</a></td>
+      <td>
+      {% with parameter.target as target %}
+        {% if target|target_extra_field:"classification" %}
+          {{ target|target_extra_field:"classification" }}
+        {% else %}
+          None
+        {% endif %}
+      </td>
+      <td>
+	{% if target|target_extra_field:"redshift" %}
+	  {% with z=target|target_extra_field:"redshift" %}
+	  {{ z|strip_trailing_zeros }}
+	  {% endwith %}
+	{% else %}
+	  None
+	{% endif %}
+      {% endwith %}
+      </td>
       <td>
 	<div class="row">{{ parameter.facility }}</div>
 	<div class="row">{{ parameter.proposal }}</div>
@@ -84,19 +102,19 @@ input[type=number]::-webkit-outer-spin-button {
 	</td>
 	<td>{{ form.ipp_value }}</td>
 	<td>{{ form.max_airmass }}</td>
-	<td rowspan="3">
-	  <div class="exposure-row">Exposure Time Exposures Block No.</div>
-	  <div class="exposure-row">{{ form.U.label }}{{ form.U }}</div>
-	  <div class="exposure-row">{{ form.B.label }}{{ form.B }}</div>
-	  <div class="exposure-row">{{ form.V.label }}{{ form.V }}</div>
-	  <div class="exposure-row">{{ form.R.label }}{{ form.R }}</div>
-	  <div class="exposure-row">{{ form.I.label }}{{ form.I }}</div>
-	  <div class="exposure-row">{{ form.u.label }}{{ form.u }}</div>
-	  <div class="exposure-row">{{ form.gp.label }}{{ form.gp }}</div>
-	  <div class="exposure-row">{{ form.rp.label }}{{ form.rp }}</div>
-	  <div class="exposure-row">{{ form.ip.label }}{{ form.ip }}</div>
-	  <div class="exposure-row">{{ form.zs.label }}{{ form.zs }}</div>
-	  <div class="exposure-row">{{ form.w.label }}{{ form.w }}</div>
+	<td rowspan="3" class="col-md-12">
+	  <div class="exposure-row">Exposure Time&nbsp;&nbsp; Exposures&nbsp;&nbsp;  Block No.</div>
+	  <div class="exposure-row" style="text-align:center;"><span>{{ form.U.label }}</span> {{ form.U }}</div>
+	  <div class="exposure-row" style="text-align:center;"><span>{{ form.B.label }}</span> {{ form.B }}</div>
+	  <div class="exposure-row" style="text-align:center;"><span>{{ form.V.label }}</span> {{ form.V }}</div>
+	  <div class="exposure-row" style="text-align:center;"><span>{{ form.R.label }}</span> {{ form.R }}</div>
+	  <div class="exposure-row" style="text-align:center;"><span>{{ form.I.label }}</span> {{ form.I }}</div>
+	  <div class="exposure-row" style="text-align:center;"><span>{{ form.u.label }}</span> {{ form.u }}</div>
+	  <div class="exposure-row" style="text-align:center;"><span>{{ form.gp.label }}</span> {{ form.gp }}</div>
+	  <div class="exposure-row" style="text-align:center;"><span>{{ form.rp.label }}</span> {{ form.rp }}</div>
+	  <div class="exposure-row" style="text-align:center;"><span>{{ form.ip.label }}</span> {{ form.ip }}</div>
+	  <div class="exposure-row" style="text-align:center;"><span>{{ form.zs.label }}</span> {{ form.zs }}</div>
+	  <div class="exposure-row" style="text-align:center;"><span>{{ form.w.label }}</span> {{ form.w }}</div>
 	</td>
 	<td style="padding-right: 40px;" rowspan="3">
 	  <div class="row">{{ form.reminder }} days</div>
@@ -146,24 +164,6 @@ input[type=number]::-webkit-outer-spin-button {
 	<div class="row">{{ parameter.comment }}</div>
       </td>
       <td>{{ parameter.reminder }}</td>
-      <td>
-      {% with parameter.target as target %}
-        {% if target|target_extra_field:"classification" %}
-          {{ target|target_extra_field:"classification" }}
-        {% else %}
-          None
-        {% endif %}
-      </td>
-      <td>
-	{% if target|target_extra_field:"redshift" %}
-	  {% with z=target|target_extra_field:"redshift" %}
-	  {{ z|strip_trailing_zeros }}
-	  {% endwith %}
-	{% else %}
-	  None
-	{% endif %}
-      {% endwith %}
-      </td>
     </tr>
       <td colspan=10 style="border-top:none;">
         <div class="collapse show" id="show-both-{{parameter.target.name|cut:" "}}">
