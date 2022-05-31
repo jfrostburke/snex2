@@ -51,11 +51,23 @@
     {% for q in observation_list %}
     {% scheduling_list_with_form q 'notpending' %}
     {% if value == 'IPP' %}
+    {% if 'SUPA202' in q.parameters.proposal %}
+    <div class="row pessto-table">
+    {% elif q.parameters.proposal == 'LCO2022A-013' %}
+    <div class="row dlt40-table">
+    {% else %}
     <div class="row">
+    {% endif %}
       <a>The IPP is {{ q.ipp }}</a>
     </div>
     {% elif value == 'URGENCY' %}
+    {% if 'SUPA202' in q.parameters.proposal %}
+    <div class="row pessto-table">
+    {% elif q.parameters.proposal == 'LCO2022A-013' %}
+    <div class="row dlt40-table">
+    {% else %}
     <div class="row">
+    {% endif %}
       <a>It has been {{ q.urgency|urgency_converter }} times the cadence length since the last observation</a>
     </div>
     {% endif %}
@@ -63,4 +75,63 @@
     {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
   </div>
 </div>
+<script>
+function showTable(groupname) {
+  var sequences = document.getElementsByClassName(groupname+'-table');
+  for (var i = 0; i < sequences.length; i++) {
+    if (sequences[i].style.display != 'block') {
+      sequences[i].style.display = 'block';
+    } else {
+      sequences[i].style.display = 'none';
+    }
+  }
+}
+function modify_sequence(clickedId) {
+  var oldval = document.getElementById(clickedId).value;
+  document.getElementById(clickedId).value = 'Loading...';
+  var thenum = clickedId.replace( /^\D+/g, '');
+  var theformstr = '#scheduling-form-' + thenum;
+  if (clickedId.includes('stop')) {
+    var cancelComment = prompt('Reason for stopping observations:', '');
+    var commentObj = {'cancel':cancelComment};
+  } else if (clickedId.includes('modify')) {
+    var cancelComment = prompt('Reason for modifying this sequence:', '');
+    //var beginComment = prompt('Any comment for this sequence:', '');
+    //var commentObj = {'cancel':cancelComment, 'begin':beginComment};
+    var commentObj = {'cancel':cancelComment};
+  } else {
+    var commentObj = {'none': ''};
+  }
+  var commentJSON = JSON.stringify(commentObj);
+  $.ajax({
+    url: '{% url "custom_code:scheduling" %}',
+    data: $(theformstr).serialize() + "&button=" + clickedId + "&comment=" + commentJSON,
+    dataType: 'json',
+    success: function(response) {
+      if (response.hasOwnProperty('failure')) {
+        alert(response.failure);
+        document.getElementById(clickedId).value = oldval;
+      } else {
+        document.getElementById(clickedId).value = response.success;
+      }
+    }
+  });
+}
+$("body").on("keyup", ".cadence-input", function() {
+  var t = this;
+  var table = t.closest(".table");
+  var delay_start = table.querySelectorAll('input[name="delay_start"]')[0];
+  var newreminder = 2*parseFloat(t.value) + parseFloat(delay_start.value) + 0.7;
+  var reminder = table.querySelectorAll('input[name="reminder"]')[0];
+  reminder.value = newreminder;
+});
+$("body").on("keyup", ".delay-start-input", function() {
+  var t = this;
+  var table = t.closest(".table");
+  var cadence_input = table.querySelectorAll('input[name="cadence_frequency"]')[0];
+  var newreminder = 2*parseFloat(cadence_input.value) + parseFloat(t.value) + 0.7;
+  var reminder = table.querySelectorAll('input[name="reminder"]')[0];
+  reminder.value = newreminder;
+});
+</script>
 {% endblock %}

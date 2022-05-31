@@ -1805,4 +1805,4 @@ def test_display_thumbnail(context, target):
 
 @register.filter
 def urgency_converter(urgency):
-    return urgency.total_seconds()/(24*60*60)
+    return round(urgency.total_seconds()/(24*60*60), 1)
