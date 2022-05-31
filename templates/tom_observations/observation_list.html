@@ -10,7 +10,7 @@
 </head>
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
-    <h3>Observations</h3>
+    <h3>Scheduling</h3>
   </div>
 </nav>
 <div class="row">
@@ -20,9 +20,14 @@
         {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
       </div>
       <div class="col-md-6">
-        <!--span class="float-right">
-          <a href="{% url 'tom_observations:list' %}?update_status=True" class="btn btn-primary" title="Update status of all incomplete observations, please be patient!">Update Observations</a>
-        </span-->
+	<div class="row">
+	  <div class="col-md-6">
+	    <a class="btn btn-primary" href="{% url 'observation-list' key='ipp' %}">View Highest IPP</a>
+	  </div>
+	  <div class="col-md-6">
+	    <a class="btn btn-primary" href="{% url 'observation-list' key='urgency' %}">View Most Urgent</a>
+          </div> 
+	</div>
       </div>
     </div>
     <div class="row">

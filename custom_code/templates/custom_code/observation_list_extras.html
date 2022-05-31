@@ -1,0 +1,66 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 observation_extras targets_extras static custom_code_tags %}
+{% block title %}Observations{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<head>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Active Sequences</h3>
+  </div>
+</nav>
+<div class="row">
+  <div class="col-md-10">
+    <div class="row">
+      <div class="col-md-6">
+        {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
+      </div>
+      <div class="col-md-6">
+	<div class="row">
+          <div class="col-md-4">
+            <a class="btn btn-primary" href="{% url 'observation-list' key='ipp' %}">View Highest IPP</a>
+          </div>
+          <div class="col-md-4">
+            <a class="btn btn-primary" href="{% url 'observation-list' key='urgency' %}">View Most Urgent</a>
+          </div>
+	  <div class="col-md-4">
+	    <a class="btn btn-primary" href="{% url 'scheduling' %}">Return to Scheduling</a>
+	  </div>
+	</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6">
+        <input type="checkbox" id="checkbox-pessto" onclick="showTable('pessto')" value="Show ePESSTO Sequences">
+        <label for="checkbox-pessto">Show ePESSTO Sequences</label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6">
+        <input type="checkbox" id="checkbox-dlt40" onclick="showTable('dlt40')" value="Show DLT40 Sequences">
+        <label for="checkbox-dlt40">Show DLT40 Sequences</label>
+      </div>
+    </div>
+    <div class="row">
+      <h4>In Order of Decreasing {{ value }}</h4>
+    </div>
+    {% for q in observation_list %}
+    {% scheduling_list_with_form q 'notpending' %}
+    {% if value == 'IPP' %}
+    <div class="row">
+      <a>The IPP is {{ q.ipp }}</a>
+    </div>
+    {% elif value == 'URGENCY' %}
+    <div class="row">
+      <a>It has been {{ q.urgency|urgency_converter }} times the cadence length since the last observation</a>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
+  </div>
+</div>
+{% endblock %}

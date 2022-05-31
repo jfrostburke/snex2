@@ -56,6 +56,7 @@ urlpatterns = [
     path('load-upcoming-reminders/', async_scheduling_page_view, name='load-upcoming-reminders'),
     path('save-comment/', save_comments_view, name='save-comment'),
     path('sync-targetextra/', sync_targetextra_view, name='sync_targetextra'),
+    path('scheduling/<str:key>/', ObservationListExtrasView.as_view(), name='observation-list'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),
