@@ -1126,24 +1126,29 @@ class ObservationListExtrasView(ListView):
 
     def get_queryset(self, *args, **kwargs):
         """
-        Get all active cadences and order their observation records in order of IPP
+        Get all active cadences and order their observation records in order of IPP or urgency
         """
-        try:
-            obsrecordlist = [c.observation_group.observation_records.order_by('-created').first() for c in DynamicCadence.objects.filter(active=True)]
-        except Exception as e:
-            logger.info(e)
-            obsrecordlist = []
-        obsrecordlist_ids = [o.id for o in obsrecordlist if o is not None and self.request.user in get_users_with_perms(o)]
-        obsrecords = ObservationRecord.objects.filter(id__in=obsrecordlist_ids)
-
         val = self.kwargs['key']
         
         if val == 'ipp':
+            try:
+                obsrecordlist = [c.observation_group.observation_records.order_by('-created').first() for c in DynamicCadence.objects.filter(active=True)]
+            except Exception as e:
+                logger.info(e)
+                obsrecordlist = []
+            obsrecordlist_ids = [o.id for o in obsrecordlist if o is not None and self.request.user in get_users_with_perms(o)]
+            obsrecords = ObservationRecord.objects.filter(id__in=obsrecordlist_ids)
             obsrecords = obsrecords.annotate(ipp=KeyTextTransform('ipp_value', 'parameters'))
             return obsrecords.order_by('-ipp')
         
         elif val == 'urgency':
-            obsrecords = obsrecords.filter(status='COMPLETED')
+            try:
+                obsrecordlist = [c.observation_group.observation_records.filter(status='COMPLETED').order_by('-created').first() for c in DynamicCadence.objects.filter(active=True)]
+            except Exception as e:
+                logger.info(e)
+                obsrecordlist = []
+            obsrecordlist_ids = [o.id for o in obsrecordlist if o is not None and self.request.user in get_users_with_perms(o)]
+            obsrecords = ObservationRecord.objects.filter(id__in=obsrecordlist_ids)
             now = datetime.utcnow()
             recent_obs = obsrecords.annotate(days_since=now-Cast(KeyTextTransform('start', 'parameters'), DateTimeField()))
             recent_obs = recent_obs.annotate(cadence=KeyTextTransform('cadence_frequency', 'parameters'))
