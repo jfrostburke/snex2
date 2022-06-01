@@ -6,8 +6,8 @@ from tom_observations.facilities.lco import LCOSpectroscopyObservationForm
 from django import forms
 import datetime
 from django.conf import settings
-from crispy_forms.layout import Layout, Div, HTML
-from crispy_forms.bootstrap import PrependedAppendedText, PrependedText
+from crispy_forms.layout import Layout, Div, HTML, Column
+from crispy_forms.bootstrap import PrependedAppendedText, PrependedText, AppendedText
 from tom_targets.models import Target
 
 # Determine settings for this module.
@@ -51,6 +51,8 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
         choices=(('NORMAL', 'Normal'), ('TARGET_OF_OPPORTUNITY', 'Rapid Response')),
         label='Priority'
     )
+    delay_start = forms.BooleanField(required=False, label='Delay Start By')
+    delay_amount = forms.FloatField(initial=0.0, min_value=0, label='', required=False)
 
     # These are required fields in the base LCO form, so I need to include them but will ignore
     start = forms.CharField(widget=forms.TextInput(attrs={'type': 'date'}), required=False, label='')
@@ -91,9 +93,16 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
         cleaned_data = super().clean()
         target = Target.objects.get(pk=cleaned_data['target_id'])
         cleaned_data['name'] = target.name
-        cleaned_data['start'] = str(datetime.datetime.utcnow())
-        cleaned_data['end'] = str(datetime.datetime.utcnow() +
-                                       datetime.timedelta(days=cleaned_data['window']))
+        now = datetime.datetime.utcnow()
+        if cleaned_data.get('delay_start'):
+            cleaned_data['start'] = str(now + datetime.timedelta(days=cleaned_data['delay_amount']))
+            cleaned_data['end'] = str(now + datetime.timedelta(days=cleaned_data['window']+cleaned_data['delay_amount']))
+        else:
+            cleaned_data['start'] = str(now)
+            cleaned_data['end'] = str(now + datetime.timedelta(days=cleaned_data['window']))
+        #cleaned_data['start'] = str(datetime.datetime.utcnow())
+        #cleaned_data['end'] = str(datetime.datetime.utcnow() +
+        #                               datetime.timedelta(days=cleaned_data['window']))
         return cleaned_data
 
     
@@ -118,7 +127,7 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
         self.fields['filter'] = forms.ChoiceField(choices=list(self.filter_choices()), initial=list(self.filter_choices())[0][0], label='')
         self.fields['readout'] = forms.ChoiceField(choices=self.readout_choices(), initial='GHTS_R_400m1_2x2', label='')
 
-        for field_name in ['start', 'end', 'name']:
+        for field_name in ['start', 'end', 'name', 'groups']:
             self.fields[field_name].widget = forms.HiddenInput()
 
         self.helper.layout = Layout(
@@ -128,6 +137,11 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
                     HTML("<p></p>"),
                     PrependedAppendedText(
                         'window','Once in the next', 'days'
+                    ),
+                    Div(
+                        Column('delay_start'),
+                        Column(AppendedText('delay_amount', 'days')),
+                        css_class='form_row'
                     ),
                     PrependedText('exposure_time','Exposure Time'),
                     PrependedText('exposure_count','Exposure Count'),

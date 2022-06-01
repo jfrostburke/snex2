@@ -3,6 +3,11 @@
 {% block title %}Submit Observation{% endblock %}
 {% block additional_css %}
 <link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+<style>
+#div_id_delay_amount {
+    display: none;
+}
+</style>
 {% endblock %}
 {% block content %}
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
@@ -68,5 +73,13 @@ if (facility === 'SOAR') {
     }
   });
 }
+$("#id_delay_start").click(function() {
+  var delayAmount = document.getElementById("div_id_delay_amount");
+  if (delayAmount.style.display === "block") {
+    delayAmount.style.display = "none";
+  } else {
+    delayAmount.style.display = "block";
+  }
+})
 </script>
 {% endblock %}
