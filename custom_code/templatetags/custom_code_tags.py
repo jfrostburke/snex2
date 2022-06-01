@@ -835,6 +835,13 @@ def observation_summary(context, target=None, time='previous'):
         # First do LCO observations
         if parameter.get('facility', '') == 'LCO':
 
+            if 'SUPA202' in parameter.get('proposal', ''):
+                title_suffix = ' [ePESSTO Proprietary]'
+            elif 'LCO2022A' in parameter.get('proposal', ''):
+                title_suffix = ' [DLT40 Proprietary]'
+            else:
+                title_suffix = ''
+
             if parameter.get('cadence_strategy', ''):
                 parameter_string = str(parameter.get('cadence_frequency', '')) + '-day ' + str(parameter.get('observation_type', '')).lower() + ' cadence of '
             else:
@@ -870,7 +877,7 @@ def observation_summary(context, target=None, time='previous'):
             comments = Comment.objects.filter(object_pk=obsgroup.id, content_type_id=content_type_id).order_by('id')
             comment_list = ['{}: {}'.format(User.objects.get(username=comment.user_name).first_name, comment.comment) for comment in comments]
 
-            parameters.append({'title': 'LCO Sequence',
+            parameters.append({'title': 'LCO Sequence'+title_suffix,
                                'summary': parameter_string,
                                'comments': comment_list,
                                'observation': observation.id,
