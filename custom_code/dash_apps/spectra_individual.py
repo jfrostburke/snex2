@@ -134,7 +134,13 @@ app.layout = html.Div([
             id='spectra-compare-results',
             style={'display': 'none'}
         )
-    ])
+    ]),
+    dcc.Checklist(
+        id='mask-lines-checklist',
+        options=[{'label': 'Mask galaxy emission lines', 'value': 'mask'}],
+        value='',
+        style={'fontSize': 18}
+    ),
 ], style={'padding-bottom': '0px'})
 
 
@@ -416,10 +422,11 @@ def change_redshift(z, *args, **kwargs):
      Input('max-flux', 'value'),
      Input('bin-factor', 'value'),
      Input('spectra-compare-dropdown', 'value'),
+     Input('mask-lines-checklist', 'value'),
      State('table-editing-simple-output', 'figure')])
 def display_output(selected_rows,
                    #selected_row_ids, columns, 
-                   value, min_flux, max_flux, bin_factor, compare_target, fig_data, *args, **kwargs):
+                   value, min_flux, max_flux, bin_factor, compare_target, mask_value, fig_data, *args, **kwargs):
     # Improvements:
     #   Fix dataproducts so they're correctly serialized
     #   Correctly display message when there are no spectra
@@ -588,6 +595,13 @@ def display_output(selected_rows,
             for key, value in datum.items():
                 wavelength.append(float(value['wavelength']))
                 flux.append(float(value['flux']))
+
+        if 'mask' in mask_value:
+            for galaxy_wave in elements['Galaxy']['waves']:
+                mask = [abs(l-galaxy_wave) < 10 for l in wavelength]
+                flux = np.ma.masked_array(flux, mask)
+            flux = flux.filled(fill_value=median(flux))
+            name += ' (galaxy lines masked)'
 
         if not bin_factor:
             bin_factor = 1
