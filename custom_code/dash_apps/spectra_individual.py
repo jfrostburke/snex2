@@ -597,10 +597,17 @@ def display_output(selected_rows,
                 flux.append(float(value['flux']))
 
         if 'mask' in mask_value:
+            object_z_query = TargetExtra.objects.filter(target_id=spectrum.target_id,key='redshift').first()
+            if not object_z_query:
+                object_z = 0
+            else:
+                object_z = float(object_z_query.value)
+
+            median_flux = median(flux)
             for galaxy_wave in elements['Galaxy']['waves']:
-                mask = [abs(l-galaxy_wave) < 10 for l in wavelength]
+                mask = [abs(l-galaxy_wave/(1+object_z)) < 10 for l in wavelength]
                 flux = np.ma.masked_array(flux, mask)
-            flux = flux.filled(fill_value=median(flux))
+            flux = flux.filled(fill_value=median_flux)
             name += ' (galaxy lines masked)'
 
         if not bin_factor:
