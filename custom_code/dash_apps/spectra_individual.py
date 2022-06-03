@@ -605,7 +605,7 @@ def display_output(selected_rows,
 
             median_flux = median(flux)
             for galaxy_wave in elements['Galaxy']['waves']:
-                mask = [abs(l-galaxy_wave/(1+object_z)) < 10 for l in wavelength]
+                mask = [abs(l-galaxy_wave*(1+object_z)) < 10 for l in wavelength]
                 flux = np.ma.masked_array(flux, mask)
             flux = flux.filled(fill_value=median_flux)
             name += ' (galaxy lines masked)'
