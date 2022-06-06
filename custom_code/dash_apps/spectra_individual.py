@@ -603,11 +603,12 @@ def display_output(selected_rows,
             else:
                 object_z = float(object_z_query.value)
 
-            median_flux = median(flux)
+            pfit = np.poly1d(np.polyfit(wavelength, flux, 4))
             for galaxy_wave in elements['Galaxy']['waves']:
                 mask = [abs(l-galaxy_wave*(1+object_z)) < 10 for l in wavelength]
                 flux = np.ma.masked_array(flux, mask)
-            flux = flux.filled(fill_value=median_flux)
+                median_flux = np.ma.median(np.ma.masked_array(pfit(wavelength), np.logical_not(mask)))
+                flux = flux.filled(fill_value=median_flux)
             name += ' (galaxy lines masked)'
 
         if not bin_factor:
