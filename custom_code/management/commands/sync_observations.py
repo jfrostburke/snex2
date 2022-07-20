@@ -370,9 +370,8 @@ class Command(BaseCommand):
                             obstagids = [t.tagid for t in db_session.query(obstags).filter(obstags.requestsid==requestsid).all()]
                             taglist = [x.tag for x in db_session.query(tags).filter(tags.id.in_(obstagids)).all()]
                             for t in taglist:
-                                snex2_tag = ScienceTags.objects.filter(tag=t).first()
-                                if snex2_tag:
-                                    newtag, created = TargetTags.objects.get_or_create(target_id=target_id, tag_id=int(snex2_tag.id))
+                                snex2_tag, _ = ScienceTags.objects.get_or_create(tag=t)
+                                newtag, created = TargetTags.objects.get_or_create(target_id=target_id, tag_id=int(snex2_tag.id))
 
                         ### Add the new observation record, if it exists in SNEx1 but not SNEx2
                         if tracknumber_count > 0 and observation_id > 0 and not in_snex2:
