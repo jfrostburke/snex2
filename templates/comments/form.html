@@ -8,8 +8,6 @@
       <div>{{ field }}</div>
     {% endif %}
   {% endfor %}
-  {% bootstrap_field form.comment show_label=False %}
-  <p class="submit">
-    <input type="submit" name="post" class="btn btn-primary submit-post" value="{% trans "Post" %}"/>
-  </p>
+  <input id="id_comment" type="text" name="comment" placeholder="Add a comment">
+  <input type="submit" hidden />
 </form>

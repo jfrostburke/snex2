@@ -1,6 +1,8 @@
 {% load bootstrap4 custom_code_tags %}
 {% for paper in papers %}
-{{ paper }}<br>
-{{ paper.description }}<br>
-{{ paper.created }}<br>
+<div id="paper_{{paper.id}}" style="padding-top: 1px; padding-bottom: 1px; padding-left: 0px; padding-right: 0px;">
+  <span style="font-size: medium; color: #004459;">{{ paper }}</span><br>
+  <span style="font-size: medium; color: #004459;">{{ paper.description }}</span><br>
+  <span style="font-size: small; color: #0089b3">{{ paper.created }}</span><br>
+</div>
 {% endfor %}
