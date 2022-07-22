@@ -399,8 +399,8 @@ def spectra_plot(target, dataproduct=None):
             name=spectrum[2]
         ) for spectrum in spectra]
     layout = go.Layout(
-        height=600,
-        width=700,
+        height=450,
+        width=600,
         hovermode='closest',
         xaxis=dict(
             tickformat="d",
@@ -411,14 +411,15 @@ def spectra_plot(target, dataproduct=None):
             mirror=True
         ),
         yaxis=dict(
-            tickformat=".1eg",
+            tickformat=".1~eg",
             title='Flux',
             gridcolor='#D3D3D3',
             showline=True,
             linecolor='#D3D3D3',
             mirror=True
         ),
-        plot_bgcolor='white'
+        plot_bgcolor='white',
+        margin=dict(l=30, r=10, b=30, t=40),
     )
     if plot_data:
       return {
