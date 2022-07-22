@@ -122,12 +122,12 @@ input[type=number]::-webkit-outer-spin-button {
 	  {% csrf_token %}
 	  {% buttons %}
 	  {% if parameter.case == 'pending' %}
-	  <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'approved')" class="btn" style="background-color: green; color: white;" value="Approve Sequence" id="approve-{{ parameter.observation_id }}" readonly>
-          <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'rejected')" class="btn" style="background-color: red; color: white;" value="Reject Sequence" id="reject-{{ parameter.observation_id }}" readonly>
+	  <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'approved')" class="btn" style="background-color: white; color: green; outline-color: green; outline-style: auto;" value="Approve Sequence" id="approve-{{ parameter.observation_id }}" readonly>
+          <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'rejected')" class="btn" style="background-color: white; color: red; outline-color: red; outline-style: auto;" value="Reject Sequence" id="reject-{{ parameter.observation_id }}" readonly>
 	  {% else %}
-	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: green; color: white;" value="Continue As-is" id="continue-{{ parameter.observation_id }}" readonly>
-	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: red; color: white;" value="Stop Sequence" id="stop-{{ parameter.observation_id }}" readonly>
-	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
+	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: white; color: green; outline-color: green; outline-style: auto;" onmouseover="style.backgroundColor='green'; style.color='white';" onmouseout="style.backgroundColor='white'; style.color='green';" value="Continue As-is" id="continue-{{ parameter.observation_id }}" readonly>
+	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: white; color: red; outline-color: red; outline-style: auto;" onmouseover="style.backgroundColor='red'; style.color='white';" onmouseout="style.backgroundColor='white'; style.color='red';" value="Stop Sequence" id="stop-{{ parameter.observation_id }}" readonly>
+	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" style="background-color: white; color: #164560; outline-color: #164560; outline-style: auto;" onmouseover="style.backgroundColor='#164560'; style.color='white';" onmouseout="style.backgroundColor='white'; style.color='#164560';" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
 	  <div>and delay start by {{ form.delay_start }} days</div>
 	  {% endif %}
           {% endbuttons %}
@@ -147,12 +147,12 @@ input[type=number]::-webkit-outer-spin-button {
 	  {% csrf_token %}
 	  {% buttons %}
 	  {% if parameter.case == 'pending' %}
-	  <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'approved')" class="btn" style="background-color: green; color: white;" value="Approve Sequence" id="approve-{{ parameter.observation_id }}" readonly>
-          <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'rejected')" class="btn" style="background-color: red; color: white;" value="Reject Sequence" id="reject-{{ parameter.observation_id }}" readonly>
+	  <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'approved')" class="btn" style="background-color: white; color: green; outline-color: green; outline-style: auto;" value="Approve Sequence" id="approve-{{ parameter.observation_id }}" readonly>
+          <input onclick="approveRejectSequence({{ parameter.observation_id }}, 'rejected')" class="btn" style="background-color: white; color: red; outline-color: red; outline-style: auto;" value="Reject Sequence" id="reject-{{ parameter.observation_id }}" readonly>
 	  {% else %}
-	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: green; color: white;" value="Continue As-is" id="continue-{{ parameter.observation_id }}" readonly>
-	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: red; color: white;" value="Stop Sequence" id="stop-{{ parameter.observation_id }}" readonly>
-	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
+	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: white; color: green; outline-color: green; outline-style: auto;" onmouseover="style.backgroundColor='green'; style.color='white';" onmouseout="style.backgroundColor='white'; style.color='green';" value="Continue As-is" id="continue-{{ parameter.observation_id }}" readonly>
+	  <input onclick="modify_sequence(this.id)" class="btn" style="background-color: white; color: red; outline-color: red; outline-style: auto;" onmouseover="style.backgroundColor='red'; style.color='white';" onmouseout="style.backgroundColor='white'; style.color='red';" value="Stop Sequence" id="stop-{{ parameter.observation_id }}" readonly>
+	  <input onclick="modify_sequence(this.id)" class="btn btn-primary" style="background-color: white; color: #164560; outline-color: #164560; outline-style: auto;" onmouseover="style.backgroundColor='#164560'; style.color='white';" onmouseout="style.backgroundColor='white'; style.color='#164560';" value="Modify Sequence" id="modify-{{ parameter.observation_id }}" readonly>
 	  <div>and delay start by {{ form.delay_start }} days</div>
 	  {% endif %}
           {% endbuttons %}
