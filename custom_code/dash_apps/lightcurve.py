@@ -13,7 +13,7 @@ from django.templatetags.static import static
 logger = logging.getLogger(__name__)
 
 app = DjangoDash(name='Lightcurve', add_bootstrap_links=True)
-app.css.append_css({'external_url': static('tom_targets/css/targets_snexclone.css')})
+app.css.append_css({'external_url': static('custom_code/css/dash.css')})
 telescopes = ['LCO']
 reducer_groups = []
 papers_used_in = []
@@ -331,6 +331,10 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
             if isinstance(value, str):
                 value = json.loads(value)
 
+            ### Check if the value contains a magnitude (may not if the entry is 9999 in snex1)
+            if not value.get('magnitude', ''):
+                continue
+
             ### Get subtracted or unsubtracted data
             if value.get('background_subtracted', '') == True:
                 if value.get('subtraction_algorithm', '') in selected_algorithm and value.get('template_source', '') in selected_template and reduction_type == 'manual':
@@ -373,7 +377,8 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
     layout = go.Layout(
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
-        margin=dict(l=30, r=40, b=30, t=40),
+        margin=dict(l=40, r=50, b=40, t=40),
+        legend=dict(x=0.84, y=1.0),
         width=width,
         height=height,
         hovermode='closest',

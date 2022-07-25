@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 
-app = DjangoDash(name='Spectra_Individual', id='spectrum_id')   # replaces dash.Dash
-app.css.append_css({'external_url': static('tom_targets/css/targets_snexclone.css')})
+app = DjangoDash(name='Spectra_Individual', id='spectrum_id', add_bootstrap_links=True, suppress_callback_exceptions=True)   # replaces dash.Dash
+app.css.append_css({'external_url': static('custom_code/css/dash.css')})
 
 params = [
     'Redshift', 'Velocity (km/s)'
@@ -71,7 +71,8 @@ app.layout = html.Div([
               figure = {'layout' : {'height': 350,
                                     'margin': {'l': 60, 'b': 30, 'r': 60, 't': 10},
                                     'yaxis': {'type': 'linear'},
-                                    'xaxis': {'showgrid': False}
+                                    'xaxis': {'showgrid': False},
+                                    'legend': {'x': 0.85, 'y': 1.0},
                                     },
                         'data' : []#[go.Scatter({'x': [], 'y': []})]
                     }
@@ -240,7 +241,8 @@ def change_redshift(z, *args, **kwargs):
     for elem in list(elements.keys())[:10]:
         row = html.Tr([
             html.Td(
-                dbc.Checkbox(id='standalone-checkbox-'+elem.replace(' ', '-'))
+                dbc.Checkbox(id='standalone-checkbox-'+elem.replace(' ', '-')),
+                style={"padding-left": "1rem"},
             ),
             html.Td(
                 elem
@@ -270,8 +272,8 @@ def change_redshift(z, *args, **kwargs):
                     #value=0
                 ),
                 colSpan=2,
-            )
-        ])
+            ),
+        ], style={'padding': '0rem'})
         elem_input_array.append(row)
     table_body_one = [html.Tbody(elem_input_array)]
     
@@ -309,7 +311,7 @@ def change_redshift(z, *args, **kwargs):
                     #value=0
                 ),
                 colSpan=2,
-            )
+            ),
         ])
         elem_input_array.append(row)
     elem_input_array.append(
@@ -621,6 +623,10 @@ def display_output(selected_rows,
             line_color='black'
         )
         graph_data['data'].append(scatter_obj)
+        graph_data['layout']['xaxis']['range'] = [min(binned_wavelength), max(binned_wavelength)]
+        graph_data['layout']['xaxis']['autorange'] = False
+        graph_data['layout']['yaxis']['range'] = [min(binned_flux), max(binned_flux)]
+        graph_data['layout']['yaxis']['autorange'] = False
     
     for row in selected_rows:
         (elem, row_extras), = json.loads(row).items()
