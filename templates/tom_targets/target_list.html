@@ -113,7 +113,7 @@
   {{ filter.fields }}
   <div class="col-md-2">
     <form action="" method="get" class="form">
-      {% bootstrap_form filter.form %}
+      {% bootstrap_form filter.form exclude='tweet,reference,observing_run_priority,last_nondetection,first_detection,maximum,target_description' %}
       {% buttons %}
         <button type="submit" class="btn btn-primary">
           Filter
