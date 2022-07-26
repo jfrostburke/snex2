@@ -10,6 +10,7 @@ from custom_code.models import ReducedDatumExtra, Papers
 import logging
 from django.templatetags.static import static
 from datetime import datetime, timedelta
+from astropy.time import Time
 
 logger = logging.getLogger(__name__)
 
@@ -370,7 +371,8 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
                 array=filter_values['error'],
                 visible=True,
                 color=get_color(filter_name, filter_translate)
-            )
+            ),
+            text=['MJD: ' + str(round(Time(t).mjd, 2)) for t in filter_values['time']],
         ) for filter_name, filter_values in selected_photometry.items()]
 
     graph_data = {'data': plot_data}
