@@ -11,6 +11,7 @@ import logging
 from django.templatetags.static import static
 from datetime import datetime, timedelta
 from astropy.time import Time
+from dash import no_update
 
 logger = logging.getLogger(__name__)
 
@@ -186,6 +187,8 @@ def display_options(n_clicks):
 def update_reduction_type(selected_subtraction, old_reduction_type):
     if selected_subtraction == 'Subtracted':
         return 'manual'
+    elif selected_subtraction == 'Unsubtracted' and old_reduction_type == 'manual':
+        return ''
     return old_reduction_type
 
 #Unselect final reduction if automatically reduced data is selected
@@ -204,8 +207,10 @@ def update_final_reduction(selected_reduction, old_final_value):
         [Input('reduction-type-radio', 'value'),
          State('subtracted-radio', 'value')])
 def update_subtracted_type(selected_reduction, old_subtracted_type):
-    if not selected_reduction:
+    if not selected_reduction and old_subtracted_type != 'Unsubtracted':
         return 'Unsubtracted'
+    elif selected_reduction == 'manual' and old_subtracted_type == 'Unsubtracted':
+        return no_update
     return old_subtracted_type
 
 #Hide subtracted choices if LCO telescope is not selected
