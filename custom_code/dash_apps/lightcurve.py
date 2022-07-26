@@ -9,6 +9,7 @@ from tom_dataproducts.models import ReducedDatum
 from custom_code.models import ReducedDatumExtra, Papers
 import logging
 from django.templatetags.static import static
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -384,6 +385,16 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
         hovermode='closest',
         plot_bgcolor='white'
     )
+
+    ### Set the minimum x-axis range to one day
+    min_xs = [min(filter_values['time']) for filter_values in selected_photometry.values()]
+    max_xs = [max(filter_values['time']) for filter_values in selected_photometry.values()]
+
+    if len(min_xs) > 0 and len(max_xs) > 0:
+        delta_t = max(max_xs) - min(min_xs)
+        if delta_t.total_seconds()/(24*3600) < 1.0:
+            x_range = [min(min_xs) - timedelta(seconds = (24*3600 - delta_t.total_seconds())/2), max(max_xs) + timedelta(seconds = (24*3600 - delta_t.total_seconds())/2)]
+            layout['xaxis']['range'] = x_range
 
     graph_data['layout'] = layout
 
