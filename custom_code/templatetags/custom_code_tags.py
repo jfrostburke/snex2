@@ -76,8 +76,30 @@ def airmass_plot(context):
     interval = 15 #min
     airmass_limit = 3.0
     plot_data = get_24hr_airmass(context['object'], interval, airmass_limit)
+    for t in plot_data:
+        time_vals = t['x']
+        airmass_vals = np.asarray(t['y'])
+        vals_above_airmass_low = np.where(airmass_vals < 1.6)
+        vals_above_airmass_high = np.where(airmass_vals < 2.0)
+
+        if len(vals_above_airmass_low[0]) > 0:
+            time_diff = max(time_vals[vals_above_airmass_low]) - min(time_vals[vals_above_airmass_low])
+            time_above_airmass_low = round(time_diff.total_seconds() / 3600, 1)
+        else:
+            time_above_airmass_low = 0.0
+
+        if len(vals_above_airmass_high[0]) > 0:
+            time_diff = max(time_vals[vals_above_airmass_high]) - min(time_vals[vals_above_airmass_high])
+            time_above_airmass_high = round(time_diff.total_seconds() / 3600, 1)
+        else:
+            time_above_airmass_high = 0.0
+        text = 'Time Above Airmass 1.6: {} hr;Time Above Airmass 2.0: {} hr'.format(time_above_airmass_low, time_above_airmass_high) 
+        t['hovertemplate'] = '(%{customdata|%Y-%m-%d %H:%M:%S}, %{y:.2f})' + '<br>{}'.format(text.split(';')[0]) + '<br>{}'.format(text.split(';')[1])
+        t['customdata'] = time_vals
+        t['x'] = np.asarray([(time_val - datetime.datetime.utcnow()).total_seconds() / 3600 for time_val in time_vals])
+
     layout = go.Layout(
-        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True,title_text="Hours From Now"),
         yaxis=dict(range=[airmass_limit,1.0],gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         margin=dict(l=20,r=10,b=30,t=40),
         hovermode='closest',
