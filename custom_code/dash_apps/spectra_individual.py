@@ -70,7 +70,7 @@ app.layout = html.Div([
     dcc.Graph(id='table-editing-simple-output',
               figure = {'layout' : {'height': 350,
                                     'margin': {'l': 60, 'b': 30, 'r': 60, 't': 10},
-                                    'yaxis': {'type': 'linear'},
+                                    'yaxis': {'type': 'linear', 'tickformat': '.1e'},
                                     'xaxis': {'showgrid': False},
                                     'legend': {'x': 0.85, 'y': 1.0},
                                     },

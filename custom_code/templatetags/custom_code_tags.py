@@ -393,9 +393,18 @@ def bin_spectra(waves, fluxes, b):
 @register.inclusion_tag('custom_code/spectra.html')
 def spectra_plot(target, dataproduct=None):
     spectra = []
-    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy').order_by('-timestamp')
+    spectral_dataproducts = ReducedDatum.objects.filter(target=target, data_type='spectroscopy').order_by('timestamp')
     if dataproduct:
         spectral_dataproducts = DataProduct.objects.get(dataproduct=dataproduct)
+    
+    colormap = plt.cm.gist_rainbow
+    colors = [colormap(i) for i in np.linspace(0.99, 0, len(spectral_dataproducts))]
+    rgb_colors = ['rgb({r}, {g}, {b})'.format(
+        r=int(color[0]*255),
+        g=int(color[1]*255),
+        b=int(color[2]*255),
+    ) for color in colors]
+
     for spectrum in spectral_dataproducts:
         datum = spectrum.value
         wavelength = []
@@ -418,8 +427,9 @@ def spectra_plot(target, dataproduct=None):
         go.Scatter(
             x=spectrum[0],
             y=spectrum[1],
-            name=spectrum[2]
-        ) for spectrum in spectra]
+            name=spectrum[2],
+            line_color=rgb_colors[i]
+        ) for i, spectrum in enumerate(spectra)]
     layout = go.Layout(
         height=450,
         width=600,
@@ -433,7 +443,7 @@ def spectra_plot(target, dataproduct=None):
             mirror=True
         ),
         yaxis=dict(
-            tickformat=".1~eg",
+            tickformat=".1g",
             title='Flux',
             gridcolor='#D3D3D3',
             showline=True,

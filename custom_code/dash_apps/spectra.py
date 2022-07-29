@@ -137,7 +137,7 @@ app.layout = html.Div([
     dcc.Graph(id='table-editing-simple-output',
               figure = {'layout' : {'height': 350,
                                     'margin': {'l': 60, 'b': 30, 'r': 60, 't': 10},
-                                    'yaxis': {'type': 'linear'},
+                                    'yaxis': {'type': 'linear', 'tickformat': '.1e'},
                                     'xaxis': {'showgrid': False}
                                     },
                         'data' : []#[go.Scatter({'x': [], 'y': []})]
@@ -334,7 +334,7 @@ def display_output(selected_rows,
         if not spectral_dataproducts:
             return 'No spectra yet'
         colormap = plt.cm.gist_rainbow
-        colors = [colormap(i) for i in np.linspace(0, 0.99, len(spectral_dataproducts))]
+        colors = [colormap(i) for i in np.linspace(0.99, 0., len(spectral_dataproducts))]
         rgb_colors = ['rgb({r}, {g}, {b})'.format(
             r=int(color[0]*255),
             g=int(color[1]*255),
