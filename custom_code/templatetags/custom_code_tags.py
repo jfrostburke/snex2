@@ -76,23 +76,47 @@ def airmass_plot(context):
     interval = 15 #min
     airmass_limit = 3.0
     plot_data = get_24hr_airmass(context['object'], interval, airmass_limit)
+
+    ### Get the amount of time each site is above airmass 1.6 and 2.0
     for t in plot_data:
         time_vals = t['x']
         airmass_vals = np.asarray(t['y'])
         vals_above_airmass_low = np.where(airmass_vals < 1.6)
         vals_above_airmass_high = np.where(airmass_vals < 2.0)
-
+        
+        ### Have to do this in a complex way to avoid nonsense answers when the
+        ### visibility plots wrap around to 24 hours from now
         if len(vals_above_airmass_low[0]) > 0:
-            time_diff = max(time_vals[vals_above_airmass_low]) - min(time_vals[vals_above_airmass_low])
+            time_diffs = np.asarray(time_vals[vals_above_airmass_low]) - min(time_vals[vals_above_airmass_low])
+            valid_time_diffs = np.where(time_diffs < datetime.timedelta(hours=12))
+            ### Get the ones that are ~24 hours from now too
+            tomorrow_time_diffs = np.where(time_diffs > datetime.timedelta(hours=12))
+
+            if len(tomorrow_time_diffs[0]) > 0: # Visibility plot wrapped, so account for that
+                time_diff = max(time_diffs[valid_time_diffs]) + (max(time_diffs[tomorrow_time_diffs]) - min(time_diffs[tomorrow_time_diffs]))
+            
+            else:
+                time_diff = max(time_diffs[valid_time_diffs])
             time_above_airmass_low = round(time_diff.total_seconds() / 3600, 1)
+        
         else:
             time_above_airmass_low = 0.0
 
         if len(vals_above_airmass_high[0]) > 0:
-            time_diff = max(time_vals[vals_above_airmass_high]) - min(time_vals[vals_above_airmass_high])
+            time_diffs = np.asarray(time_vals[vals_above_airmass_high]) - min(time_vals[vals_above_airmass_high])
+            valid_time_diffs = np.where(time_diffs < datetime.timedelta(hours=12))
+            tomorrow_time_diffs = np.where(time_diffs > datetime.timedelta(hours=12))
+            
+            if len(tomorrow_time_diffs[0]) > 0:
+                time_diff = max(time_diffs[valid_time_diffs]) + (max(time_diffs[tomorrow_time_diffs]) - min(time_diffs[tomorrow_time_diffs]))
+            
+            else:
+                time_diff = max(time_diffs[valid_time_diffs])
             time_above_airmass_high = round(time_diff.total_seconds() / 3600, 1)
+        
         else:
             time_above_airmass_high = 0.0
+        
         text = 'Time Above Airmass 1.6: {} hr;Time Above Airmass 2.0: {} hr'.format(time_above_airmass_low, time_above_airmass_high) 
         t['hovertemplate'] = '(%{customdata|%Y-%m-%d %H:%M:%S}, %{y:.2f})' + '<br>{}'.format(text.split(';')[0]) + '<br>{}'.format(text.split(';')[1])
         t['customdata'] = time_vals
