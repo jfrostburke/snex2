@@ -1819,7 +1819,7 @@ def test_display_thumbnail(context, target):
     thumbs = [f for f in listdir('data/thumbs/') if isfile(join('data/thumbs/', f))]
     top_images = []
     bottom_images = [] 
-    sites = [f[:3] for f in filenames]
+    sites = [f[:3].upper() for f in filenames]
     
     thumbfiles = []
     thumbdates = []
@@ -1854,15 +1854,12 @@ def test_display_thumbnail(context, target):
         with open('data/thumbs/'+thumbfiles[i], 'rb') as imagefile:        
             b64_image = base64.b64encode(imagefile.read())
             label = '{} {} {} {} {}'.format(thumbdates[i], thumbsites[i], thumbteles[i], thumbfilters[i], thumbexptimes[i])
-            b64_str = b64_image.decode('utf-8')
-            while len(b64_str) % 4 != 0:
-                b64_str += '='
             if i < halfway:
-                top_images.append({'image': b64_str,#b64_image.decode('utf-8'),
+                top_images.append({'image': b64_image.decode('utf-8'),
                                    'label': label,
                                 })
             else:
-                bottom_images.append({'image': b64_str,#b64_image.decode('utf-8'),
+                bottom_images.append({'image': b64_image.decode('utf-8'),
                                       'label': label
                                       })
 
