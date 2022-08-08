@@ -49,8 +49,9 @@ def _return_session(db_address='mysql://{}:{}@supernova.science.lco.global:3306/
     Base.metadata.bind = engine
 
     db_session = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+    session = db_session()
 
-    return db_session
+    return session
 
 
 def _load_table(tablename, db_address):
