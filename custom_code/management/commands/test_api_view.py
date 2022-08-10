@@ -51,7 +51,9 @@ class Command(BaseCommand):
         
             #Append filts and exposures
             for filt, exptime in filt_dict.items():
-                observing_parameters[filt] = [exptime+0.0, 2, 1]
+                if filt in ['U', 'B', 'V']:
+                    continue
+                observing_parameters[filt+'p'] = [exptime+0.0, 2, 1]
             
             observing_parameters = json.dumps(observing_parameters)
             try:
