@@ -25,7 +25,7 @@ class Command(BaseCommand):
         group_query = Group.objects.filter(name__in=settings.DEFAULT_GROUPS)
         groups = json.dumps([{'name': g.name, 'id': g.id} for g in group_query])
 
-        me = User.objects.get(id=3)
+        me = User.objects.get(username='cpellegrino')
         cadence = json.dumps({'cadence_strategy': 'SnexResumeCadenceAfterFailureStrategy', 'cadence_frequency': 7.0})
         with open(filepath) as json_file:
             obs_to_schedule = json.load(json_file) 
