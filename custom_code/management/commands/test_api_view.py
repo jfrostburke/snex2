@@ -42,7 +42,7 @@ class Command(BaseCommand):
             observing_parameters = {'cadence_strategy': 'SnexResumeCadenceAfterFailureStrategy', 
                                     'ipp_value': 0.95, 'max_airmass': 2.0, 'facility': 'LCO', 
                                     'observation_type': 'IMAGING', 'min_lunar_distance': 20, 
-                                    'observation_mode': 'NORMAL', 'cadence_frequency': 3.0, 
+                                    'observation_mode': 'NORMAL', 'cadence_frequency': 7.0, 
                                     'proposal': 'KEY2020B-002', 
                                     'instrument_type': '1M0-SCICAM-SINISTRO',
                                     'start': start, 'end': end, 'reminder': 14.0}
@@ -51,9 +51,10 @@ class Command(BaseCommand):
         
             #Append filts and exposures
             for filt, exptime in filt_dict.items():
-                if filt in ['U', 'B', 'V']:
-                    continue
-                observing_parameters[filt+'p'] = [exptime+0.0, 2, 1]
+                if filt not in ['g', 'r', 'i']:
+                    observing_parameters[filt] = [exptime+0.0, 2, 1]
+                else:
+                    observing_parameters[filt+'p'] = [exptime+0.0, 2, 1]
             
             observing_parameters = json.dumps(observing_parameters)
             try:
