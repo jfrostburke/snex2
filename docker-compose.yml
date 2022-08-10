@@ -28,6 +28,7 @@ services:
             - DB_NAME=snex2
             - DB_HOST=snex2-db
             - DB_PORT=5432
+            - SNEX2_USER=${SNEX2_USER}
             - SNEX2_DB_USER=${SNEX2_DB_USER}
             - SNEX2_DB_PASSWORD=${SNEX2_DB_PASSWORD}
             - SNEX1_DB_USER=${SNEX1_DB_USER}
