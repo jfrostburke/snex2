@@ -250,12 +250,18 @@ def generic_lightcurve_plot(target, user):
 
     if settings.TARGET_PERMISSIONS_ONLY:
         datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
+        spec = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['spectroscopy'][0])
     else:
         datums = get_objects_for_user(user,
                                       'tom_dataproducts.view_reduceddatum',
                                       klass=ReducedDatum.objects.filter(
                                         target=target,
                                         data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
+        spec = get_objects_for_user(user,
+                                    'tom_dataproducts.view_reduceddatum',
+                                    klass=ReducedDatum.objects.filter(
+                                        target=target,
+                                        data_type=settings.DATA_PRODUCT_TYPES['spectroscopy'][0]))
 
     for rd in datums:
     #for rd in ReducedDatum.objects.filter(target=target, data_type='photometry'):
@@ -284,7 +290,19 @@ def generic_lightcurve_plot(target, user):
                 visible=True,
                 color=get_color(filter_name, filter_translate)
             )
-        ) for filter_name, filter_values in photometry_data.items()] 
+        ) for filter_name, filter_values in photometry_data.items()]
+
+    #if photometry_data:
+    #    plot_data += [
+    #        go.Scatter(
+    #            x=[s.timestamp, s.timestamp],
+    #            y=[min([min(filter_values['magnitude']) for filter_values in photometry_data.values()], default=-1),
+    #               max([max(filter_values['magnitude']) for filter_values in photometry_data.values()], default=1)],
+    #            mode='lines',
+    #            opacity=0.2,
+    #            line=dict(color='black'),
+    #            showlegend=False,
+    #        ) for s in spec]
 
     return plot_data
 
@@ -319,6 +337,7 @@ def lightcurve(context, target):
 def lightcurve_collapse(target, user):
     
     plot_data = generic_lightcurve_plot(target, user)     
+    spec = ReducedDatum.objects.filter(target=target, data_type='spectroscopy')
     
     layout = go.Layout(
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
@@ -328,7 +347,17 @@ def lightcurve_collapse(target, user):
         height=200,
         width=250,
         showlegend=False,
-        plot_bgcolor='white'
+        plot_bgcolor='white',
+        shapes=[
+            dict(
+                type='line',
+                yref='paper',
+                y0=0,#min([min(filter_values['magnitude']) for filter_values in photometry_data.values()], default=-1),
+                y1=1,#max([max(filter_values['magnitude']) for filter_values in photometry_data.values()], default=1),
+                xref='x',
+                x0=s.timestamp,
+                x1=s.timestamp,
+            ) for s in spec]
     )
     if plot_data:
         return {
