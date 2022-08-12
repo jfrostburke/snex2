@@ -899,7 +899,7 @@ def observation_summary(context, target=None, time='previous'):
             else:
                 title_suffix = ''
 
-            if parameter.get('cadence_strategy', ''):
+            if parameter.get('cadence_strategy', '') == 'SnexResumeCadenceAfterFailureStrategy':
                 parameter_string = str(parameter.get('cadence_frequency', '')) + '-day ' + str(parameter.get('observation_type', '')).lower() + ' cadence of '
             else:
                 parameter_string = 'Single ' + str(parameter.get('observation_type', '')).lower() + ' observation of '
@@ -1050,6 +1050,11 @@ def get_scheduling_form(observation, user_id, start, requested_str, case='notpen
         if not end:
             end = str(observation.modified).split('.')[0]
 
+        if parameter.get('cadence_strategy', '') == 'SnexResumeCadenceAfterFailureStrategy':
+            cadence_strat = '(Repeating)'
+        else:
+            cadence_strat = '(Onetime)'
+
         observing_parameters = {
                    'instrument_type': parameter.get('instrument_type', ''),
                    'min_lunar_distance': parameter.get('min_lunar_distance', ''),
@@ -1093,6 +1098,7 @@ def get_scheduling_form(observation, user_id, start, requested_str, case='notpen
                            'facility': facility,
                            'proposal': parameter.get('proposal', ''),
                            'observation_type': observation_type,
+                           'cadence_strategy': cadence_strat,
                            'instrument': instrument,
                            'start': start + ' by ' + requested_str,
                            'comment': comment_str,
@@ -1105,6 +1111,10 @@ def get_scheduling_form(observation, user_id, start, requested_str, case='notpen
         observation_type = 'Spec'
         instrument = 'Floyds'
         cadence_frequency = parameter.get('cadence_frequency', '')
+        if parameter.get('cadence_strategy', '') == 'SnexResumeCadenceAfterFailureStrategy':
+            cadence_strat = '(Repeating)'
+        else:
+            cadence_strat = '(Onetime)'
         #start = str(obsset.first().parameters['start']).replace('T', ' ')
         end = str(parameter.get('reminder', '')).replace('T', ' ')
         if not end:
@@ -1148,6 +1158,7 @@ def get_scheduling_form(observation, user_id, start, requested_str, case='notpen
                            'facility': facility,
                            'proposal':  parameter.get('proposal', ''),
                            'observation_type': observation_type,
+                           'cadence_strategy': cadence_strat,
                            'instrument': instrument,
                            'start': start + ' by ' + requested_str,
                            'comment': comment_str,
