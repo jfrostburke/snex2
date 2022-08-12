@@ -383,17 +383,6 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
             text=['MJD: ' + str(round(Time(t).mjd, 2)) for t in filter_values['time']],
         ) for filter_name, filter_values in selected_photometry.items()]
 
-    #plot_data += [
-    #    go.Scatter(
-    #        x=[s.timestamp, s.timestamp],
-    #        y=[min([min(filter_values['magnitude']) for filter_values in photometry_data.values()], default=-1),
-    #           max([max(filter_values['magnitude']) for filter_values in photometry_data.values()], default=1)],
-    #        mode='lines',
-    #        opacity=0.2,
-    #        line=dict(color='black'),
-    #        showlegend=False,
-    #    ) for s in spec]
-
     graph_data = {'data': plot_data}
 
     layout = go.Layout(
@@ -409,11 +398,13 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
             dict(
                 type='line',
                 yref='paper',
-                y0=0,#min([min(filter_values['magnitude']) for filter_values in photometry_data.values()], default=-1),
-                y1=1,#max([max(filter_values['magnitude']) for filter_values in photometry_data.values()], default=1),
+                y0=0,
+                y1=1,
                 xref='x',
                 x0=s.timestamp, 
                 x1=s.timestamp,
+                opacity=0.2,
+                line=dict(color='black', dash='dash'),
             ) for s in spec]
     )
 
