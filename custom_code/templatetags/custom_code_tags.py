@@ -1767,13 +1767,26 @@ def lightcurve_with_extras(target, user):
         'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2', 
         'UVW1': 'UVW1'}
     plot_data = generic_lightcurve_plot(target, user)         
+    spec = ReducedDatum.objects.filter(target=target, data_type='spectroscopy')
 
     layout = go.Layout(
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         margin=dict(l=30, r=10, b=100, t=40),
         hovermode='closest',
-        plot_bgcolor='white'
+        plot_bgcolor='white',
+        shapes=[
+            dict(
+                type='line',
+                yref='paper',
+                y0=0,
+                y1=1,
+                xref='x',
+                x0=s.timestamp,
+                x1=s.timestamp,
+                opacity=0.2,
+                line=dict(color='black', dash='dash'),
+            ) for s in spec]
         #height=500,
         #width=500
     )

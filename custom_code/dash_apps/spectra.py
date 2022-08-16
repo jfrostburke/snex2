@@ -143,40 +143,42 @@ app.layout = html.Div([
                         'data' : []#[go.Scatter({'x': [], 'y': []})]
                     }
     ),
-    dcc.Input(id='target_id', type='hidden', value=0),
-    dcc.Input(id='target_redshift', type='hidden', value=0),
-    dcc.Input(id='min-flux', type='hidden', value=0),
-    dcc.Input(id='max-flux', type='hidden', value=0),
-    dcc.Checklist(
-        id='line-plotting-checklist',
-        options=[{'label': 'Show line plotting interface', 'value': 'display'}],
-        value=''
-    ),
-    html.Div(
-        children=[],
-        id='checked-rows',
-        style={'display': 'none'}
-    ),
-    html.Div(
-        children=[
-            dbc.Row([
-                dbc.Table(
-                    html.Tbody([
-                        html.Tr([
-                            html.Td(
-                                dbc.Table(table_body_one, bordered=True),
-                            ),
-                            html.Td(
-                                dbc.Table(table_body_two, bordered=True),
-                            )
-                        ]),
-                    ])
-                )
-            ])
-        ],
-        id='table-container-div',
-        style={'display': 'none'}
-    )
+    html.Div([
+        dcc.Input(id='target_id', type='hidden', value=0),
+        dcc.Input(id='target_redshift', type='hidden', value=0),
+        dcc.Input(id='min-flux', type='hidden', value=0),
+        dcc.Input(id='max-flux', type='hidden', value=0),
+        dcc.Checklist(
+            id='line-plotting-checklist',
+            options=[{'label': 'Show line plotting interface', 'value': 'display'}],
+            value=''
+        ),
+        html.Div(
+            children=[],
+            id='checked-rows',
+            style={'display': 'none'}
+        ),
+        html.Div(
+            children=[
+                dbc.Row([
+                    dbc.Table(
+                        html.Tbody([
+                            html.Tr([
+                                html.Td(
+                                    dbc.Table(table_body_one, bordered=True),
+                                ),
+                                html.Td(
+                                    dbc.Table(table_body_two, bordered=True),
+                                )
+                            ]),
+                        ])
+                    )
+                ])
+            ],
+            id='table-container-div',
+            style={'display': 'none'}
+        )
+    ], style={'overflow-y': 'auto'})
 ])
 
 @app.callback(

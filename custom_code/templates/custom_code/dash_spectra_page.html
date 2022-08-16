@@ -1,7 +1,9 @@
 {% load plotly_dash %}
+<table class="table">
+<tbody>
 {% for entry in plot_list %}
-  <div class="row" style="margin-bottom: -250px;">
-    <div class="col-md-2">
+  <tr valign="top">
+    <td width=200>
       <div class="row"><b>{{ entry.time }}</b></div>
       <div class="row">Telescope: {{ entry.spec_extras.telescope }} {{ entry.spec_extras.site }}</div>
       <div class="row">Instrument: {{ entry.spec_extras.instrument }}</div>
@@ -16,10 +18,11 @@
 	<input id="comment-{{ entry.spectrum.id }}" type="text" name="comment" placeholder="Add a comment">
 	<input onclick="savecomment({{ entry.spectrum.id }})" type="submit" class="btn btn-primary btn-post" name="submit" value="Submit">
       </div>
-    </div>
-    <div class="col-md-10">
-      {% plotly_app name="Spectra_Individual" ratio=1.0 initial_arguments=entry.dash_context %}
-    </div>
-  </div>
-  <hr>
+    </td>
+    <td width=1000>
+      {% plotly_app name="Spectra_Individual" ratio=0.6 initial_arguments=entry.dash_context %}
+    </td>
+  </tr>
 {% endfor %}
+</tbody>
+</table>
