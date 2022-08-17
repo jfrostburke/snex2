@@ -243,7 +243,7 @@ def target_post_save(target, created, group_names=None, wrapped_session=None):
         #            pass
 
     else:
-        _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+        _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
     
         if wrapped_session:
             db_session = wrapped_session
