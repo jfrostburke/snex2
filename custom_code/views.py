@@ -260,6 +260,11 @@ class CustomTargetCreateView(TargetCreateView):
     def get_form_class(self):
         return CustomTargetCreateForm
 
+    def get_form(self, *args, **kwargs):
+        form = super().get_form(*args, **kwargs)
+        form.fields['groups'].queryset = Group.objects.all()
+        return form
+
     def get_initial(self):
         return {
             'type': self.get_target_type(),
