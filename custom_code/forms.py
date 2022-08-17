@@ -13,18 +13,24 @@ from django.contrib.auth.models import Group
 
 class CustomTargetCreateForm(SiderealTargetCreateForm):
 
-    sciencetags = forms.ModelMultipleChoiceField(ScienceTags.objects.all().order_by(Lower('tag')), widget=forms.CheckboxSelectMultiple, label='Science Tags')
+    sciencetags = forms.ModelMultipleChoiceField(ScienceTags.objects.all().order_by(Lower('tag')), widget=forms.CheckboxSelectMultiple, label='Science Tags', required=False)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        self.cleaned_data = cleaned_data
+
 
     def save(self, commit=True):
         instance = super().save(commit=commit)
         if commit:
-            for field in settings.EXTRA_FIELDS:
-                if self.cleaned_data.get(field['name']) is not None:
-                    TargetExtra.objects.update_or_create(
-                            target=instance,
-                            key=field['name'],
-                            defaults={'value': self.cleaned_data[field['name']]}
-                    )
+            #for field in settings.EXTRA_FIELDS:
+            #    if self.cleaned_data.get(field['name']) is not None:
+            #        print(instance.id, field['name'])
+            #        TargetExtra.objects.update_or_create(
+            #                target=instance,
+            #                key=field['name'],
+            #                defaults={'value': self.cleaned_data[field['name']]}
+            #        )
             # Save groups for this target
             for group in self.cleaned_data['groups']:
                 assign_perm('tom_targets.view_target', group, instance)

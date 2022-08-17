@@ -260,15 +260,43 @@ class CustomTargetCreateView(TargetCreateView):
     def get_form_class(self):
         return CustomTargetCreateForm
 
+    def get_initial(self):
+        return {
+            'type': self.get_target_type(),
+            'groups': Group.objects.filter(name__in=settings.DEFAULT_GROUPS),
+            **dict(self.request.GET.items())
+        }
+
     def get_context_data(self, **kwargs):
         context = super(CustomTargetCreateView, self).get_context_data(**kwargs)
         context['type_choices'] = Target.TARGET_TYPES
         return context
 
+    def post(self, request):
+        super(CustomTargetCreateView, self).post(request)
+        return redirect(self.get_success_url())
+    
     def form_valid(self, form):
-        self.object = form.save(commit=True)
-        #logger.info('Target post save hook: %s created: %s', self.object, True)
-        run_hook('target_post_save', target=self.object, created=True)
+        # First, create the targets in both dbs and nothing else
+        with transaction.atomic():
+            if form.is_valid():
+                groups = [g.name for g in form.cleaned_data['groups']]
+                self.object = form.save(form)
+
+                # Sync with SNEx1
+                db_session = _return_session()
+                run_hook('target_post_save', target=self.object, created=True, group_names=groups, wrapped_session=db_session)
+                db_session.commit()
+            else:
+                logger.info('Submitting target failed with errors {}'.format(form.errors))
+                return super().form_invalid(form)
+
+        # If that works, ingest extra stuff for SNEx2 target only
+        # Run in separate atomic transaction block to avoid rolling back
+        # target creation if extra data ingestion goes wrong
+        with transaction.atomic():
+            run_hook('target_post_save', target=self.object, created=False)
+
         return redirect(self.get_success_url())
 
 
@@ -1330,8 +1358,8 @@ def make_tns_request_view(request):
     if tns_params.get('success', ''):
         return HttpResponse(json.dumps(tns_params), content_type='application/json')
     else:
-        logger.info('No TNS name found for target {}'.format(target_id))
-        response_data = {'failure': 'No TNS name for this target'}
+        logger.info('TNS parameters not ingested for target {}'.format(target_id))
+        response_data = {'failure': 'TNS parameters not ingested for this target'}
         return HttpResponse(json.dumps(response_data), content_type='application/json')
 
 

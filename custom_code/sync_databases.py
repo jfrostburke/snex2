@@ -435,10 +435,12 @@ def update_target(action, db_address=_SNEX2_DB):
                     db_session.query(Target).filter(criteria).update({'ra': t_ra, 'dec': t_dec, 'modified': t_modified, 'created': t_created, 'type': 'SIDEREAL', 'epoch': 2000, 'scheme': ''})
 
                 elif action=='insert':
-                    db_session.add(Target(id=target_id, name=t_name, ra=t_ra, dec=t_dec, modified=t_modified, created=t_created, type='SIDEREAL', epoch=2000, scheme=''))
-                    update_permissions(t_groupid, 47, target_id, 12) #Change target
-                    update_permissions(t_groupid, 48, target_id, 12) #Delete target
-                    update_permissions(t_groupid, 49, target_id, 12) #View target
+                    existing_target_query = db_session.query(Target).filter(criteria).first()
+                    if not existing_target_query:
+                        db_session.add(Target(id=target_id, name=t_name, ra=t_ra, dec=t_dec, modified=t_modified, created=t_created, type='SIDEREAL', epoch=2000, scheme=''))
+                        update_permissions(t_groupid, 47, target_id, 12) #Change target
+                        update_permissions(t_groupid, 48, target_id, 12) #Delete target
+                        update_permissions(t_groupid, 49, target_id, 12) #View target
 
                 elif action=='delete':
                     db_session.query(Target).filter(criteria).delete()

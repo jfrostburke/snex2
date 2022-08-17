@@ -102,60 +102,66 @@ def _get_tns_params(target):
     json_list = [('objname',tns_name), ('objid',''), ('photometry','1'), ('spectra','0')]
     json_file = OrderedDict(json_list)
 
-    response = requests.post(tns_url, headers={'User-Agent': 'tns_marker{"tns_id":'+str(tns_id)+', "type":"bot", "name":"SNEx_Bot1"}'}, data={'api_key': api_key, 'data': json.dumps(json_file)})
+    try:
+        response = requests.post(tns_url, headers={'User-Agent': 'tns_marker{"tns_id":'+str(tns_id)+', "type":"bot", "name":"SNEx_Bot1"}'}, data={'api_key': api_key, 'data': json.dumps(json_file)})
 
-    parsed = json.loads(response.text, object_pairs_hook=OrderedDict)
-    result = json.dumps(parsed, indent=4)
+        parsed = json.loads(response.text, object_pairs_hook=OrderedDict)
+        result = json.dumps(parsed, indent=4)
 
-    result = json.loads(result)
-    discoverydate = result['data']['reply']['discoverydate']
-    discoverymag = result['data']['reply']['discoverymag']
-    discoveryfilt = result['data']['reply']['discmagfilter']['name']
-
-
-    nondets = {}
-    dets = {}
-
-    photometry = result['data']['reply']['photometry']
-    for phot in photometry:
-        remarks = phot['remarks']
-        if 'Last non detection' in remarks:
-            nondet_jd = phot['jd']
-            nondet_filt = phot['filters']['name']
-            nondet_limmag = phot['limflux']
-
-            nondets[nondet_jd] = [nondet_filt, nondet_limmag]
-
-        else:
-            det_jd = phot['jd']
-            det_filt = phot['filters']['name']
-            det_mag = phot['flux']
-
-            dets[det_jd] = [det_filt, det_mag]
+        result = json.loads(result)
+        discoverydate = result['data']['reply']['discoverydate']
+        discoverymag = result['data']['reply']['discoverymag']
+        discoveryfilt = result['data']['reply']['discmagfilter']['name']
 
 
-    first_det = min(dets.keys())
+        nondets = {}
+        dets = {}
 
-    last_nondet = 0
-    for nondet, phot in nondets.items():
-        if nondet > last_nondet and nondet < first_det:
-            last_nondet = nondet
+        photometry = result['data']['reply']['photometry']
+        for phot in photometry:
+            remarks = phot['remarks']
+            if 'Last non detection' in remarks:
+                nondet_jd = phot['jd']
+                nondet_filt = phot['filters']['name']
+                nondet_limmag = phot['limflux']
 
-    response_data = {'success': 'Completed',
-                     'nondetection': '{} ({})'.format(date.strftime(Time(last_nondet, scale='utc', format='jd').datetime, "%m/%d/%Y"), round(last_nondet, 2)),
-                     'nondet_mag': nondets[last_nondet][1],
-                     'nondet_filt': nondets[last_nondet][0],
-                     'detection': '{} ({})'.format(date.strftime(Time(first_det, scale='utc', format='jd').datetime, "%m/%d/%Y"), round(first_det, 2)),
-                     'det_mag': dets[first_det][1],
-                     'det_filt': dets[first_det][0]}
+                nondets[nondet_jd] = [nondet_filt, nondet_limmag]
+
+            else:
+                det_jd = phot['jd']
+                det_filt = phot['filters']['name']
+                det_mag = phot['flux']
+
+                dets[det_jd] = [det_filt, det_mag]
+
+
+        first_det = min(dets.keys())
+
+        last_nondet = 0
+        for nondet, phot in nondets.items():
+            if nondet > last_nondet and nondet < first_det:
+                last_nondet = nondet
+
+        response_data = {'success': 'Completed',
+                         'nondetection': '{} ({})'.format(date.strftime(Time(last_nondet, scale='utc', format='jd').datetime, "%m/%d/%Y"), round(last_nondet, 2)) if last_nondet > 0 else None,
+                         'nondet_mag': nondets[last_nondet][1] if last_nondet > 0 else None,
+                         'nondet_filt': nondets[last_nondet][0] if last_nondet > 0 else None,
+                         'detection': '{} ({})'.format(date.strftime(Time(first_det, scale='utc', format='jd').datetime, "%m/%d/%Y"), round(first_det, 2)),
+                         'det_mag': dets[first_det][1],
+                         'det_filt': dets[first_det][0]}
+    
+    except:
+        logger.warning('TNS parameter ingestion failed for target {}'.format(target))
+        response_data = {'failure': 'Parameters not ingested'}
+
     return response_data
 
 
-def target_post_save(target, created):
+def target_post_save(target, created, group_names=None, wrapped_session=None):
  
     logger.info('Target post save hook: %s created: %s', target, created)
     
-    if created:
+    if not created:
         ### Add the last nondetection and first detection from TNS, if it exists
         tns_results = _get_tns_params(target)
         if tns_results.get('success', ''):
@@ -204,53 +210,71 @@ def target_post_save(target, created):
         ### Ingest ZTF data, if a ZTF target
         get_ztf_data(target)
   
-        gaia_name = next((name for name in target.names if 'Gaia' in name), None)
-        if gaia_name:
-            base_url = 'http://gsaweb.ast.cam.ac.uk/alerts/alert'
-            lightcurve_url = f'{base_url}/{gaia_name}/lightcurve.csv'
+        ### Not currently functional
+        #gaia_name = next((name for name in target.names if 'Gaia' in name), None)
+        #if gaia_name:
+        #    base_url = 'http://gsaweb.ast.cam.ac.uk/alerts/alert'
+        #    lightcurve_url = f'{base_url}/{gaia_name}/lightcurve.csv'
 
-            response = requests.get(lightcurve_url)
-            data = response._content.decode('utf-8').split('\n')[2:-2]
+        #    response = requests.get(lightcurve_url)
+        #    data = response._content.decode('utf-8').split('\n')[2:-2]
 
-            jd = [x.split(',')[1] for x in data]
-            mag = [x.split(',')[2] for x in data]
+        #    jd = [x.split(',')[1] for x in data]
+        #    mag = [x.split(',')[2] for x in data]
 
-            for i in reversed(range(len(mag))):
-                try:
-                    datum_mag = float(mag[i])
-                    datum_jd = Time(float(jd[i]), format='jd', scale='utc')
-                    value = {
-                        'magnitude': datum_mag,
-                        'filter': 'G_Gaia',
-                        'error': 0 # for now
-                    }
-                    rd, created = ReducedDatum.objects.get_or_create(
-                        timestamp=datum_jd.to_datetime(timezone=TimezoneInfo()),
-                        value=value,
-                        source_name=target.name,
-                        source_location=lightcurve_url,
-                        data_type='photometry',
-                        target=target)
-                    rd.save()
-                except:
-                    pass
+        #    for i in reversed(range(len(mag))):
+        #        try:
+        #            datum_mag = float(mag[i])
+        #            datum_jd = Time(float(jd[i]), format='jd', scale='utc')
+        #            value = {
+        #                'magnitude': datum_mag,
+        #                'filter': 'G_Gaia',
+        #                'error': 0 # for now
+        #            }
+        #            rd, created = ReducedDatum.objects.get_or_create(
+        #                timestamp=datum_jd.to_datetime(timezone=TimezoneInfo()),
+        #                value=value,
+        #                source_name=target.name,
+        #                source_location=lightcurve_url,
+        #                data_type='photometry',
+        #                target=target)
+        #            rd.save()
+        #        except:
+        #            pass
 
-    #  ### Craig custom code starts here:
-    #  ### ----------------------------------
-    #    _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-    #
-    #    with _get_session(db_address=_snex1_address) as db_session:
-    #        Targets = _load_table('targets', db_address=_snex1_address)
-    #        Targetnames = _load_table('targetnames', db_address=_snex1_address)
-    #        if created == True: 
-    #            # Insert into SNex 1 db
-    #            db_session.add(Targets(ra0=target__ra, dec0=target__dec, lastmodified=target__modified, datecreated=target__created))
-    #            db_session.add(Targetnames(targetid=target__id, name=target__name, datecreated=target__created, lastmodified=target__modified))
-    #        elif created == False:
-    #            # Update in SNex 1 db
-    #            db_session.query(Targets).filter(target__id==Targets__id).update({'ra0': target__ra, 'dec0': target__dec, 'lastmodified': target__modified, 'datecreated': target__created})
-    #            db_session.add(Targetnames(targetid=target__id, name=target__name, datecreated=target__created, lastmodified=target__modified))
-    #        db_session.commit()
+    else:
+        _snex1_address = 'mysql://{}:{}@localhost:3306/supernova'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+    
+        if wrapped_session:
+            db_session = wrapped_session
+    
+        else:
+            db_session = _return_session(_snex1_address)
+    
+        Targets = _load_table('targets', db_address=_snex1_address)
+        Targetnames = _load_table('targetnames', db_address=_snex1_address)
+        Groups = _load_table('groups', db_address=_snex1_address)
+        # Insert into SNEx 1 db
+        if group_names:
+            groupidcode = 0
+            for group_name in group_names:
+                groupidcode += int(db_session.query(Groups).filter(Groups.name==group_name).first().idcode)
+        else:
+            groupidcode = 32769 #Default in SNEx1
+        snex1_target = Targets(id=target.id, ra0=target.ra, dec0=target.dec, groupidcode=groupidcode, lastmodified=target.modified, datecreated=target.created)
+        db_session.add(snex1_target)
+        db_session.add(Targetnames(targetid=target.id, name=target.name, datecreated=target.created, lastmodified=target.modified))
+    
+        if not wrapped_session:
+            try:
+                db_session.commit()
+            except:
+                db_session.rollback()
+            finally:
+                db_session.close()
+        
+        else:
+            db_session.flush()
 
 def targetextra_post_save(targetextra, created):
     '''

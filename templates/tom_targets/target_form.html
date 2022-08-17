@@ -46,7 +46,7 @@
   <form action="{% url 'targets:update' pk=object.id %}" method="post" class="form">
   {% bootstrap_form form exclude='tweet,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err' %}
   {% else %}
-  <form action="{% url "create-target" %}" method="post" class="form">
+  <form action="" method="POST" class="form">
   {% bootstrap_form form exclude='tweet,redshift,classification,epoch,pm_ra,pm_dec,galactic_lng,galactic_lat,distance,distance_err,groups,sciencetags,reference,observing_run_priority,last_nondetection,first_detection,maximum,target_description' %}
   <div class="row">
     {{ form.groups.label_tag }}</br>
@@ -65,8 +65,7 @@
   </div>
   {% csrf_token %}
   {% buttons %}
-    <button type="submit" formaction="{% url 'targets:create' %}"class="btn btn-primary">Submit</button>
-
+  <button type="submit" formaction="" method="POST" class="btn btn-primary">Submit</button>
   {% endbuttons %}
   </form>
 {% endblock %}
