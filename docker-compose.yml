@@ -56,6 +56,7 @@ services:
             - TNS_APIID=${TNS_APIID}
             - SWIFT_USERNAME=${SWIFT_USERNAME}
             - SWIFT_SECRET=${SWIFT_SECRET}
+            - LASAIR_IRIS_TOKEN=${LASAIR_IRIS_TOKEN}
         volumes:
             - ${SNEX_THUMBNAIL_PATH}:/snex2/data/thumbs/
             - ${SNEX_FITS_PATH}:/snex2/data/fits/

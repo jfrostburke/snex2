@@ -14,9 +14,9 @@ from django_comments.models import Comment
 from django_comments.signals import comment_was_posted
 from django.dispatch import receiver
 
-from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons
-from custom_code.filters import TNSTargetFilter, CustomTargetFilter#, BrokerTargetFilter
 from tom_targets.models import TargetList, Target, TargetExtra, TargetName
+from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons, BrokerTarget
+from custom_code.filters import TNSTargetFilter, CustomTargetFilter, BrokerTargetFilter, BrokerTargetForm
 from tom_targets.templatetags.targets_extras import target_extra_field
 from guardian.mixins import PermissionListMixin
 from guardian.models import GroupObjectPermission
@@ -303,6 +303,13 @@ class CustomTargetCreateView(TargetCreateView):
             run_hook('target_post_save', target=self.object, created=False)
 
         return redirect(self.get_success_url())
+
+    def get_initial(self):
+        return {
+            'type': self.get_target_type(),
+            'groups': Group.objects.filter(name__in=settings.DEFAULT_GROUPS),
+            **dict(self.request.GET.items())
+        }
 
 
 class CustomDataProductUploadView(DataProductUploadView):
@@ -1522,27 +1529,33 @@ class ObservationGroupDetailView(DetailView):
         return context
 
 
-#class BrokerTargetView(FilterView):
-# 
-#    template_name = 'custom_code/broker_query_targets.html'
-#    model = BrokerTarget
-#    paginate_by = 10
-#    context_object_name = 'brokertargets'
-#    strict = False
-#    filterset_class = BrokerTargetFilter
-#
-#    def get_context_data(self, **kwargs):
-#        context = super().get_context_data(**kwargs)
-#        #jd_now = Time(datetime.utcnow()).jd
-#        #TNS_URL = "https://www.wis-tns.org/object/"
-#        #for target in context['object_list']:
-#        #    logger.info('Getting context data for TNS Target %s', target)
-#        #    target.coords = make_coords(target.ra, target.dec)
-#        #    target.mag_lnd = make_lnd(target.lnd_maglim,
-#        #        target.lnd_filter, target.lnd_jd, jd_now)
-#        #    target.mag_recent = make_magrecent(target.all_phot, jd_now)
-#        #    target.link = TNS_URL + target.name
-#        return context
+class BrokerTargetView(FilterView):
+ 
+    template_name = 'custom_code/broker_query_targets.html'
+    model = BrokerTarget
+    paginate_by = 10
+    context_object_name = 'brokertargets'
+    strict = False
+    filterset_class = BrokerTargetFilter
+    ordering = ['-created']
+
+    def get_filterset_kwargs(self, filterset_class):
+        ### Initially filter so only new targets are displayed
+        kwargs = super(BrokerTargetView, self).get_filterset_kwargs(filterset_class)
+        if kwargs['data'] is None:
+            kwargs['data'] = {'status': 'New'}
+        elif 'status' not in kwargs['data']:
+            kwargs['data']._mutable = True
+            kwargs['data']['status'] = 'New'
+        return kwargs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        #TNS_URL = "https://www.wis-tns.org/object/"
+        for target in context['object_list']:
+            target.coords = make_coords(target.ra, target.dec)
+        #    target.link = TNS_URL + target.name
+        return context
 
 
 def query_swift_observations_view(request):
@@ -1674,3 +1687,20 @@ def target_comment_receiver(sender, **kwargs):
         user_id = int(posted_comment.user_id)
         if not settings.DEBUG:
             run_hook('sync_comment_with_snex1', comment, tablename, user_id, target_id, target_id)
+
+
+def change_broker_target_status_view(request):
+    
+    try:
+        target_id = request.GET.get('target_id', '')
+        brokertarget = BrokerTarget.objects.get(id=target_id)
+        new_status = request.GET.get('new_status')
+        brokertarget.status = new_status
+        brokertarget.save()
+
+        context = {'update': 'Success'}
+    
+    except:
+        context = {'update': 'Failed'} 
+    
+    return HttpResponse(json.dumps(context), content_type='application/json')

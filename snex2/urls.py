@@ -58,10 +58,11 @@ urlpatterns = [
     path('save-comment/', save_comments_view, name='save-comment'),
     path('sync-targetextra/', sync_targetextra_view, name='sync_targetextra'),
     path('scheduling/<str:key>/', ObservationListExtrasView.as_view(), name='observation-list'),
+    path('alerts/broker-targets/', BrokerTargetView.as_view(), name='broker-targets'),
+    path('change-broker-target-status/', change_broker_target_status_view, name='change-broker-target-status'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),
     path('django_plotly_dash/', include('django_plotly_dash.urls')),
     #path('__debug__/', include('debug_toolbar.urls')),
-
 ]

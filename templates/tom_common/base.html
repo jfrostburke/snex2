@@ -43,9 +43,15 @@
               </li>
             </ul>
           </li>
-          <li class="nav-item {% if request.resolver_match.namespace == 'alerts' %}active{% endif %}">
-            <a class="nav-link" href="{% url 'alerts:list' %}" style="font-family: 'Montserrat', sans-serif;">Alerts</a>
-          </li>
+	  <li class="nav-item dropdown">
+	    <a class="nav-link dropdown-toggle" data-toggle="dropdown" style="font-family: 'Montserrat', sans-serif;">Alerts</a>
+	    <ul class="dropdown-menu">
+              <li class="nav-item {% if request.resolver_match.namespace == 'alerts' %}active{% endif %}">
+		<a class="nav-link" href="{% url 'alerts:list' %}"><Font color="black">Make a Query</font></a>
+		<a class="nav-link" href="{% url 'broker-targets' %}"><font color="black">Automatic Filters</font></a>
+              </li>
+	    </ul>
+	  </li>
           <li class="nav-item {% if request.resolver_match.namespace == 'observations' %}active{% endif %}">
               <a class="nav-link" href="{% url 'scheduling' %}" style="font-family: 'Montserrat', sans-serif;">Scheduling</a>
           </li>

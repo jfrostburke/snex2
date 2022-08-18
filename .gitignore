@@ -107,3 +107,4 @@ venv.bak/
 # custom
 .idea
 src/
+custom_code/brokers/queries/queries.json

@@ -1,0 +1,114 @@
+{% extends 'tom_common/base.html' %}
+{% load static bootstrap4 crispy_forms_tags %}
+{% load targets_extras custom_code_tags %}
+{% block title %}Broker Query Targets{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>View Broker Query Targets</h3>
+  </div>
+</nav>
+<h2 class="text-center">Recent targets from broker alert streams</h2>
+<div>
+  <form action="" method="get" class="form">
+    {% crispy filter.form %}
+  </form>
+  <h4>Results</h4>
+  <table class="table">
+    <thead class="thead-light">
+      <tr>
+	<!--th><br /><p></p></th-->
+        <th>Name<br /><p></p></th>
+        <th>Coordinates<br /><p></p></th>
+        <th>Name of Stream<br /><p></p></th>
+	<th>Redshift<br /><p></p></th>
+	<th>Classification<br /><p></p></th>
+	<th>Status<br /><p></p></th>
+	<th><br /><p></p></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for target in brokertargets %}
+      <tr id="top-row-{{target.id}}">
+	<td rowspan=2>
+          <button class="btn btn-primary" data-toggle="collapse" data-target="#show-both-{{target.name}}">+</button>
+	  {% if 'ZTF' in target.name %}
+	  <a target="_blank" href="https://alerce.online/object/{{ target.name }}">{{ target.name }}</a>
+	  {% else %}
+	  <a target="_blank">{{ target.name }}</a>
+	  {% endif %}
+        </td>
+	<td>{{ target.coords }}</td>
+	<td>{{ target.stream_name }}</td>
+	{% if target.redshift %}
+	<td>{{ target.redshift }} ({{ target.redshift_source}})</td>
+	{% else %}
+	<td>None</td>
+	{% endif %}
+	{% if target.classification %}
+        <td>{{ target.classification }}</td>
+	{% else %}
+	<td>None</td>
+	{% endif %}
+	<td colspan=2>
+	  <select name="status" id="status-{{target.id}}" style="background-color: white;">
+	    {% if target.status == 'New' %}
+	    <option value="New" selected>New</option>
+	    {% else %}
+	    <option value="New">New</option>
+	    {% endif %}
+	    {% if target.status == 'Interesting' %}
+	    <option value="Interesting" selected>Interesting</option>
+	    {% else %}
+	    <option value="Interesting">Interesting</option>
+	    {% endif %}
+	    {% if target.status == 'Uninteresting' %}
+	    <option value="Uninteresting" selected>Uninteresting</option>
+	    {% else %}
+	    <option value="Uninteresting">Uninteresting</option>
+	    {% endif %}
+	  </select>
+	  <button id="update-btn-{{target.id}}" class="btn btn-primary" onclick="updateStatus('{{ target.id }}')">Save Changes</button>
+	</td>
+	<td>	
+	  <a class="button" style="background-color: green; color: white; padding-top: 0.375rem; padding-right: 0.75rem; padding-bottom: 0.375rem; padding-left: 0.75rem;" href="{% url "create-target" %}?name={{target.name}}&ra={{target.ra}}&dec={{target.dec}}">Add Target</a>
+	</td>
+      </tr>
+      <tr id="bottom-row-{{target.id}}">
+        <td colspan=6 style="border-top:none;">
+          <div class="collapse" id="show-both-{{target.name}}">
+            <div style="display: inline-block;">{% aladin_collapse target %}</div>
+            <div style="display: inline-block;">{% airmass_collapse target %}</div>
+	    <div style="display: inline-block;">{% broker_target_lightcurve target %}</div>
+          </div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
+</div>
+<script>
+function updateStatus(targetId) {
+  var newStatus = document.getElementById('status-'+targetId).value;
+  $.ajax({
+    url: '{% url "change-broker-target-status" %}',
+    data: {'target_id': targetId,
+	   'new_status': newStatus},
+    datatype: 'json',
+    success: function(response) {
+      if (response.update === 'Success') {
+        document.getElementById('update-btn-'+targetId).innerHTML = 'Saved';
+	if (newStatus === 'Uninteresting') {
+          document.getElementById('top-row-'+targetId).style.display = 'none';
+	  document.getElementById('bottom-row-'+targetId).style.display = 'none';
+	}
+      }
+    }
+  })
+}
+</script>
+{% endblock %}
