@@ -48,26 +48,48 @@ var facility = '{{ form.facility.value }}';
 if (facility === 'SOAR') {
   var cameraSelect = document.getElementById('id_instrument_type');
   var readoutSelect = document.getElementById('id_readout');
+  var filterDiv = document.getElementById('div_id_filter');
+  var gratingDiv = document.getElementById('div_id_grating');
   cameraSelect.addEventListener("change", function () {
     var camera = cameraSelect.value;
     if (camera.includes('BLUE')) {
       readoutSelect.value = 'GHTS_B_400m1_2x2';
+      filterDiv.style.visibility = 'visible';
+      gratingDiv.style.visibility = 'visible';
       for (i = 0; i < readoutSelect.length; i++) {
 	var readout = readoutSelect[i];
-	if (readout.value.includes('R')) {
+	if (readout.value.includes('GHTS_R')) {
 	  readout.style.visibility = 'hidden';
+        } else if (readout.value.includes('fowler')) {
+          readout.style.visibility = 'hidden';
 	} else {
 	  readout.style.visibility = 'visible';
         }
       }
-    } else {
+    } else if (camera.includes('RED')) {
       readoutSelect.value = 'GHTS_R_400m1_2x2';
+      filterDiv.style.visibility = 'visible';
+      gratingDiv.style.visibility = 'visible';
       for (i = 0; i < readoutSelect.length; i++) {
 	var readout = readoutSelect[i];
-	if (readout.value.includes('B')) {
+	if (readout.value.includes('GHTS_B')) {
 	  readout.style.visibility = 'hidden';
+        } else if (readout.value.includes('fowler')) {
+          readout.style.visibility = 'hidden';
 	} else {
 	  readout.style.visibility = 'visible';
+	}
+      }
+    } else {
+      readoutSelect.value = 'fowler1_coadds2';
+      gratingDiv.style.visibility = 'hidden';
+      filterDiv.style.visibility = 'hidden';
+      for (i = 0; i < readoutSelect.length; i++) {
+	var readout = readoutSelect[i];
+	if (readout.value.includes('fowler')) {
+          readout.style.visibility = 'visible';
+        } else {
+          readout.style.visibility = 'hidden';
 	}
       }
     }

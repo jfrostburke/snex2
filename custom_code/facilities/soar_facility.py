@@ -179,9 +179,18 @@ class SOARFacility(SOARFacility):
         _target = observation_payload['requests'][0]['configurations'][0]['target']
         _constraints = observation_payload['requests'][0]['configurations'][0]['constraints']
         instrument_type = observation_payload['requests'][0]['configurations'][0]['instrument_type']
+
+        if instrument_type == 'SOAR_TRIPLESPEC':
+            observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['optical_elements'].pop('slit', '')
+            observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['optical_elements'].pop('grating', '')
+            slit = ''
+            grating = ''
+
+        else:
+            slit = observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['optical_elements']['slit']
+            grating = observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['optical_elements']['grating']
+
         rotator_angle = observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['extra_params']['rotator_angle']
-        slit = observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['optical_elements']['slit']
-        grating = observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['optical_elements']['grating']
         readout = observation_payload['requests'][0]['configurations'][0]['instrument_configs'][0]['mode']
 
         template_calibration= {
@@ -209,15 +218,16 @@ class SOARFacility(SOARFacility):
             'constraints': _constraints
         }
 
-        arc = copy.deepcopy(template_calibration)
-        arc["type"] = "ARC"
-        arc["instrument_configs"][0]["exposure_time"] = 0.5
-        observation_payload['requests'][0]['configurations'].append(arc)
+        if instrument_type != 'SOAR_TRIPLESPEC':
+            arc = copy.deepcopy(template_calibration)
+            arc["type"] = "ARC"
+            arc["instrument_configs"][0]["exposure_time"] = 0.5
+            observation_payload['requests'][0]['configurations'].append(arc)
 
-        flat = copy.deepcopy(template_calibration)
-        flat["type"] = "LAMP_FLAT"
-        flat["instrument_configs"][0]["exposure_time"] = 2
-        observation_payload['requests'][0]['configurations'].append(flat)
+            flat = copy.deepcopy(template_calibration)
+            flat["type"] = "LAMP_FLAT"
+            flat["instrument_configs"][0]["exposure_time"] = 2
+            observation_payload['requests'][0]['configurations'].append(flat)
 
         return observation_payload
 
