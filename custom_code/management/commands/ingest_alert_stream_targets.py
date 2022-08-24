@@ -201,6 +201,13 @@ class Command(BaseCommand):
                 obj.nondetections = json.dumps(nondet)
                 obj.save()
 
+                ### Add a corresponding TNSTarget object to this BrokerTarget, if applicable
+                if tns_name and not obj.tns_target:
+                    tns_target = TNSTarget.objects.filter(name=tns_name).first()
+                    if tns_target:
+                        obj.tns_target = tns_target
+                        obj.save()
+
             time.sleep(6)
 
         logger.info('Finished ingesting new data for existing targets')
