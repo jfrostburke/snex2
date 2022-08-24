@@ -1554,6 +1554,18 @@ class BrokerTargetView(FilterView):
         #TNS_URL = "https://www.wis-tns.org/object/"
         for target in context['object_list']:
             target.coords = make_coords(target.ra, target.dec)
+            if target.tns_target is not None:
+                target.tns_name = target.tns_target.name
+
+            targetname_matchlist = Target.objects.filter(Q(name__icontains=target.name) | Q(aliases__name__icontains=target.name)).distinct().first()
+            if target.tns_target:
+                target_tnsname_matchlist = Target.objects.filter(Q(name__icontains=target.tns_target.name) | Q(aliases__name__icontains=target.tns_target.name)).distinct().first()
+
+            if targetname_matchlist or (target.tns_target and target_tnsname_matchlist):
+                target.exists = True
+            else:
+                target.exists = False
+            
         #    target.link = TNS_URL + target.name
         return context
 

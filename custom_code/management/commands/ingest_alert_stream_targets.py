@@ -3,7 +3,6 @@ import logging
 import requests
 import time
 import json
-from tom_targets.templatetags.targets_extras import deg_to_sexigesimal
 from custom_code.models import TNSTarget, BrokerTarget
 from custom_code.brokers.queries.alerce_queries import BasicAlerceQuery
 from custom_code.brokers.queries.lasair_iris_queries import LasairIrisQuery
@@ -90,7 +89,7 @@ def ingest_targets(q, stream_name):
             api_key = os.environ['TNS_APIKEY']
             tns_id = os.environ['TNS_APIID']
 
-            json_list = {'ra': deg_to_sexigesimal(ra, 'hms'), 'dec': deg_to_sexigesimal(dec, 'dms'), 'radius': '5', 'units': 'arcsec', 'internal_name': name}
+            json_list = {'ra': str(ra), 'dec': str(dec), 'radius': '5', 'units': 'arcsec', 'internal_name': name}
             obj_list = requests.post(search_url, headers={'User-Agent': 'tns_marker{"tns_id":'+str(tns_id)+', "type":"bot", "name":"SNEx_Bot1"}'}, data={'api_key': api_key, 'data': json.dumps(json_list)})
             obj_list = json.loads(obj_list.text)['data']['reply']
             if obj_list:
@@ -171,7 +170,7 @@ class Command(BaseCommand):
             api_key = os.environ['TNS_APIKEY']
             tns_id = os.environ['TNS_APIID']
 
-            json_list = {'ra': deg_to_sexigesimal(obj.ra, 'hms'), 'dec': deg_to_sexigesimal(obj.dec, 'dms'), 'radius': '5', 'units': 'arcsec', 'internal_name': obj.name}
+            json_list = {'ra': str(obj.ra), 'dec': str(obj.dec), 'radius': '5', 'units': 'arcsec', 'internal_name': obj.name}
             obj_list = requests.post(search_url, headers={'User-Agent': 'tns_marker{"tns_id":'+str(tns_id)+', "type":"bot", "name":"SNEx_Bot1"}'}, data={'api_key': api_key, 'data': json.dumps(json_list)})
             obj_list = json.loads(obj_list.text)['data']['reply']
             if obj_list:
