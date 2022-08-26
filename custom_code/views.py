@@ -285,6 +285,22 @@ class CustomTargetCreateView(TargetCreateView):
         # First, create the targets in both dbs and nothing else
         with transaction.atomic():
             if form.is_valid():
+                
+                ### Check that there are no targets with the same name or coordinates
+                target_cone_search = Target.objects.filter(ra__gte=form.cleaned_data['ra']-4.0/3600.0, ra__lte=form.cleaned_data['ra']+4.0/3600.0, dec__gte=form.cleaned_data['dec']-4.0/3600.0, dec__lte=form.cleaned_data['dec']+4.0/3600.0)
+                if target_cone_search.count() > 0.0:
+                    logger.info('There exists another target near the coordinates {} {}'.format(form.cleaned_data['ra'], form.cleaned_data['dec']))
+                    form.errors['ra'] = ['Target found with same or similar coordinates']
+                    form.errors['dec'] = ['Target found with same or similar coordinates']
+                    return super().form_invalid(form)
+
+                name_lookup = form.cleaned_data['name'].replace('SN', '').replace('AT', '').replace(' ', '')
+                target_name_search = Target.objects.filter(Q(name__icontains=name_lookup) | Q(aliases__name__icontains=name_lookup)).distinct()
+                if target_name_search.count() > 0.0:
+                    logger.info('Target with name {} already exists'.format(form.cleaned_data['name']))
+                    form.errors['name'] = ['Target found with same name']
+                    return super().form_invalid(form)
+                
                 groups = [g.name for g in form.cleaned_data['groups']]
                 self.object = form.save(form)
 
@@ -1561,7 +1577,11 @@ class BrokerTargetView(FilterView):
             if target.tns_target:
                 target_tnsname_matchlist = Target.objects.filter(Q(name__icontains=target.tns_target.name) | Q(aliases__name__icontains=target.tns_target.name)).distinct().first()
 
-            if targetname_matchlist or (target.tns_target and target_tnsname_matchlist):
+            if targetname_matchlist:
+                target.existing_target = targetname_matchlist.id
+                target.exists = True
+            elif target.tns_target and target_tnsname_matchlist:
+                target.existing_target = target_tnsname_matchlist.id
                 target.exists = True
             else:
                 target.exists = False

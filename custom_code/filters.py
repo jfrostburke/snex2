@@ -115,7 +115,7 @@ class BrokerTargetFilter(django_filters.FilterSet):
         ('Uninteresting', 'Uninteresting')
     ]
     
-    name = django_filters.CharFilter(field_name='name', lookup_expr='icontains', label='')
+    name = django_filters.CharFilter(field_name='name', method='filter_name', label='')
     stream_name = django_filters.CharFilter(field_name='stream_name', lookup_expr='icontains',
         label=''
     )
@@ -126,6 +126,9 @@ class BrokerTargetFilter(django_filters.FilterSet):
         if not status:
             status = ''
         return queryset.filter(status=status)
+
+    def filter_name(self, queryset, name, value):
+        return queryset.filter(Q(name__icontains=value) | Q(tns_target__name__icontains=value))
     
     class Meta:
         model = BrokerTarget
