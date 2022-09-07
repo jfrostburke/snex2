@@ -112,7 +112,8 @@ class BrokerTargetFilter(django_filters.FilterSet):
     status_choices = [
         ('New', 'New'),
         ('Interesting', 'Interesting'),
-        ('Uninteresting', 'Uninteresting')
+        ('Uninteresting', 'Uninteresting'),
+        ('Added', 'Added')
     ]
     
     name = django_filters.CharFilter(field_name='name', method='filter_name', label='')

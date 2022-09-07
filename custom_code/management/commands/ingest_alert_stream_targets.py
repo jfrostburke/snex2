@@ -3,6 +3,8 @@ import logging
 import requests
 import time
 import json
+from django.db.models import Q
+from tom_targets.models import Target
 from custom_code.models import TNSTarget, BrokerTarget
 from custom_code.brokers.queries.alerce_queries import BasicAlerceQuery
 from custom_code.brokers.queries.lasair_iris_queries import LasairIrisQuery
@@ -140,8 +142,16 @@ class Command(BaseCommand):
         ### Search for new data for existing targets that are new or interesting
         brokertargetlist = BrokerTarget.objects.filter(status__in=['New', 'Interesting'])
         for obj in brokertargetlist:
+
+            ### Check if target exists in SNEx2, and update status if it does
+            targetname_matchlist = Target.objects.filter(Q(name__icontains=obj.name) | Q(aliases__name__icontains=obj.name)).distinct().first()
+            if obj.tns_target:
+                target_tnsname_matchlist = Target.objects.filter(Q(name__icontains=obj.tns_target.name) | Q(aliases__name__icontains=obj.tns_target.name)).distinct().first()
+            if targetname_matchlist or (obj.tns_target and target_tnsname_matchlist):
+                obj.status = 'Added'
+                obj.save()
             
-            ### First the ZTF data
+            ### First ingest the ZTF data
             if 'ZTF' in obj.name or 'ztf' in obj.name:
                 filters = {1: 'g', 2: 'r', 3: 'i'}
                 url = 'http://api.alerce.online/ztf/v1/objects/{}/lightcurve'.format(obj.name)

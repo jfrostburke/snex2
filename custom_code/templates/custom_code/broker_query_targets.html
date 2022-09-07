@@ -73,6 +73,11 @@
 	    {% else %}
 	    <option value="Uninteresting">Uninteresting</option>
 	    {% endif %}
+	    {% if target.status == 'Added' %}
+	    <option value="Added" selected>Added</option>
+	    {% else %}
+	    <option value="Added">Added</option>
+	    {% endif %}
 	  </select>
 	  <button id="update-btn-{{target.id}}" class="btn btn-primary" onclick="updateStatus('{{ target.id }}')">Save Changes</button>
 	</td>
