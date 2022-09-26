@@ -61,15 +61,15 @@ class TNSTargetQuery:
 
             t = TNSTarget.objects.get(name=name)
             all_phot = json.loads(t.all_phot)
-            for ind, phot in all_phot.items():
-                filt = phot['filters']['name']
-                if phot.get('flux', ''):
-                    fluxerr = phot.get('fluxerr', 0)
+            for ind, p in all_phot.items():
+                filt = p['filters']['name']
+                if p.get('flux', ''):
+                    fluxerr = p.get('fluxerr', 0)
                     current_phot.setdefault(filt, {})
-                    current_phot[filt][str(phot['jd']-2400000.5)] = [phot['flux'], fluxerr]
+                    current_phot[filt][str(p['jd']-2400000.5)] = [p['flux'], fluxerr]
                 else:
                     current_nondet.setdefault(filt, {})
-                    current_nondet[filt][str(phot['jd']-2400000.5)] = phot['limflux']
+                    current_nondet[filt][str(p['jd']-2400000.5)] = p['limflux']
 
             phot[name] = current_phot
             nondet[name] = current_nondet
