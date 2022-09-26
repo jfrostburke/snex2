@@ -8,6 +8,7 @@ from tom_targets.models import Target
 from custom_code.models import TNSTarget, BrokerTarget
 from custom_code.brokers.queries.alerce_queries import BasicAlerceQuery
 from custom_code.brokers.queries.lasair_iris_queries import LasairIrisQuery
+from custom_code.borkers.queries.tns_target_queries import TNSTargetQuery
 import urllib.request
 import os
 from django.conf import settings
@@ -229,6 +230,9 @@ class Command(BaseCommand):
             
             elif query['name'] in ['Young Blue SNe', 'Rapidly Rising SNe']:
                 q = LasairIrisQuery(query['parameters']['stream_name'], query['parameters']['ncandidates'], query['parameters']['days_ago'])
+
+            else:
+                q = TNSTargetQuery(query['parameters']['mag_lower'], query['parameters']['days_since_nondet'], query['parameters']['days_since_discovery'], query['parameters']['magrise'])
             
             ingest_targets(q, query['name'])
 
