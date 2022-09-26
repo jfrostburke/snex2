@@ -8,7 +8,7 @@ from tom_targets.models import Target
 from custom_code.models import TNSTarget, BrokerTarget
 from custom_code.brokers.queries.alerce_queries import BasicAlerceQuery
 from custom_code.brokers.queries.lasair_iris_queries import LasairIrisQuery
-from custom_code.borkers.queries.tns_target_queries import TNSTargetQuery
+from custom_code.brokers.queries.tns_target_queries import TNSTargetQuery
 import urllib.request
 import os
 from django.conf import settings
