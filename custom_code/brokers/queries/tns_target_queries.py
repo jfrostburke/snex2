@@ -46,7 +46,7 @@ class TNSTargetQuery:
             if most_recent_mag < self.mag_lower and lnd_jd > jdnow - self.days_since_nondet and (t.lnd_maglim - most_recent_mag)/(most_recent_jd - lnd_jd) > self.magrise:
                 tnsnames.append(t.name)
                 tns_name_dict[t.name] = t.name # Artefact of how the ingestion works
-                coords[t.name] = [t.ra, r.dec]
+                coords[t.name] = [t.ra, t.dec]
                 rises[t.name] = float(t.lnd_maglim) - most_recent_mag
 
         return tnsnames, tns_name_dict, coords, rises
