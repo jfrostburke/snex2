@@ -23,7 +23,7 @@ class TNSTargetQuery:
     def get_candidates(self, *args, **kwargs):
         jdnow = Time(datetime.utcnow()).jd
         jdmin = jdnow - self.days_since_discovery
-        tnstargets = TNSTarget.objects.filter(disc_jd > jdmin)
+        tnstargets = TNSTarget.objects.filter(disc_jd__gte = jdmin)
 
         tnsnames = []
         tns_name_dict = {}
