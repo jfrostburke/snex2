@@ -43,6 +43,7 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
     window = forms.FloatField(initial=3.0,label='',min_value=0.0)
     ipp_value = forms.FloatField(initial=1.0,label='',min_value=0.5,max_value=2.0)
     max_airmass = forms.FloatField(initial=1.6,label='',min_value=1.0)
+    min_lunar_distance = forms.IntegerField(min_value=0, label='', initial=20)
     rotator_angle= forms.FloatField(initial=0.0,label='',min_value=0.0)
     exposure_count = forms.IntegerField(initial=1,label='',min_value=1)
     exposure_time = forms.FloatField(min_value=0.1,label='',
@@ -155,6 +156,7 @@ class SOARObservationForm(SOARSpectroscopyObservationForm, LCOSpectroscopyObserv
                 Div(
                     HTML("<p></p>"),
                     PrependedText('max_airmass', 'Airmass <'),
+                    PrependedText('min_lunar_distance', 'Lunar Distance >'),
                     PrependedText('ipp_value', 'IPP'),
                     'proposal',
                     'observation_mode',
