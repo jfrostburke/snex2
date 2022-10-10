@@ -647,11 +647,11 @@ def submit_lco_observations(target):
     phot_initial = {'target_id': target.id,
                     'facility': 'LCO',
                     'observation_type': 'IMAGING',
-                    'name': target.name}
+                    'name': get_best_name(target)}
     spec_initial = {'target_id': target.id,
                     'facility': 'LCO',
                     'observation_type': 'SPECTRA',
-                    'name': target.name}
+                    'name': get_best_name(target)}
     phot_form = SnexPhotometricSequenceForm(initial=phot_initial, auto_id='phot_%s')
     spec_form = SnexSpectroscopicSequenceForm(initial=spec_initial, auto_id='spec_%s')
     phot_form.helper.form_action = reverse('submit-lco-obs', kwargs={'facility': 'LCO'})
@@ -914,7 +914,7 @@ def observation_summary(context, target=None, time='previous'):
             else:
                 title_suffix = ''
 
-            if parameter.get('cadence_strategy', '') == 'SnexResumeCadenceAfterFailureStrategy':
+            if parameter.get('cadence_strategy', '') == 'SnexResumeCadenceAfterFailureStrategy' and float(parameter.get('cadence_frequency', 0.0)) > 0.0:
                 parameter_string = str(parameter.get('cadence_frequency', '')) + '-day ' + str(parameter.get('observation_type', '')).lower() + ' cadence of '
             else:
                 parameter_string = 'Single ' + str(parameter.get('observation_type', '')).lower() + ' observation of '
@@ -932,6 +932,10 @@ def observation_summary(context, target=None, time='previous'):
                 parameter_string += str(parameter.get('exposure_time', ''))
                 parameter_string += 's '
 
+            if parameter.get('observation_mode') == 'TIME_CRITICAL':
+                parameter_string += '(time critical) '
+            elif parameter.get('observation_mode') == 'RAPID_RESPONSE':
+                parameter_string += '(rapid response) '
 
             parameter_string += 'with IPP ' + str(parameter.get('ipp_value', ''))
             parameter_string += ' and airmass < ' + str(parameter.get('max_airmass', ''))
