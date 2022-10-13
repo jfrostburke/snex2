@@ -222,6 +222,8 @@ def update_phot(action, db_address=_SNEX2_DB):
                 tobs = phot_row.ut
                 if tobs is None:
                     tobs = '00:00:00'
+                if dobs is None:
+                    dobs = datetime.datetime.today().strftime('%Y-%m-%d')
                 time = '{} {}'.format(dobs, tobs) 
                 
                 if int(phot_row.mag) != 9999:
