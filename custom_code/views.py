@@ -164,15 +164,15 @@ def target_redirect_view(request):
     logger.info('Redirecting search for %s', search_entry)
     
     target_search_coords = None
-    for i in [',', ' ']:
-        if i in search_entry:
-            target_search_coords = search_entry.split(i)
-            break 
+    if ':' in search_entry or '.' in search_entry:
+        target_search_coords = search_entry.split(' ')
+        if len(target_search_coords) < 2:
+            target_search_coords = search_entry.split(',')
 
     if target_search_coords is not None:
         ra = target_search_coords[0]
         dec = target_search_coords[1]
-        radius = 1.0/60.0 #1 arcsec search radius
+        radius = 1.0/60.0 #1 arcmin search radius
 
         if ':' in ra and ':' in dec:
             ra_hms = ra.split(':')
@@ -206,7 +206,7 @@ def target_redirect_view(request):
             return(redirect('/targets/?cone_search={ra}%2C{dec}%2C{radius}'.format(ra=ra,dec=dec,radius=radius)))
 
     else:
-        target_match_list = Target.objects.filter(Q(name__icontains=search_entry) | Q(aliases__name__icontains=search_entry)).distinct()
+        target_match_list = Target.objects.filter(Q(name__icontains=search_entry) | Q(aliases__name__icontains=search_entry) | Q(name__icontains=search_entry.lower().replace('SN ','')) | Q(aliases__name__icontains=search_entry.lower().replace('AT ',''))).distinct()
 
         if len(target_match_list) == 1:
             target_id = target_match_list[0].id
