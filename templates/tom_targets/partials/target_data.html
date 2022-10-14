@@ -64,18 +64,31 @@
   {% papers_form target %}
 </dl>
 <dl class="row" style="display: block;">
-  <p>Share <select id="data-share-choices" style="background-color: white;">
-    <option value="all">All data</option>
-    <option value="phot">All photometry</option>
-    <option value="spec">All spectra</option>
-  </select><br>
-  to <select id="data-topic-choices" style="background-color: white;">
-      <option id="topic1" value="topic1">Topic1</option>
-      <option id="topic2" value="topic2">Topic2</option>
-  </select></p>
-</dl>
-<dl class="row" style="display: block;">
-  <button class="btn" style="border-color: #174460;" id="hermes-btn" onclick="submitToHermes()">Share to Hermes</button>
+  <h5>Data Sharing</h5>
+  <div class="dropdown-check-list">
+    <button class="dropbtn" style="background-color: white; color: black; font-size: 16px; border-color: #174460;" onclick="displayTopics('all')">Share all data to...</button>
+      <div id="all-topic-dropdown" class="dropdown-content" style="background-color: white; color: black; font-size: 14px; border: none;">
+        <span><input type="checkbox" class="all-check" id="all-select-topic1" value="topic1">Topic1</span><br>
+        <span><input type="checkbox" class="all-check" id="all-select-topic2" value="topic2">Topic2</span><br>
+	<button onclick="submitToHermes('allbtn', 'all')" id='allbtn' class="btn" style="background-color: #174460; color: white; border: none;">Share</button>
+      </div>
+  </div>
+  <div class="dropdown-check-list">
+    <button class="dropbtn" style="background-color: white; color: black; font-size: 16px; border-color: #174460;" onclick="displayTopics('phot')">Share all photometry to...</button>
+      <div id="phot-topic-dropdown" class="dropdown-content" style="background-color: white; color: black; font-size: 14px; border: none;">
+        <span><input type="checkbox" class="phot-check" id="phot-select-topic1" value="topic1">Topic1</span><br>
+        <span><input type="checkbox" class="phot-check" id="phot-select-topic2" value="topic2">Topic2</span><br>
+	<button onclick="submitToHermes('photbtn', 'phot')" id="photbtn" class="btn" style="background-color: #174460; color: white; border: none;">Share</button>
+      </div>
+  </div>
+  <div class="dropdown-check-list">
+    <button class="dropbtn" style="background-color: white; color: black; font-size: 16px; border-color: #174460;" onclick="displayTopics('spec')">Share all spectra to...</button>
+      <div id="spec-topic-dropdown" class="dropdown-content" style="background-color: white; color: black; font-size: 14px; border: none;">
+        <span><input type="checkbox" class="spec-check" id="spec-select-topic1" value="topic1">Topic1</span><br>
+        <span><input type="checkbox" class="spec-check" id="spec-select-topic2" value="topic2">Topic2</span><br>
+	<button onclick="submitToHermes('specbtn', 'spec')" id='specbtn' class="btn" style="background-color: #174460; color: white; border: none;">Share</button>
+      </div>
+  </div>
 </dl>
 <dl class="row">
   <h5>Reference Status:</h5>
@@ -86,22 +99,30 @@
 </dl>
 {% display_group_list target %}
 <script>
-function submitToHermes() {
+function submitToHermes(btnId, data_type) {
   var targetid = {{ target.id }};
-  var topic = document.getElementById('data-topic-choices').value;
-  var data_type = document.getElementById('data-share-choices').value;
+  var checkboxes = document.getElementsByClassName(data_type+"-check");
+  var topics = [];
+  for (var i=0; i<checkboxes.length; i++) {
+    if (checkboxes[i].checked) {
+      topics.push(checkboxes[i].value);
+    }
+  };
   $.ajax({
     url: '{% url "submit-to-hermes" %}',
     headers: {"X-CSRFToken": '{{ csrf_token }}'},
     data: {'target_id': targetid,
-	   'topic': topic,
+	   'topic': JSON.stringify(topics),
 	   'data_type': data_type,
     },
     contentType: "application/JSON",
     dataType: "json",
     success: function(response) {
-      document.getElementById('hermes-btn').innerHTML = response.success;
-   },
+      document.getElementById(btnId).innerHTML = response.success;
+   }
   })
+}
+function displayTopics(type) {
+  document.getElementById(type+'-topic-dropdown').classList.toggle("show");
 }
 </script>

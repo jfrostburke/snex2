@@ -1739,7 +1739,7 @@ def change_broker_target_status_view(request):
 
 
 def send_photometry_via_hermes(request):
-    topic = request.GET.get('topic', '')
+    topics = json.loads(request.GET.get('topic', ''))
     data_type = request.GET.get('data_type', '')
     
     if request.GET.get('phot_id', ''):
@@ -1758,31 +1758,32 @@ def send_photometry_via_hermes(request):
 
 
     data_list = []
-    for phot in all_phot:
-        telescope = 'LCO'
-        instrument = 'Sinistro'
-        unit_dict = {'U': 'Vega', 'B': 'Vega', 'V': 'Vega', 'R': 'Vega', 'I': 'Vega'}
+    for topic in topics:
+        for phot in all_phot:
+            telescope = 'LCO'
+            instrument = 'Sinistro'
+            unit_dict = {'U': 'Vega', 'B': 'Vega', 'V': 'Vega', 'R': 'Vega', 'I': 'Vega'}
+            
+            data_list.append({'target_name': get_best_name(t),
+                              'ra': t.ra,
+                              'dec': t.dec,
+                              'date_observed': phot.timestamp,
+                              'telescope': telescope,
+                              'instrument': instrument,
+                              'band': phot.value['filter'],
+                              'brightness': phot.value['magnitude'],
+                              'brightness_error': phot.value['error'],
+                              'brightness_unit': unit_dict.get(phot.value['filter'], 'AB') + ' mag',
+            })
+        message = {'title': 'Test',
+                   'topic': topic,
+                   'submitted': 'Craig',
+                   'authors': 'Craig and Este',
+                   'message_text': 'This is a test',
+                   'event_id': 'unknown',
+                   'data': data_list
+        }
         
-        data_list.append({'target_name': get_best_name(t),
-                          'ra': t.ra,
-                          'dec': t.dec,
-                          'date_observed': phot.timestamp,
-                          'telescope': telescope,
-                          'instrument': instrument,
-                          'band': phot.value['filter'],
-                          'brightness': phot.value['magnitude'],
-                          'brightness_error': phot.value['error'],
-                          'brightness_unit': unit_dict.get(phot.value['filter'], 'AB') + ' mag',
-        })
-    message = {'title': 'Test',
-               'topic': topic,
-               'submitted': 'Craig',
-               'authors': 'Craig and Este',
-               'message_text': 'This is a test',
-               'event_id': 'unknown',
-               'data': data_list
-    }
-    
-    print(message)
+        print(message)
     return HttpResponse(json.dumps({'success': 'It worked!'}), content_type='application/json')
 
