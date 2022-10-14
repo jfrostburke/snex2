@@ -1994,3 +1994,17 @@ def broker_target_lightcurve(target):
             'target': target,
             'plot': 'No photometry for this target yet.'
         }
+
+
+@register.inclusion_tag('custom_code/phot_sharing_table.html', takes_context=True)
+def phot_sharing_table(context, target):
+
+    user = context['request'].user
+    datums = get_objects_for_user(user,
+                                  'tom_dataproducts.view_reduceddatum',
+                                  klass=ReducedDatum.objects.filter(
+                                    target=target,
+                                    data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])).order_by('timestamp')
+
+    return {'photometry': datums}
+ 

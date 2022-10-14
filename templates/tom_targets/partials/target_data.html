@@ -63,6 +63,20 @@
   {% papers_list target %}
   {% papers_form target %}
 </dl>
+<dl class="row" style="display: block;">
+  <p>Share <select id="data-share-choices" style="background-color: white;">
+    <option value="all">All data</option>
+    <option value="phot">All photometry</option>
+    <option value="spec">All spectra</option>
+  </select><br>
+  to <select id="data-topic-choices" style="background-color: white;">
+      <option id="topic1" value="topic1">Topic1</option>
+      <option id="topic2" value="topic2">Topic2</option>
+  </select></p>
+</dl>
+<dl class="row" style="display: block;">
+  <button class="btn" style="border-color: #174460;" id="hermes-btn" onclick="submitToHermes()">Share to Hermes</button>
+</dl>
 <dl class="row">
   <h5>Reference Status:</h5>
 </dl>
@@ -71,3 +85,23 @@
   <h5>Known to:</h5>
 </dl>
 {% display_group_list target %}
+<script>
+function submitToHermes() {
+  var targetid = {{ target.id }};
+  var topic = document.getElementById('data-topic-choices').value;
+  var data_type = document.getElementById('data-share-choices').value;
+  $.ajax({
+    url: '{% url "submit-to-hermes" %}',
+    headers: {"X-CSRFToken": '{{ csrf_token }}'},
+    data: {'target_id': targetid,
+	   'topic': topic,
+	   'data_type': data_type,
+    },
+    contentType: "application/JSON",
+    dataType: "json",
+    success: function(response) {
+      document.getElementById('hermes-btn').innerHTML = response.success;
+   },
+  })
+}
+</script>
