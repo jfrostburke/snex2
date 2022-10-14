@@ -172,7 +172,7 @@ def target_redirect_view(request):
     if target_search_coords is not None:
         ra = target_search_coords[0]
         dec = target_search_coords[1]
-        radius = 1
+        radius = 1.0/60.0 #1 arcsec search radius
 
         if ':' in ra and ':' in dec:
             ra_hms = ra.split(':')
@@ -196,14 +196,14 @@ def target_redirect_view(request):
             ra = float(ra)
             dec = float(dec)
 
-        target_match_list = Target.objects.filter(ra__gte=ra-1, ra__lte=ra+1, dec__gte=dec-1, dec__lte=dec+1)
+        target_match_list = Target.objects.filter(ra__gte=ra-radius, ra__lte=ra+radius, dec__gte=dec-radius, dec__lte=dec+radius)
 
         if len(target_match_list) == 1:
             target_id = target_match_list[0].id
             return(redirect('/targets/{}/'.format(target_id)))
         
         else:
-            return(redirect('/targets/?cone_search={ra}%2C{dec}%2C1'.format(ra=ra,dec=dec)))
+            return(redirect('/targets/?cone_search={ra}%2C{dec}%2C{radius}'.format(ra=ra,dec=dec,radius=radius)))
 
     else:
         target_match_list = Target.objects.filter(Q(name__icontains=search_entry) | Q(aliases__name__icontains=search_entry)).distinct()
@@ -1336,7 +1336,7 @@ class CustomObservationCreateView(ObservationCreateView):
         
         # Run the hook to add the sequence to SNEx1
         if form.cleaned_data.get('comment') and (len(records) > 1 or form.cleaned_data.get('cadence_strategy')):
-            save_comments(form.cleaned_data['comment'], observation_group.id, self.request.user.id)
+            save_comments(form.cleaned_data['comment'], observation_group.id, self.request.user)
             snex_id = run_hook('sync_sequence_with_snex1', 
                                form.serialize_parameters(), 
                                group_names, 
