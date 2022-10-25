@@ -297,7 +297,7 @@ def read_spec(filename):
     """
     spec_file = open(filename, 'r')
     lines = [x.split() for x in spec_file.readlines()]
-    data = {"{}".format(i): {"wavelength": float(lines[i][0]), "flux": float(lines[i][1])} for i in range(len(lines))}
+    data = {"{}".format(i): {"wavelength": float(lines[i][0]), "flux": float(lines[i][1])} for i in range(len(lines)) if lines[i][1] != 'nan'}
     return(data)
 
 
