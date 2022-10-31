@@ -108,19 +108,19 @@ function submitToHermes(btnId, data_type) {
       topics.push(checkboxes[i].value);
     }
   };
-  $.ajax({
-    url: '{% url "submit-to-hermes" %}',
-    headers: {"X-CSRFToken": '{{ csrf_token }}'},
-    data: {'target_id': targetid,
-	   'topic': JSON.stringify(topics),
-	   'data_type': data_type,
-    },
-    contentType: "application/JSON",
-    dataType: "json",
-    success: function(response) {
-      document.getElementById(btnId).innerHTML = response.success;
-   }
-  })
+  //$.ajax({
+  //  url: '{% url "submit-to-hermes" %}',
+  //  headers: {"X-CSRFToken": '{{ csrf_token }}'},
+  //  data: {'target_id': targetid,
+  //         'topic': JSON.stringify(topics),
+  //         'data_type': data_type,
+  //  },
+  //  contentType: "application/JSON",
+  //  dataType: "json",
+  //  success: function(response) {
+  //    document.getElementById(btnId).innerHTML = response.success;
+  // }
+  //})
 }
 function displayTopics(type) {
   document.getElementById(type+'-topic-dropdown').classList.toggle("show");
