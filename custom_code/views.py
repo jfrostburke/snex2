@@ -728,7 +728,12 @@ def scheduling_view(request):
                 facility = get_service_class(obs.facility)()
                 form = facility.get_form(form_data['observation_type'])(observing_parameters)
                 if form.is_valid():
-                    observation_ids = facility.submit_observation(form.observation_payload())
+                    observation_errors = facility.validate_observation(form.observation_payload())
+                    if observation_errors:
+                        logger.error(msg=f'Unable to submit next cadenced observation: {observation_errors}')
+                        response_data = {'failure': 'Unable to submit next cadenced observation'}
+                        raise Snex1ConnectionError(message='Observation portal returned errors {}'.format(observation_errors))
+
                 else:
                     logger.error(msg=f'Unable to submit next cadenced observation: {form.errors}')
                     response_data = {'failure': 'Unable to submit next cadenced observation'}
@@ -737,7 +742,7 @@ def scheduling_view(request):
 
                 # Creation of corresponding ObservationRecord objects for the observations
                 new_observations = []
-                for observation_id in observation_ids:
+                for observation_id in ['template']:#observation_ids:
                     # Create Observation record
                     record = ObservationRecord.objects.create(
                         target=Target.objects.get(id=form_data['target_id']),
@@ -816,22 +821,22 @@ def scheduling_view(request):
                         record.parameters['name'] = snex_id
                         record.save()
             
-                # Now run the hook to add each observation record to SNEx1
-                for record in new_observations:
-                    # Get the requestsgroup ID from the LCO API using the observation ID
-                    obs_id = int(record.observation_id)
-                    LCO_SETTINGS = settings.FACILITIES['LCO']
-                    PORTAL_URL = LCO_SETTINGS['portal_url']
-                    portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
+                ## Now run the hook to add each observation record to SNEx1
+                #for record in new_observations:
+                #    # Get the requestsgroup ID from the LCO API using the observation ID
+                #    obs_id = int(record.observation_id)
+                #    LCO_SETTINGS = settings.FACILITIES['LCO']
+                #    PORTAL_URL = LCO_SETTINGS['portal_url']
+                #    portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
 
-                    query_params = urlencode({'request_id': obs_id})
+                #    query_params = urlencode({'request_id': obs_id})
 
-                    r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
-                    requestgroups = r.json()
-                    if requestgroups['count'] == 1:
-                        requestgroup_id = int(requestgroups['results'][0]['id'])
+                #    r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
+                #    requestgroups = r.json()
+                #    if requestgroups['count'] == 1:
+                #        requestgroup_id = int(requestgroups['results'][0]['id'])
 
-                    run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id, wrapped_session=db_session)
+                #    run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id, wrapped_session=db_session)
                 
                 response_data = {'success': 'Modified'}
                 db_session.commit()
@@ -1287,10 +1292,10 @@ class CustomObservationCreateView(ObservationCreateView):
         # Submit the observation
         facility = self.get_facility_class()
         target = self.get_target()
-        observation_ids = facility().submit_observation(form.observation_payload())
+        errors = facility().validate_observation(form.observation_payload()) #TODO: Do something with errors
         records = []
 
-        for observation_id in observation_ids:
+        for observation_id in ['template']:#observation_ids:
             # Create Observation record
             record = ObservationRecord.objects.create(
                 target=target,
@@ -1356,22 +1361,22 @@ class CustomObservationCreateView(ObservationCreateView):
                 record.parameters['name'] = snex_id
                 record.save()
             
-        # Now run the hook to add each observation record to SNEx1
-        for record in records:
-            # Get the requestsgroup ID from the LCO API using the observation ID
-            obs_id = int(record.observation_id)
-            LCO_SETTINGS = settings.FACILITIES['LCO']
-            PORTAL_URL = LCO_SETTINGS['portal_url']
-            portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
+        ## Now run the hook to add each observation record to SNEx1
+        #for record in records:
+        #    # Get the requestsgroup ID from the LCO API using the observation ID
+        #    obs_id = int(record.observation_id)
+        #    LCO_SETTINGS = settings.FACILITIES['LCO']
+        #    PORTAL_URL = LCO_SETTINGS['portal_url']
+        #    portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
 
-            query_params = urlencode({'request_id': obs_id})
+        #    query_params = urlencode({'request_id': obs_id})
 
-            r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
-            requestgroups = r.json()
-            if requestgroups['count'] == 1:
-                requestgroup_id = int(requestgroups['results'][0]['id'])
+        #    r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
+        #    requestgroups = r.json()
+        #    if requestgroups['count'] == 1:
+        #        requestgroup_id = int(requestgroups['results'][0]['id'])
 
-            run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id)
+        #    run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id)
 
         return redirect(
             reverse('tom_targets:detail', kwargs={'pk': target.id})
