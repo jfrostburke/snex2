@@ -1,0 +1,12 @@
+{% extends 'tom_common/base.html' %}
+{% load static %}
+{% block title %}Event Detail{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<h1>Superevent Detail</h1>
+{{ object.id }}
+{{ object.superevent_id }}
+{{ object.superevent_url }}
+{% endblock content %}

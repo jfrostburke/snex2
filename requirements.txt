@@ -1,5 +1,8 @@
 dataclasses
 tomtoolkit==2.9.2
+tom-scimma
+tom-nonlocalizedevents
+tom-alertstreams
 gunicorn[gevent]
 django-heroku
 django-storages

@@ -1,0 +1,75 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 static superevent_extras tom_common_extras %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock additional_css %}
+{% block content %}
+<nav id="navbar" class="navbar navbar-expand-md fixed-top fixed-top-2">
+    <div class="collapse navbar-collapse" id="nleName">
+	<h3><span id="superevent_name">{{ object.superevent_id }}</span></h3>
+    </div>
+</nav>
+<div id="superevent-banner">
+    <div class="row mr-auto">
+        <div class="col-md-10">
+            <div class="row">
+                <div class="col">
+                    <h4><span id="update_version">Update {{ superevent_data.event_data.sequence_number }}</span></h4>
+                </div>
+                <div class="col">
+                    <h4>MassGap <span id="mass_gap">{{ superevent_data.event_data.attributes.prob_massgap|percentage_filter }}</span></h4>
+                </div>
+                <div class="col">
+                    <h4><span id="nsbh">NSBH {{ superevent_data.event_data.attributes.prob_nsbh|percentage_filter }}</span></h4>
+                </div>
+                <div class="col">
+                    <h4><span id="area_90">90%: {{ superevent_data.event_data.attributes.area_90|truncate_number }}</span></h4>
+                </div>
+                <div class="col">
+                    <h4><span id="instruments">{{ superevent_data.event_data.attributes.Instruments }}</span></h4>
+                </div>
+                <div class="col">
+                    <h4><span id="far">FAR {{ superevent_data.event_data.attributes.far|percentage_filter }}</span></h4>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <h4><span id="bns">BNS {{ superevent_data.event_data.attributes.prob_bns|percentage_filter }}</span></h4>
+                </div>
+                <div class="col">
+                    <h4><span id="terrestrial">Terrestrial {{ superevent_data.event_data.attributes.prob_terres|percentage_filter }}</span></h4>
+                </div>
+                <div class="col">
+                    <h4><span id="bbh">BBH {{ superevent_data.event_data.attributes.prob_bbh|percentage_filter }}</span></h4>
+                </div>
+                <div class="col">
+                    <h4><span id="area_50">50%: {{ superevent_data.event_data.attributes.area_50|truncate_number }}</span></h4>
+                </div>
+                <div class="col">
+	            <h4><span id="">{{ superevent_data.event_data.attributes.unknown_field }}</span></h4>
+                </div>
+                <div class="col">
+                    <h4><span id="has_ns_remnant">NS/Rem: {{ superevent_data.event_data.attributes.prob_ns }}/{{ superevent_data.event_data.attributes.prob_remnant }}</span></h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div>
+    <div class="row">
+        <div class="col-md-6">
+            {% alert_table %}
+        </div>
+        <div class="col-md-3 float-right"><img src="{{ fwhm_url }}"/></div>
+        <div class="col-md-3 float-right"><img src="{{ skymap_url }}" height="400 px"/></div>
+    </div>
+</div>
+<div>
+    <div class="row">
+	<div class="col-md-12" style="text-align: center;">
+	    <h4><span>Candidate List</span>
+	    <p> Candidate table, image triplets, buttons go here </p>
+        </div>
+    </div>
+</div>
+{% endblock content %}

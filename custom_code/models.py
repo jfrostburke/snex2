@@ -253,3 +253,106 @@ class BrokerTarget(models.Model):
         auto_now_add=True, verbose_name='Time Created',
         help_text='The time which this target was created in the TOM database.'
     )
+
+
+class GladeCatalog(models.Model):
+
+    pgc_no = models.IntegerField(
+        verbose_name='PGC number', help_text='Principal Galaxies Catalog number',
+        blank=True, null=True
+    )
+
+    gwgc_name = models.CharField(
+        max_length=100, default='', blank=True, null=True, verbose_name='GWGC name',
+        help_text='Name in the GWGC catalog'
+    )
+
+    hyperleda_name = models.CharField(
+        max_length=100, default='', blank=True, null=True, verbose_name='HyperLEDA name',
+        help_text='Name in the HyperLEDA catalog'
+    )
+
+    twomass_name = models.CharField(
+        max_length=100, default='', blank=True, null=True, verbose_name='2MASS name',
+        help_text='Name in the 2MASS XSC catalog'
+    )
+
+    wisexscos_name = models.CharField(
+        max_length=100, default='', blank=True, null=True, verbose_name='WISExSCOS name',
+        help_text='Name in the WISExSuperCOSMOS catalog'
+    )
+
+    sdss_dr16q_name = models.CharField(
+        max_length=100, default='', blank=True, null=True, verbose_name='SDSS-DR16Q name',
+        help_text='Name in the SDSS-DR16Q catalog'
+    )
+
+    object_type_flag = models.CharField(
+        max_length=2, default='', blank=True, null=True, verbose_name='Object type flag',
+        help_text='Q: source is from SDSS-DR16Q catalog; G: source is from another catalog and has not been identified as a quasar'
+    )
+
+
+    ra = models.FloatField(
+        verbose_name='Right Ascension', help_text='Right Ascension, in degrees.'
+    )
+    
+    dec = models.FloatField(
+        verbose_name='Declination', help_text='Declination, in degrees.'
+    )
+
+    mag = models.JSONField(
+        blank=True, null=True, verbose_name='Magnitudes', help_text='Magnitude information'
+    )
+
+    z_helio = models.FloatField(
+        blank=True, null=True, help_text='Heliocentric redshift'
+    )
+
+    z_cmb = models.FloatField(
+        blank=True, null=True, help_text='CMB-frame redshift'
+    )
+
+    z_flag = models.IntegerField(
+        blank=True, null=True, help_text='0: CMB frame redshift and lum distance values are not corrected for peculiar velocity; 1: they are corrected values'
+    )
+
+    v_err = models.FloatField(
+        blank=True, null=True, help_text='Error of redshift from peculiar velocity estimation'
+    )
+
+    z_err = models.FloatField(
+        blank=True, null=True, help_text='Measurement error of heliocentric redshift'
+    )
+
+    d_l = models.FloatField(
+        blank=True, null=True, verbose_name='luminosity distance', help_text='Luminosity distance, in Mpc'
+    )
+
+    d_l_err = models.FloatField(
+        blank=True, null=True, verbose_name='luminosity distance err', help_text='Error in luminosity distance, in Mpc'
+    )
+
+    dist_flag = models.IntegerField(
+        blank=True, null=True, verbose_name='distance flag', help_text='0: no measured redshift or distance; 1: distance from phot z; 2: redshift from lum dist; 3: distance from spec z'
+    )
+
+    m_star = models.FloatField(
+        blank=True, null=True, help_text='Stellar mass, in 10^10 M_solar'
+    )
+
+    m_star_err = models.FloatField(
+        blank=True, null=True, help_text='Absolute error of stellar mass, in 10^10 M_solar'
+    )
+
+    m_star_flag = models.IntegerField(
+        blank=True, null=True, help_text='0: M_star calculated assuming no active star formation; 1: M_star calculated assuming active star formation'
+    )
+
+    merger_rate = models.FloatField(
+        blank=True, null=True, help_text='Log10 of estimated BNS merger rate in galaxy, in Gyr^-1'
+    )
+
+    merger_rate_err = models.FloatField(
+        blank=True, null=True, help_text='Absolute error of estimated BNS merger rate in galaxy'
+    )

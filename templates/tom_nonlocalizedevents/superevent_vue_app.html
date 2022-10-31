@@ -1,0 +1,17 @@
+{% extends 'tom_common/base.html' %}
+{% load render_bundle from webpack_loader %}
+{% load static %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+
+    <div id="superevent_identifier" style="display: none">{{ superevent_identifier }}</div>
+
+    <div id="superevent-detail">
+        <app></app>
+    </div>
+
+    {% render_bundle 'superevent_vue_app' config='TOM_NONLOCALIZEDEVENTS' %}
+
+{% endblock %}

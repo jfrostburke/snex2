@@ -22,7 +22,15 @@
       <td>{{ phot.value.filter }}</td>
       <td>{{ phot.value.magnitude }}</td>
       <td>{{ phot.value.error }}</td>
-      <td></td>
+      <td>
+	{% for message in phot.message.all %} 
+	  {% if message.exchange_status == 'published' %}
+	    {{ message.exchange_status }} to {{ message.topic }} <br>
+	  {% else %}
+	    {{ message.exchange_status }} from {{ message.topic }} <br>
+	  {% endif %}
+        {% endfor %}
+      </td>
     </tr>
   {% endfor %}
 </table>

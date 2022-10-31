@@ -64,6 +64,11 @@
 	  <li class="nav-item {% if request.resolver_match.namespace == 'custom_code' %}active{% endif %}">
             <a class="nav-link" href="{% url 'custom_code:tns-targets' %}" style="font-family: 'Montserrat', sans-serif;">TNS Targets</a>
           </li>
+	  {% if user.username == 'cpellegrino' %}
+	  <li class="nav-item {% if request.resolver_match.namespace == 'nonlocalizedevents' %}active{% endif %}">
+	    <a class="nav-link" href="/nonlocalizedevents/" style="font-family: 'Montserrat', sans-serif;">Non-Localized Events</a>
+	  </li>
+	  {% endif %}
 	  <li class="nav-item" style="align-self: center;padding: 10px">
 	    <div class="target-search">
 	      <form action="{% url 'redirect' %}" method="get">

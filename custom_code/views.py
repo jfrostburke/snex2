@@ -55,6 +55,7 @@ from tom_common.hooks import run_hook
 from tom_dataproducts.views import DataProductUploadView, DataProductDeleteView
 from tom_dataproducts.models import DataProduct
 from tom_dataproducts.exceptions import InvalidFileFormatException
+from tom_dataproducts.hermes import publish_photometry_to_hermes
 from custom_code.processors.data_processor import run_custom_data_processor
 from guardian.shortcuts import assign_perm
 
@@ -1757,33 +1758,31 @@ def send_photometry_via_hermes(request):
             all_phot = ReducedDatum.objects.filter(target_id=t.id)
 
 
-    data_list = []
     for topic in topics:
-        for phot in all_phot:
-            telescope = 'LCO'
-            instrument = 'Sinistro'
-            unit_dict = {'U': 'Vega', 'B': 'Vega', 'V': 'Vega', 'R': 'Vega', 'I': 'Vega'}
+        all_phot = all_phot.exclude(message__topic__contains='hermes.test') #TODO: Change this to topic
+        #for phot in all_phot:
+            #telescope = 'LCO'
+            #instrument = 'Sinistro'
+            #unit_dict = {'U': 'Vega', 'B': 'Vega', 'V': 'Vega', 'R': 'Vega', 'I': 'Vega'}
             
-            data_list.append({'target_name': get_best_name(t),
-                              'ra': t.ra,
-                              'dec': t.dec,
-                              'date_observed': phot.timestamp,
-                              'telescope': telescope,
-                              'instrument': instrument,
-                              'band': phot.value['filter'],
-                              'brightness': phot.value['magnitude'],
-                              'brightness_error': phot.value['error'],
-                              'brightness_unit': unit_dict.get(phot.value['filter'], 'AB') + ' mag',
-            })
-        message = {'title': 'Test',
+            #data_list.append({'photometryId': '',
+            #                  'dateObs': phot.timestamp,
+            #                  'telescope': telescope,
+            #                  'instrument': instrument,
+            #                  'band': phot.value['filter'],
+            #                  'brightness': str(phot.value['magnitude']),
+            #                  'brightnessError': str(phot.value['error']),
+            #                  'brightnessUnit': unit_dict.get(phot.value['filter'], 'AB') + ' mag',
+            #})
+        message = {'share_title': 'Test',
                    'topic': topic,
-                   'submitted': 'Craig',
-                   'authors': 'Craig and Este',
-                   'message_text': 'This is a test',
-                   'event_id': 'unknown',
-                   'data': data_list
+                   'submitter': 'Craig',
+                   'share_authors': 'Craig and Este',
+                   'share_message': 'This is a test',
         }
-        
+
+        if all_phot.count() > 0:
+            publish_photometry_to_hermes('hermes', message, all_phot)
         print(message)
     return HttpResponse(json.dumps({'success': 'It worked!'}), content_type='application/json')
 
