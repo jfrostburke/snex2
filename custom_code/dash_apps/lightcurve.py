@@ -124,8 +124,9 @@ app.layout = html.Div([
                     ), width=6),
                     dbc.Col(dcc.RadioItems(
                         id='reduction-type-radio',
-                        options=[{'label': 'Automatic', 'value': ''},
-                                 {'label': 'Manual', 'value': 'manual'}
+                        options=[{'label': 'All', 'value': 'all'},
+                                 {'label': 'Only Automatic', 'value': ''},
+                                 {'label': 'Only Manual', 'value': 'manual'}
                         ],
                         value='',
                         inputStyle={"margin-right": "5px", "margin-left": "5px"}
@@ -188,7 +189,7 @@ def update_reduction_type(selected_subtraction, old_reduction_type):
     if selected_subtraction == 'Subtracted':
         return 'manual'
     elif selected_subtraction == 'Unsubtracted' and old_reduction_type == 'manual':
-        return ''
+        return 'all'
     return old_reduction_type
 
 #Unselect final reduction if automatically reduced data is selected
@@ -197,7 +198,7 @@ def update_reduction_type(selected_subtraction, old_reduction_type):
         [Input('reduction-type-radio', 'value'),
          State('final-reduction-checklist', 'value')])
 def update_final_reduction(selected_reduction, old_final_value):
-    if not selected_reduction:
+    if not selected_reduction or selected_reduction == 'all':
         return ''
     return old_final_value
 
@@ -207,7 +208,7 @@ def update_final_reduction(selected_reduction, old_final_value):
         [Input('reduction-type-radio', 'value'),
          State('subtracted-radio', 'value')])
 def update_subtracted_type(selected_reduction, old_subtracted_type):
-    if not selected_reduction and old_subtracted_type != 'Unsubtracted':
+    if (not selected_reduction or selected_reduction == 'all') and old_subtracted_type != 'Unsubtracted':
         return 'Unsubtracted'
     elif selected_reduction == 'manual' and old_subtracted_type == 'Unsubtracted':
         return no_update
@@ -355,7 +356,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
                     subtracted_photometry_data[subtracted_filt].setdefault('time', []).append(rd.timestamp)
                     subtracted_photometry_data[subtracted_filt].setdefault('magnitude', []).append(value.get('magnitude',None))
                     subtracted_photometry_data[subtracted_filt].setdefault('error', []).append(value.get('error', None))
-            elif value.get('reduction_type', '')==reduction_type:
+            elif value.get('reduction_type', '') == reduction_type or reduction_type == 'all':
 
                 filt = filter_translate.get(value.get('filter', ''), '')
 
