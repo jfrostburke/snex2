@@ -900,6 +900,8 @@ def observation_summary(context, target=None, time='previous'):
             requested_str = ''
         else:
             sequence_start = str(observation.parameters.get('sequence_start', '')).split('T')[0]
+            if not sequence_start:
+                sequence_start = str(observation.parameters.get('start', '')).split('T')[0]
             requested_str = ', requested by {}'.format(str(observation.parameters.get('start_user', '')))
 
         parameter = observation.parameters
@@ -1214,6 +1216,8 @@ def scheduling_list_with_form(context, observation, case='notpending'):
         if case == 'pending':
             template_observation = observation
         start = str(template_observation.parameters.get('sequence_start', '')).replace('T', ' ')
+        if not start:
+            start = str(template_observation.parameters.get('start', '')).replace('T', ' ')
         requested_str = str(template_observation.parameters.get('start_user', ''))
     
     return get_scheduling_form(observation, context['request'].user.id, start, requested_str, case=case)

@@ -750,6 +750,9 @@ def scheduling_view(request):
                         parameters=form.serialize_parameters(),#observing_parameters,
                         observation_id=observation_id
                     )
+                    # Add the request user
+                    record.parameters['start_user'] = request.user.first_name
+                    record.save()
                     new_observations.append(record)
         
                 if len(new_observations) > 1 or form_data.get('cadence'):
@@ -1304,6 +1307,9 @@ class CustomObservationCreateView(ObservationCreateView):
                 parameters=form.serialize_parameters(),
                 observation_id=observation_id
             )
+            # Add the request user
+            record.parameters['start_user'] = self.request.user.first_name
+            record.save()
             records.append(record)
 
         if len(records) > 1 or form.cleaned_data.get('cadence_strategy'):
