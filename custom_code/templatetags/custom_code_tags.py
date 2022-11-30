@@ -1213,7 +1213,7 @@ def scheduling_list_with_form(context, observation, case='notpending'):
     else:
         if case == 'pending':
             template_observation = observation
-        start = str(template_observation.parameters.get('sequence_start', '').replace('T', ' ')
+        start = str(template_observation.parameters.get('sequence_start', '')).replace('T', ' ')
         requested_str = str(template_observation.parameters.get('start_user', ''))
     
     return get_scheduling_form(observation, context['request'].user.id, start, requested_str, case=case)
