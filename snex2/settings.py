@@ -61,8 +61,11 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
     'tom_registration',
-    #'debug_toolbar'
-
+    #'debug_toolbar',
+    'tom_scimma',
+    'tom_nonlocalizedevents',
+    'tom_alertstreams',
+    'webpack_loader',
 ]
 
 SITE_ID = 2
@@ -100,6 +103,31 @@ TEMPLATES = [
         },
     },
 ]
+
+
+# Configuration for the TOM receiving data from this TOM
+DATA_SHARING = {
+    'hermes': {
+        'DISPLAY_NAME': os.getenv('HERMES_DISPLAY_NAME', 'Hermes'),
+        'BASE_URL': os.getenv('HERMES_BASE_URL', 'http://hermes-dev.lco.gtn/'),
+        'SCIMMA_AUTH_USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
+        'CREDENTIAL_USERNAME': os.getenv('SCIMMA_CREDENTIAL_USERNAME', None,),
+        'CREDENTIAL_PASSWORD': os.getenv('SCIMMA_CREDENTIAL_PASSWORD', None),
+        'USER_TOPICS': ['hermes.test', 'tomtoolkit.test']
+    },
+    'tom-demo-dev': {
+        'BASE_URL': os.getenv('TOM_DEMO_BASE_URL', 'http://tom-demo-dev.lco.gtn/'),
+        'USERNAME': os.getenv('TOM_DEMO_USERNAME', 'set TOM_DEMO_USERNAME value in environment'),
+        'PASSWORD': os.getenv('TOM_DEMO_PASSWORD', 'set TOM_DEMO_PASSWORD value in environment'),
+    },
+    'localhost-tom': {
+        # for testing; share with yourself
+        'BASE_URL': os.getenv('LOCALHOST_TOM_BASE_URL', 'http://127.0.0.1:8000/'),
+        'USERNAME': os.getenv('LOCALHOST_TOM_USERNAME', 'set LOCALHOST_TOM_USERNAME value in environment'),
+        'PASSWORD': os.getenv('LOCALHOST_TOM_PASSWORD', 'set LOCALHOST_TOM_PASSWORD value in environment'),
+    }
+}
+
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
@@ -317,6 +345,7 @@ TOM_ALERT_CLASSES = [
     'tom_alerts.brokers.gaia.GaiaBroker',
     'tom_alerts.brokers.tns.TNSBroker',
     'tom_alerts.brokers.alerce.ALeRCEBroker',
+    'tom_scimma.scimma.SCIMMABroker',
 ]
 
 TOM_FACILITY_CLASSES = [
@@ -417,6 +446,35 @@ PLOTLY_DASH = {
     'cache_arguments': False,
     #'cache_timeout_initial_arguments': 120,
 }
+
+VUE_FRONTEND_DIR_TOM_NONLOCAL = os.path.join(STATIC_ROOT, 'tom_nonlocalizedevents/vue')
+WEBPACK_LOADER = {
+    'TOM_NONLOCALIZEDEVENTS': {
+        'CACHE': not DEBUG,
+        'BUNDLE_DIR_NAME': 'tom_nonlocalizedevents/vue/',  # must end with slash
+        'STATS_FILE': os.path.join(BASE_DIR, 'static/tom_nonlocalizedevents/vue/webpack-stats.json'),#os.path.join(VUE_FRONTEND_DIR_TOM_NONLOCAL, 'webpack-stats.json'),
+        'POLL_INTERVAL': 0.1,
+        'TIMEOUT': None,
+        'IGNORE': [r'.+\.hot-update.js', r'.+\.map']
+    }
+}
+
+ALERT_STREAMS = [
+    {
+        'ACTIVE': True,
+        'NAME': 'tom_alertstreams.alertstreams.hopskotch.HopskotchAlertStream',
+        'OPTIONS': {
+            'URL': 'kafka://kafka.scimma.org/',
+            'USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
+            'PASSWORD': os.getenv('SCIMMA_AUTH_PASSWORD', None),
+            'TOPIC_HANDLERS': {
+                'sys.heartbeat': 'tom_alertstreams.alertstreams.hopskotch.heartbeat_handler',
+                'tomtoolkit.test': 'custom_code.alertstreams.hopskotch.alert_handler',
+                'hermes.test': 'custom_code.alertstreams.hopskotch.alert_handler',
+            },
+        },
+    },
+]
 
 if DEBUG:
     INTERNAL_IPS = [

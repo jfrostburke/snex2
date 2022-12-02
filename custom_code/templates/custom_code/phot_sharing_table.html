@@ -1,5 +1,6 @@
 <input type="checkbox" class="select-all" id="select-all-phot-row" onclick="checkAll()">
 <label><b>Select all</b></label>
+<div id="table-wrapper" style="height: 500px; overflow-y: scroll;">
 <table class="table">
   <thead>
     <tr>
@@ -34,11 +35,12 @@
     </tr>
   {% endfor %}
 </table>
+</div>
 <div class="row" style="display: block;">
   <p>Share to 
     <select id="phot-topic-choices" style="background-color: white;">
-      <option id="topic1" value="topic1">Topic1</option>
-      <option id="topic2" value="topic2">Topic2</option>
+      <option id="hermes.test" value="hermes.test">hermes.test</option>
+      <option id="tomtoolkit.test" value="tomtoolkit.test">tomtoolkit.test</option>
     </select>
   </p>
 </div>

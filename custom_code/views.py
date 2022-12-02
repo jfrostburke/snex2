@@ -55,7 +55,7 @@ from tom_common.hooks import run_hook
 from tom_dataproducts.views import DataProductUploadView, DataProductDeleteView
 from tom_dataproducts.models import DataProduct
 from tom_dataproducts.exceptions import InvalidFileFormatException
-from tom_dataproducts.hermes import publish_photometry_to_hermes
+from tom_dataproducts.alertstreams.hermes import publish_photometry_to_hermes, BuildHermesMessage
 from custom_code.processors.data_processor import run_custom_data_processor
 from guardian.shortcuts import assign_perm
 
@@ -1757,32 +1757,17 @@ def send_photometry_via_hermes(request):
         else:
             all_phot = ReducedDatum.objects.filter(target_id=t.id)
 
-
     for topic in topics:
-        all_phot = all_phot.exclude(message__topic__contains='hermes.test') #TODO: Change this to topic
-        #for phot in all_phot:
-            #telescope = 'LCO'
-            #instrument = 'Sinistro'
-            #unit_dict = {'U': 'Vega', 'B': 'Vega', 'V': 'Vega', 'R': 'Vega', 'I': 'Vega'}
-            
-            #data_list.append({'photometryId': '',
-            #                  'dateObs': phot.timestamp,
-            #                  'telescope': telescope,
-            #                  'instrument': instrument,
-            #                  'band': phot.value['filter'],
-            #                  'brightness': str(phot.value['magnitude']),
-            #                  'brightnessError': str(phot.value['error']),
-            #                  'brightnessUnit': unit_dict.get(phot.value['filter'], 'AB') + ' mag',
-            #})
-        message = {'share_title': 'Test',
-                   'topic': topic,
-                   'submitter': 'Craig',
-                   'share_authors': 'Craig and Este',
-                   'share_message': 'This is a test',
-        }
+        all_phot = all_phot.exclude(message__topic__contains=topic)
+        message = BuildHermesMessage(title='Test',
+                                     submitter='Craig',
+                                     authors='Craig and Este',
+                                     message='This is a test',
+                                     topic=topic
+        )
 
         if all_phot.count() > 0:
             publish_photometry_to_hermes('hermes', message, all_phot)
-        print(message)
+    
     return HttpResponse(json.dumps({'success': 'It worked!'}), content_type='application/json')
 

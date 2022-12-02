@@ -68,24 +68,24 @@
   <div class="dropdown-check-list">
     <button class="dropbtn" style="background-color: white; color: black; font-size: 16px; border-color: #174460;" onclick="displayTopics('all')">Share all data to...</button>
       <div id="all-topic-dropdown" class="dropdown-content" style="background-color: white; color: black; font-size: 14px; border: none;">
-        <span><input type="checkbox" class="all-check" id="all-select-topic1" value="topic1">Topic1</span><br>
-        <span><input type="checkbox" class="all-check" id="all-select-topic2" value="topic2">Topic2</span><br>
+        <span><input type="checkbox" class="all-check" id="all-select-hermes.test" value="hermes.test">hermes.test</span><br>
+        <span><input type="checkbox" class="all-check" id="all-select-toomtoolkit.test" value="tomtoolkit.test">tomtoolkit.test</span><br>
 	<button onclick="submitToHermes('allbtn', 'all')" id='allbtn' class="btn" style="background-color: #174460; color: white; border: none;">Share</button>
       </div>
   </div>
   <div class="dropdown-check-list">
     <button class="dropbtn" style="background-color: white; color: black; font-size: 16px; border-color: #174460;" onclick="displayTopics('phot')">Share all photometry to...</button>
       <div id="phot-topic-dropdown" class="dropdown-content" style="background-color: white; color: black; font-size: 14px; border: none;">
-        <span><input type="checkbox" class="phot-check" id="phot-select-topic1" value="topic1">Topic1</span><br>
-        <span><input type="checkbox" class="phot-check" id="phot-select-topic2" value="topic2">Topic2</span><br>
+        <span><input type="checkbox" class="phot-check" id="phot-select-hermes.test" value="hermes.test">hermes.test</span><br>
+        <span><input type="checkbox" class="phot-check" id="phot-select-tomtoolkit.test" value="tomtoolkit.test">tomtoolkit.test</span><br>
 	<button onclick="submitToHermes('photbtn', 'phot')" id="photbtn" class="btn" style="background-color: #174460; color: white; border: none;">Share</button>
       </div>
   </div>
   <div class="dropdown-check-list">
     <button class="dropbtn" style="background-color: white; color: black; font-size: 16px; border-color: #174460;" onclick="displayTopics('spec')">Share all spectra to...</button>
       <div id="spec-topic-dropdown" class="dropdown-content" style="background-color: white; color: black; font-size: 14px; border: none;">
-        <span><input type="checkbox" class="spec-check" id="spec-select-topic1" value="topic1">Topic1</span><br>
-        <span><input type="checkbox" class="spec-check" id="spec-select-topic2" value="topic2">Topic2</span><br>
+        <span><input type="checkbox" class="spec-check" id="spec-select-hermes.test" value="hermes.test">hermes.test</span><br>
+        <span><input type="checkbox" class="spec-check" id="spec-select-tomtoolkit.test" value="tomtoolkit.test">tomtoolkit.test</span><br>
 	<button onclick="submitToHermes('specbtn', 'spec')" id='specbtn' class="btn" style="background-color: #174460; color: white; border: none;">Share</button>
       </div>
   </div>
@@ -125,4 +125,7 @@ function submitToHermes(btnId, data_type) {
 function displayTopics(type) {
   document.getElementById(type+'-topic-dropdown').classList.toggle("show");
 }
+$('.dropdown-content').click(function(e) {
+  e.stopPropagation();
+});
 </script>

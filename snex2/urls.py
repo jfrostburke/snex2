@@ -60,9 +60,11 @@ urlpatterns = [
     path('scheduling/<str:key>/', ObservationListExtrasView.as_view(), name='observation-list'),
     path('alerts/broker-targets/', BrokerTargetView.as_view(), name='broker-targets'),
     path('change-broker-target-status/', change_broker_target_status_view, name='change-broker-target-status'),
+    path('submit-to-hermes/', send_photometry_via_hermes, name='submit-to-hermes'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),
+    path('nonlocalizedevents/', include('tom_nonlocalizedevents.urls')),
     path('django_plotly_dash/', include('django_plotly_dash.urls')),
     #path('__debug__/', include('debug_toolbar.urls')),
 ]
