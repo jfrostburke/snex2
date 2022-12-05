@@ -2004,7 +2004,8 @@ def phot_sharing_table(context, target):
                                   'tom_dataproducts.view_reduceddatum',
                                   klass=ReducedDatum.objects.filter(
                                     target=target,
-                                    data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])).order_by('timestamp')
+                                    data_type=settings.DATA_PRODUCT_TYPES['photometry'][0],
+                                    value__has_key='filter')).order_by('timestamp')
 
     return {'photometry': datums}
  
