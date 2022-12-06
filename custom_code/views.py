@@ -1751,7 +1751,7 @@ def send_photometry_via_hermes(request):
         target_id = request.GET.get('target_id', '')
         t = Target.objects.get(id=target_id)
         if data_type == 'phot':
-            all_phot = ReducedDatum.objects.filter(target_id=t.id, data_type='photometry')
+            all_phot = ReducedDatum.objects.filter(target_id=t.id, data_type='photometry', value__has_key='filter')
         elif data_type == 'spec':
             all_phot = ReducedDatum.objects.filter(target_id=t.id, data_type='spectroscopy')
         else:
