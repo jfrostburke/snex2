@@ -4,8 +4,11 @@ import dash_html_components as html
 import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
 import json
+import numpy as np
 from django_plotly_dash import DjangoDash
 from tom_dataproducts.models import ReducedDatum
+from tom_targets.templatetags.targets_extras import target_extra_field
+from tom_targets.models import Target
 from custom_code.models import ReducedDatumExtra, Papers
 import logging
 from django.templatetags.static import static
@@ -289,6 +292,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
         'UVW1': 'UVW1'}
     photometry_data = {}
     subtracted_photometry_data = {}
+    target = Target.objects.get(id=target_id)
     datumextras = ReducedDatumExtra.objects.filter(target_id=target_id, key='upload_extras', data_type='photometry')
     
     datums = []
@@ -369,6 +373,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
         selected_photometry = photometry_data
     elif subtracted_value == 'Subtracted':
         selected_photometry = subtracted_photometry_data
+
     plot_data = [
         go.Scatter(
             x=filter_values['time'],
@@ -384,11 +389,36 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
             text=['MJD: ' + str(round(Time(t).mjd, 2)) for t in filter_values['time']],
         ) for filter_name, filter_values in selected_photometry.items()]
 
+    if target_extra_field(target, 'redshift') is not None and float(target_extra_field(target, 'redshift')) > 0.01:
+        ydata = [[np.asarray(filter_values['magnitude']) + np.asarray(filter_values['error'])] for filter_values in selected_photometry.values()]
+        ydata.append([np.asarray(filter_values['magnitude']) - np.asarray(filter_values['error']) for filter_values in selected_photometry.values()])
+        if ydata:
+            ydata = np.concatenate(ydata)
+            ymin = np.min(ydata)
+            ymax = np.max(ydata)
+            ymin_view = ymin - 0.05 * (ymax-ymin)
+            ymax_view = ymax + 0.05 * (ymax-ymin)
+        else:
+            ymin_view = 0
+            ymax_view = 0
+
+        dm = 5*np.log10(float(target_extra_field(target, 'redshift'))*3e5/70.0*1e6) - 5
+        yaxis2 = {'range': (ymax_view-dm, ymin_view-dm),
+                  'showgrid': False,
+                  'overlaying': 'y',
+                  'side': 'right',
+        }
+        plot_data.append(go.Scatter(x=[], y=[], yaxis='y2'))
+
+    else:
+        yaxis2 = None
+
     graph_data = {'data': plot_data}
 
     layout = go.Layout(
         xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        yaxis2=yaxis2,
         margin=dict(l=40, r=50, b=40, t=40),
         legend=dict(x=0.84, y=1.0),
         width=width,
