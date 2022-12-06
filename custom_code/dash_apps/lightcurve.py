@@ -268,6 +268,7 @@ def update_template_value(selected_subtraction):
 def update_graph(selected_telescope, subtracted_value, selected_algorithm, selected_template, selected_photometry_type, reduction_type, final_reduction_value, selected_paper, selected_groups, value, width, height):
     def get_color(filter_name, filter_translate):
         colors = {'U': 'rgb(59,0,113)',
+            'u': 'rgb(59,0,113)',
             'B': 'rgb(0,87,255)',
             'V': 'rgb(120,255,0)',
             'g': 'rgb(0,204,255)',
@@ -287,7 +288,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
     logger.info('Plotting dash lightcurve for target %s', value)
     target_id = value
     filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
-        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
+        'up': 'u', 'u': 'u', 'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
         'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2',
         'UVW1': 'UVW1'}
     photometry_data = {}
@@ -313,7 +314,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
     
     ### Get the data for the selected telescope
     if not selected_telescope:
-        datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry'))
+        datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', value__has_key='filter'))
     
     else:
         for de in datumextras:
@@ -326,11 +327,11 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
                     de_value.get('reducer_group', '') in selected_groups,
                     (not selected_paper or de_value.get('used_in', '')==selected_paper or de_value.get('used_in', '') in papers_for_target)]):
                 dp_id = de_value.get('data_product_id', '')
-                datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id=dp_id))
+                datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id=dp_id, value__has_key='filter'))
         
         ### Finally, get the data that was automatically uploaded from snex1 db
         if 'LCO' in selected_telescope and not final_reduction:
-            datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id__isnull=True))
+            datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id__isnull=True, value__has_key='filter'))
     
     ### Plot the data
     if not datums:
@@ -390,8 +391,11 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
         ) for filter_name, filter_values in selected_photometry.items()]
 
     if target_extra_field(target, 'redshift') is not None and float(target_extra_field(target, 'redshift')) > 0.01:
-        ydata = [[np.asarray(filter_values['magnitude']) + np.asarray(filter_values['error'])] for filter_values in selected_photometry.values()]
-        ydata.append([np.asarray(filter_values['magnitude']) - np.asarray(filter_values['error']) for filter_values in selected_photometry.values()])
+        ydata = []
+        for filter_name, filter_values in selected_photometry.items():
+            if filter_name is not None:
+                ydata.append(np.asarray(filter_values['magnitude']) + np.asarray(filter_values['error']))
+                ydata.append(np.asarray(filter_values['magnitude']) - np.asarray(filter_values['error']))
         if ydata:
             ydata = np.concatenate(ydata)
             ymin = np.min(ydata)
