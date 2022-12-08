@@ -27,7 +27,7 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 
-from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons
+from custom_code.models import *
 from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, SpecSchedulingForm, ReferenceStatusForm, ThumbnailForm
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
@@ -2011,4 +2011,51 @@ def phot_sharing_table(context, target):
                                     data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])).order_by('timestamp')
 
     return {'photometry': datums}
+
+
+@register.inclusion_tag('custom_code/partials/time_usage_bars.html', takes_context=True)
+def time_usage_bars(context, telescope):
+    
+    tu = TimeUsed.objects.filter(telescope_class=telescope).order_by('-id').first()
+    
+    total_time_used = tu.std_time_used + tu.tc_time_used + tu.rr_time_used
+    total_time_allocated = tu.std_time_allocated + tu.tc_time_allocated + tu.rr_time_allocated
+    total_frac_used = total_time_used/total_time_allocated
+    
+    if total_frac_used > tu.frac_of_semester:
+        barcolor = 'red'
+    else:
+        barcolor = '#004459'
+    
+    barwidth = int(100*tu.frac_of_semester)
+    usedbarwidth = max(int(total_frac_used*100.0), 1)
+
+    tooltip = "Standard time: {} of {} hours ({}%)\n".format(
+            round(tu.std_time_used, 2), round(tu.std_time_allocated, 2),
+            round(tu.std_time_used/tu.std_time_allocated * 100, 2))
+
+    if tu.tc_time_allocated > 0.0:
+        tooltip += "TC time: {} of {} hours ({}%)\n".format(
+                round(tu.tc_time_used, 2), round(tu.tc_time_allocated, 2),
+                round(tu.tc_time_used/tu.tc_time_allocated * 100, 2))
+    else:
+        tooltip += "TC time: {} of {} hours\n".format(
+                round(tu.tc_time_used, 2), round(tu.tc_time_allocated, 2))
+    
+    if tu.rr_time_allocated > 0.0:
+        tooltip += "RR time: {} of {} hours ({}%)\n".format(
+            round(tu.rr_time_used, 2), round(tu.rr_time_allocated, 2),
+            round(tu.rr_time_used/tu.rr_time_allocated * 100, 2))
+    else:
+        tooltip += "RR time: {} of {} hours\n".format(
+                round(tu.rr_time_used, 2), round(tu.rr_time_allocated, 2))
+
+    tooltip += "[We're currently {}% through the semester]".format(round(tu.frac_of_semester*100, 2))
+    
+    return {'telescope': telescope.replace('0', '').lower(),
+            'barwidth': barwidth,
+            'barcolor': barcolor,
+            'usedbarwidth': usedbarwidth,
+            'tooltip': tooltip,
+    }
  

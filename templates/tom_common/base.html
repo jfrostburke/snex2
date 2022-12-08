@@ -1,4 +1,4 @@
-{% load static bootstrap4 %}
+{% load static bootstrap4 custom_code_tags %}
 <!doctype html>
 <html lang="en">
   <head>
@@ -74,6 +74,12 @@
         </ul>
         <ul class="navbar-nav ml-auto">
         {% if user.is_authenticated %}
+	  <li class="nav-item">
+	    {% time_usage_bars '1M0' %}
+	  </li>
+	  <li>
+	    {% time_usage_bars '2M0' %}
+	  </li>
           <li class="nav-item">
             {% if user.first_name or user.last_name %}
             <a class="nav-link" href="{% url 'user-update' user.id %}">{{ user.first_name }} {{ user.last_name }}</a>
