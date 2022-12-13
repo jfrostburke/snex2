@@ -882,6 +882,6 @@ def get_unreduced_spectra(allspec=True):
         dateobs = [s.dateobs for s in unreduced_spectra]
         paths = [s.filepath for s in unreduced_spectra]
         filenames = [s.filename for s in unreduced_spectra]
-        imgpaths = [s.filename.replace('/supernova/data/floyds', '/snex2/data/floyds') for s in unreduced_spectra]
+        imgpaths = [s.filepath.replace('/supernova/data/floyds', '/snex2/data/floyds') + s.filename.replace('.fits', '.png') for s in unreduced_spectra]
 
     return targetids, propids, dateobs, paths, filenames, imgpaths

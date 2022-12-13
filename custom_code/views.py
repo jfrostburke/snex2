@@ -46,7 +46,7 @@ from plotly import offline
 import plotly.graph_objs as go
 from tom_dataproducts.models import ReducedDatum
 from django.utils.safestring import mark_safe
-from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras, get_best_name, dash_spectra_page, scheduling_list_with_form
+from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras, get_best_name, dash_spectra_page, scheduling_list_with_form, smart_name_list
 from custom_code.hooks import _get_tns_params, _return_session, get_unreduced_spectra
 from custom_code.thumbnails import make_thumb
 
@@ -1815,7 +1815,7 @@ class FloydsInboxView(TemplateView):
             current_dict = {}
             t = Target.objects.get(id=targetids[i])
             current_dict['targetid'] = targetids[i]
-            current_dict['targetnames'] = [t.name] + [alias.name for alias in t.aliases.all()]
+            current_dict['targetnames'] = smart_name_list(t)
             current_dict['propid'] = propids[i]
             current_dict['dateobs'] = dateobs[i]
             current_dict['path'] = paths[i]
