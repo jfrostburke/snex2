@@ -1,0 +1,42 @@
+{% extends 'tom_common/base.html' %}
+{% load bootstrap4 static %}
+{% block title %}Floyds Inbox{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Floyds Inbox</h3>
+  </div>
+</nav>
+<h4>Spectra in need of reduction:</h4>
+<table class="table">
+  <thead>
+    <tr>
+      <th style="width: 10%;">Target</th>
+      <th style="width: 15%;">Proposal</th>
+      <th style="width: 10;">Date</th>
+      <th style="width: 25%;">Path</th>
+      <th style="width: 10%;">File</th>
+      <th style="width: 30%;">Preview</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in inbox_rows %}
+  <tr>
+    <td>
+      {% for name in row.targetnames %}
+      <a href="{% url 'targets:detail' row.targetid %}">{{ name }}</a><br>
+      {% endfor %}
+    </td>
+    <td>{{ row.propid }}</td>
+    <td>{{ row.dateobs }}</td>
+    <td>{{ row.path }}</td>
+    <td>{{ row.filename }}</td>
+    <td><img src="{{ row.imgpath }}" width="270"></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
+

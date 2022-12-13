@@ -63,7 +63,7 @@ services:
             - ${SNEX_0m4_FITS_PATH}:/snex2/data/fits/0m4/
             - ${SNEX_2m_FITS_PATH}:/snex2/data/fits/fts/
             - ${SNEX_MUSCAT_FITS_PATH}:/snex2/data/fits/2m0a/
-
+            - ${SNEX_FLOYDS_PATH}:/snex2/data/floyds/
     snex2-dev:
         image: snex2-dev:latest
         network_mode: bridge
@@ -117,3 +117,4 @@ services:
             - ${SNEX_0m4_FITS_PATH}:/snex2/data/fits/0m4/
             - ${SNEX_2m_FITS_PATH}:/snex2/data/fits/fts/
             - ${SNEX_MUSCAT_FITS_PATH}:/snex2/data/fits/2m0a/
+            - ${SNEX_FLOYDS_PATH}:/snex2/data/floyds/
