@@ -1820,10 +1820,14 @@ class FloydsInboxView(TemplateView):
             current_dict['dateobs'] = dateobs[i]
             current_dict['path'] = paths[i]
             current_dict['filename'] = filenames[i]
-            current_dict['imgpath'] = imgpaths[i]
+            
+            with open(imgpaths[i], 'rb') as imagefile:
+                b64_image = base64.b64encode(imagefile.read())
+                thumb = b64_image.decode('utf-8')
+            current_dict['img'] = 'data:image/png;base64,{}'.format(thumb) 
+            
             inbox_rows.append(current_dict)
 
         context['inbox_rows'] = inbox_rows
 
         return context
-
