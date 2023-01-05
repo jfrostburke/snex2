@@ -17,7 +17,7 @@ class AlerceQuery:
         self.ndet = ndet # At least this many detections
         startdate = Time(datetime.utcnow(), scale='utc').mjd - self.days_ago
         enddate = Time(datetime.utcnow(), scale='utc').mjd
-        self.search_url = "http://api.alerce.online/ztf/v1/objects/?class=SN&ndet={}&probability=0.5&firstmjd={}&firstmjd={}&page_size=1000&count=false".format(ndet, startdate, enddate)
+        self.search_url = "https://api.alerce.online/ztf/v1/objects/?class=SN&ndet={}&probability=0.5&firstmjd={}&firstmjd={}&page_size=1000&count=false".format(ndet, startdate, enddate)
         
         self.candidates, self.coords = self.get_candidates(self)
         self.det, self.nondet = self.get_photometry(self)
@@ -46,7 +46,7 @@ class AlerceQuery:
         phot = {}
         nondets = {}
         for name in self.candidates:
-            alerce_url = 'http://api.alerce.online/ztf/v1/objects/{}/lightcurve'.format(name)
+            alerce_url = 'https://api.alerce.online/ztf/v1/objects/{}/lightcurve'.format(name)
             
             g_dets = {}
             r_dets = {}
