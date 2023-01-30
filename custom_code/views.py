@@ -539,16 +539,22 @@ def save_comments_view(request):
 
 
 def cancel_observation(obs):
+     
+    # Get the last non-template ObservationRecord and cancel it through the facility
+    if 'template' in obs.observation_id:
+        last_obs = obs.observationgroup_set.first().observation_records.all().exclude(observation_id__contains='template').order_by('-id').first()
+    else:
+        last_obs = obs
     
-    facility = get_service_class(obs.facility)()
+    facility = get_service_class(last_obs.facility)()
     
-    if obs.status not in TERMINAL_OBSERVING_STATES:
-        success = facility.cancel_observation(obs.observation_id)
+    if last_obs.status not in TERMINAL_OBSERVING_STATES:
+        success = facility.cancel_observation(last_obs.observation_id)
         if not success:
             return False
 
-        obs.status = 'CANCELED'
-        obs.save()
+        last_obs.status = 'CANCELED'
+        last_obs.save()
     
     ## Change status of DynamicCadence
     obs_group = obs.observationgroup_set.first()
