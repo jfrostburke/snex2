@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
 
 from django.urls import include
 from custom_code.views import *
@@ -65,5 +66,7 @@ urlpatterns = [
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),
     path('django_plotly_dash/', include('django_plotly_dash.urls')),
-    #path('__debug__/', include('debug_toolbar.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns.append(path('__debug__/', include('debug_toolbar.urls')))
