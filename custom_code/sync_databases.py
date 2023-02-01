@@ -228,7 +228,7 @@ def update_phot(action, db_address=_SNEX2_DB):
                 
                 if int(phot_row.mag) != 9999:
                     if int(phot_row.filetype) == 1:
-                        phot = {'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': False}
+                        phot = {'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': False, 'telescope': phot_row.telescope, 'instrument': phot_row.instrument}
                     elif int(phot_row.filetype) == 3 and phot_row.difftype is not None:
                         if int(phot_row.difftype) == 0:
                             subtraction_algorithm = 'Hotpants'
@@ -239,7 +239,7 @@ def update_phot(action, db_address=_SNEX2_DB):
                             template_source = 'SDSS'
                         else:
                             template_source = 'LCO'
-                        phot = {'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': True, 'subtraction_algorithm': subtraction_algorithm, 'template_source': template_source, 'reduction_type': 'manual'}
+                        phot = {'magnitude': float(phot_row.mag), 'filter': phot_row.filter, 'error': float(phot_row.dmag), 'snex_id': int(id_), 'background_subtracted': True, 'subtraction_algorithm': subtraction_algorithm, 'template_source': template_source, 'reduction_type': 'manual', 'telescope': phot_row.telescope, 'instrument': phot_row.instrument}
                     
                     else:
                         phot = {'snex_id': int(id_)}
