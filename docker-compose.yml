@@ -57,6 +57,8 @@ services:
             - SWIFT_USERNAME=${SWIFT_USERNAME}
             - SWIFT_SECRET=${SWIFT_SECRET}
             - LASAIR_IRIS_TOKEN=${LASAIR_IRIS_TOKEN}
+            - SCIMMA_AUTH_USERNAME=${SCIMMA_AUTH_USERNAME}
+            - SCIMMA_AUTH_PASSWORD=${SCIMMA_AUTH_PASSWORD}
         volumes:
             - ${SNEX_THUMBNAIL_PATH}:/snex2/data/thumbs/
             - ${SNEX_FITS_PATH}:/snex2/data/fits/
@@ -110,6 +112,8 @@ services:
             - SWIFT_USERNAME=${SWIFT_USERNAME}
             - SWIFT_SECRET=${SWIFT_SECRET}
             - LASAIR_IRIS_TOKEN=${LASAIR_IRIS_TOKEN}
+            - SCIMMA_AUTH_USERNAME=${SCIMMA_AUTH_USERNAME}
+            - SCIMMA_AUTH_PASSWORD=${SCIMMA_AUTH_PASSWORD}
             - HERMES_BASE_URL=${HERMES_BASE_URL}
         volumes:
             - ${SNEX_THUMBNAIL_PATH}:/snex2/data/thumbs/
