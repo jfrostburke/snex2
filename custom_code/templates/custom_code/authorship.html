@@ -1,0 +1,30 @@
+{% extends 'tom_common/base.html' %}
+{% load comments bootstrap4 tom_common_extras targets_extras observation_extras dataproduct_extras static cache %}
+{% load custom_code_tags %}
+{/* % load airmass_tags % */}
+{% block title %}Authorship information {% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<style>
+  #id_comment {
+    height: 2.5rem;
+    width: 30rem;
+    margin-left: 1rem;
+    margin-top: 1rem;
+  }
+  .mb-1 {
+    font-weight: bold;
+    font-size: 14px;
+  }
+  .mr-1 {
+    font-size: 14px;
+    margin-bottom: 0rem;
+  }
+  ::placeholder {
+    color: white;
+  }
+</style>
+<iframe width=100%,  height="500px" src="https://docs.google.com/spreadsheets/d/e/2PACX-1vScQ5pAocYTvOVDZ-b97xW14sbJIN5cgPtYbCRP0CywfoKoVlNKABUXrhBAL0sMxWqRkKM9IaK-xSiU/pubhtml?gid=0&amp;single=true&amp;widget=true&amp;headers=false"></iframe>
+{% endblock %}
