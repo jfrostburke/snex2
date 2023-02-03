@@ -3,7 +3,7 @@ FROM python:3.8-slim
 ENTRYPOINT ["./run.sh"]
 
 RUN apt-get update && apt-get install -y git libpq-dev gcc gfortran mariadb-client \
-    libmariadbclient-dev libmagic-dev libcfitsio-bin libffi-dev && apt-get autoclean && rm -rf /var/lib/apt/lists/*
+    libmariadb-dev libmagic-dev libcfitsio-bin libffi-dev && apt-get autoclean && rm -rf /var/lib/apt/lists/*
 
 COPY . /snex2
 
