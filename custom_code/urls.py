@@ -1,6 +1,6 @@
 from django.urls import path
 
-from custom_code.views import TNSTargets, PaperCreateView, scheduling_view, ReferenceStatusUpdateView, ObservationGroupDetailView, observation_sequence_cancel_view, approve_or_reject_observation_view
+from custom_code.views import TNSTargets, PaperCreateView, scheduling_view, ReferenceStatusUpdateView, ObservationGroupDetailView, observation_sequence_cancel_view, approve_or_reject_observation_view, AuthorshipInformation
 
 app_name = 'custom_code'
 
@@ -11,6 +11,7 @@ urlpatterns = [
     path('update-reference-status/', ReferenceStatusUpdateView.as_view(), name='update-reference-status'),
     path('observationgroup/<int:pk>/', ObservationGroupDetailView.as_view(), name='observationgroup-detail'),
     path('observation/cancel/', observation_sequence_cancel_view, name='observation-sequence-cancel'),
-    path('observation/approve-or-reject/', approve_or_reject_observation_view, name='approve-or-reject-observation')
+    path('observation/approve-or-reject/', approve_or_reject_observation_view, name='approve-or-reject-observation'),
+    path('authorshipinformation/', AuthorshipInformation.as_view(), name='authorship')
 
 ]

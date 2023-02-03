@@ -6,15 +6,18 @@
 {% endblock %}
 {% block content %}
 <div class="row">
-  <div class="col-md-8">
+  <div class="col-md-8" align="center">
     <br>
     <br>
     <br>
     <table border=0 width=100% cellpadding=0 cellspacing=0>
     <tr><td colspan=2 align=center>
-    <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:black">welcome to</span><br><br>
+
+    <!-- <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:black">welcome to</span><br><br> -->
     </td></tr>
+
     <tr><td valign=bottom align=right width=50%>
+    <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:#004459;">welcome to </span>
     <span style="font-family: 'Open Sans', sans-serif; font-weight:600; font-size:48pt; color:#004459; line-height:100%; letter-spacing:-3px;">SN</span>
     </td><td valign=bottom align=left width=50%>
     <span style="font-family: 'Open Sans', sans-serif; font-weight:600; font-size:48pt; color:#ff9900; line-height:100%; letter-spacing:-3px;">Ex 2.0</span>
@@ -24,13 +27,23 @@
     <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:24pt; color:#004459;">Supernova</span>
     </td><td valign=bottom align=left width=50%>
     <span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:24pt; color:#ff9900;">Exchange (2.0)</span>
+
     </td></tr>
+
     <tr><td colspan=2 align=center><br><br>
-      <form action="{% url 'redirect' %}" method="get">
-        <input name="name" type="text" placeholder="Search by name or coords">
+      <form action="{% url 'redirect' %}" method="get" >
+        <input name="name" type="text" placeholder="Search by name or coordinates" style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:#ff9900; width:40%" title="Examples: SN 2022hnt; 13:56:9.960 +05:02:12.120">
       </form>
     </td></tr>
+
     </table>
+  </br>
+  </br>
+  </br>
+    <div align="center">
+        <u><span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:#ff9900;"><a href="{% url 'custom_code:authorship' %}">Authorship Information</a></span></u>
+    </div>
+
   </div>
   <div class="col-md-4">
     <div class="card">
@@ -45,6 +58,11 @@
         Latest Targets
       </div>
       {% recent_targets %}
+
   </div>
+
 </div>
+    <footer>
+
+    </footer>
 {% endblock %}
