@@ -4,7 +4,7 @@ tom-scimma
 tom-nonlocalizedevents
 tom-alertstreams
 gunicorn[gevent]
-django==3.2.16
+django==3.2.18
 django-heroku
 django-storages
 boto3
