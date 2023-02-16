@@ -424,6 +424,11 @@ class NEDLVSCatalog(models.Model):
         help_text='Measurement type indicator for redshift-independent distance (Primary or Secondary)'
     )
 
+    z_dist_refcode = models.CharField(
+        max_length=20, default='', blank=True, null=True,
+        help_text='Reference code for the publication that provided the distance when a single measurement was chosen, otherwise "Mix" indicates an average of multiple measurements was used (refcode or Mix)'
+    )
+
     d_l = models.FloatField(
         blank=True, null=True, verbose_name='luminosity distance', 
         help_text='Luminosity distance, in Mpc'
