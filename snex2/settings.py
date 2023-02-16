@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'tom_observations',
     'tom_dataproducts',
     'custom_code',
+    'gw',
     'rest_framework',
     'rest_framework.authtoken',
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
