@@ -43,7 +43,7 @@ from sqlalchemy.ext.automap import automap_base
 from contextlib import contextmanager
 from plotly import offline
 import plotly.graph_objs as go
-from tom_dataproducts.models import ReducedDatum
+from tom_dataproducts.models import ReducedDatum, DataProduct
 from django.utils.safestring import mark_safe
 from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras, get_best_name, dash_spectra_page, scheduling_list_with_form
 from custom_code.hooks import _get_tns_params, _return_session
@@ -52,10 +52,10 @@ from custom_code.thumbnails import make_thumb
 from .forms import CustomTargetCreateForm, CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, ReferenceStatusForm
 from tom_targets.views import TargetCreateView
 from tom_common.hooks import run_hook
-from tom_dataproducts.views import DataProductUploadView, DataProductDeleteView
-from tom_dataproducts.models import DataProduct
+from tom_dataproducts.views import DataProductUploadView, DataProductDeleteView, DataShareView
+from tom_dataproducts.forms import DataShareForm
 from tom_dataproducts.exceptions import InvalidFileFormatException
-from tom_dataproducts.alertstreams.hermes import publish_photometry_to_hermes, BuildHermesMessage
+from tom_dataproducts.alertstreams.hermes import publish_photometry_to_hermes, BuildHermesMessage, create_hermes_phot_table_row
 from custom_code.processors.data_processor import run_custom_data_processor
 from guardian.shortcuts import assign_perm
 
@@ -163,7 +163,7 @@ def target_redirect_view(request):
  
     search_entry = request.GET['name'] 
     logger.info('Redirecting search for %s', search_entry)
-    
+
     target_search_coords = None
     if ':' in search_entry or '.' in search_entry:
         target_search_coords = search_entry.split(' ')
@@ -1739,35 +1739,149 @@ def change_broker_target_status_view(request):
     return HttpResponse(json.dumps(context), content_type='application/json')
 
 
-def send_photometry_via_hermes(request):
-    topics = json.loads(request.GET.get('topic', ''))
-    data_type = request.GET.get('data_type', '')
-    
-    if request.GET.get('phot_id', ''):
-        phot_ids = json.loads(request.GET.get('phot_id'))
-        all_phot = ReducedDatum.objects.filter(id__in=[int(phot_id) for phot_id in phot_ids])
-        t = Target.objects.get(id=all_phot.first().target_id)
-    else:
-        target_id = request.GET.get('target_id', '')
-        t = Target.objects.get(id=target_id)
-        if data_type == 'phot':
-            all_phot = ReducedDatum.objects.filter(target_id=t.id, data_type='photometry', value__has_key='filter')
-        elif data_type == 'spec':
-            all_phot = ReducedDatum.objects.filter(target_id=t.id, data_type='spectroscopy')
-        else:
-            all_phot = ReducedDatum.objects.filter(target_id=t.id)
+#def send_photometry_via_hermes(request):
+#    topics = json.loads(request.GET.get('topic', ''))
+#    data_type = request.GET.get('data_type', '')
+#    
+#    if request.GET.get('phot_id', ''):
+#        phot_ids = json.loads(request.GET.get('phot_id'))
+#        all_phot = ReducedDatum.objects.filter(id__in=[int(phot_id) for phot_id in phot_ids])
+#        t = Target.objects.get(id=all_phot.first().target_id)
+#    else:
+#        target_id = request.GET.get('target_id', '')
+#        t = Target.objects.get(id=target_id)
+#        if data_type == 'phot':
+#            all_phot = ReducedDatum.objects.filter(target_id=t.id, data_type='photometry', value__has_key='filter')
+#        elif data_type == 'spec':
+#            all_phot = ReducedDatum.objects.filter(target_id=t.id, data_type='spectroscopy')
+#        else:
+#            all_phot = ReducedDatum.objects.filter(target_id=t.id)
+#
+#    for topic in topics:
+#        all_phot = all_phot.exclude(message__topic__contains=topic)
+#        message = BuildHermesMessage(title='Test',
+#                                     submitter='Craig',
+#                                     authors='Craig and Este',
+#                                     message='This is a test',
+#                                     topic=topic
+#        )
+#
+#        if all_phot.count() > 0:
+#            publish_photometry_to_hermes('hermes', message, all_phot)
+#    
+#    return HttpResponse(json.dumps({'success': 'It worked!'}), content_type='application/json')
 
-    for topic in topics:
-        all_phot = all_phot.exclude(message__topic__contains=topic)
-        message = BuildHermesMessage(title='Test',
-                                     submitter='Craig',
-                                     authors='Craig and Este',
-                                     message='This is a test',
-                                     topic=topic
-        )
+class SNEx2BuildHermesMessage(BuildHermesMessage, View):
 
-        if all_phot.count() > 0:
-            publish_photometry_to_hermes('hermes', message, all_phot)
-    
-    return HttpResponse(json.dumps({'success': 'It worked!'}), content_type='application/json')
+    def validate_hermes_phot_table_row(datum, **kwargs):
+
+        table_row = create_hermes_phot_table_row(datum)
+
+        table_row['telescope'] = telescope_dict[datum.value.get('telescope', '')]
+        table_row['instrument'] = instrument_dict[datum.value.get('instrument', '')]
+        table_row['brightness_unit'] = system_dict[datum.value.get('filter', '')]
+
+        return table_row
+
+
+    def publish_photometry_to_hermes(self, datums, **kwargs):
+        """
+        Submits a typical hermes photometry alert using the datums supplied to 
+        build a photometry table.
+        -- Stores an AlertStreamMessage connected to each datum to show that 
+        the datum has previously been shared.
+        :param datums: Queryset of Reduced Datums to be built into table.
+        :return: response
+        """
+        stream_base_url = settings.DATA_SHARING['hermes']['BASE_URL']
+        submit_url = stream_base_url + 'api/v0/' + 'submit_photometry/'
+        headers = {'SCIMMA-API-Auth-Username': settings.DATA_SHARING['hermes']['CREDENTIAL_USERNAME'],
+                   'SCIMMA-API-Auth-Password': settings.DATA_SHARING['hermes']['CREDENTIAL_PASSWORD']}
+        hermes_photometry_data = []
+        hermes_alert = AlertStreamMessage(topic=self.topic, exchange_status='published')
+        hermes_alert.save()
+        for tomtoolkit_photometry in datums:
+            tomtoolkit_photometry.message.add(hermes_alert)
+            hermes_photometry_data.append(self.validate_hermes_phot_table_row(tomtoolkit_photometry, **kwargs))
+        alert = {
+            'topic': self.topic,
+            'title': self.title,
+            'submitter': self.submitter,
+            'authors': self.authors,
+            'data': {
+                'photometry': hermes_photometry_data,
+                'extra_info': self.extra_info
+            },
+            'message_text': self.message,
+        }
+
+        response = requests.post(url=submit_url, json=alert, headers=headers)
+        return response
+
+
+class SNEx2DataShareView(DataShareView):
+
+    def post(self, request, *args, **kwargs):
+        """
+        Method that handles the POST requests for sharing data.
+        Handles Data Products and All the data of a type for a target as well as individual Reduced Datums.
+        """
+        data_share_form = DataShareForm(request.POST, request.FILES)
+        # Check if data points have been selected.
+        selected_data = request.POST.getlist("share-box")
+        if data_share_form.is_valid():
+            form_data = data_share_form.cleaned_data
+            # 1st determine if pk is data product, Reduced Datum, or Target.
+            # Then query relevant Reduced Datums Queryset
+            product_id = kwargs.get('dp_pk', None)
+            if product_id:
+                product = DataProduct.objects.get(pk=product_id)
+                data_type = product.data_product_type
+                reduced_datums = ReducedDatum.objects.filter(data_product=product)
+            else:
+                target_id = kwargs.get('tg_pk', None)
+                target = Target.objects.get(pk=target_id)
+                data_type = form_data['data_type']
+                if request.POST.get("share-box", None) is None:
+                    reduced_datums = ReducedDatum.objects.filter(target=target, data_type=data_type)
+                else:
+                    reduced_datums = ReducedDatum.objects.filter(pk__in=selected_data)
+            if data_type == 'photometry':
+                share_destination = form_data['share_destination']
+                if 'HERMES' in share_destination.upper():
+                    # Build and submit hermes table from Reduced Datums
+                    hermes_topic = share_destination.split(':')[1]
+                    destination = share_destination.split(':')[0]
+                    message = SNEx2BuildHermesMessage(title=form_data['share_title'],
+                                                      submitter=form_data['submitter'],
+                                                      authors=form_data['share_authors'],
+                                                      message=form_data['share_message'],
+                                                      topic=hermes_topic
+                                                      )
+                    # Run ReducedDatums Queryset through sharing protocols to make sure they are safe to share.
+                    filtered_reduced_datums = self.get_share_safe_datums(destination, reduced_datums,
+                                                                         topic=hermes_topic)
+                    if filtered_reduced_datums.count() > 0:
+                        response = message.publish_photometry_to_hermes(filtered_reduced_datums)
+                    else:
+                        messages.error(self.request, 'No Data to share. (Check sharing Protocol.)')
+                        return redirect(reverse('tom_targets:detail', kwargs={'pk': request.POST.get('target')}))
+                else:
+                    messages.error(self.request, 'TOM-TOM sharing is not yet supported.')
+                    return redirect(reverse('tom_targets:detail', kwargs={'pk': request.POST.get('target')}))
+                    # response = self.share_with_tom(share_destination, product)
+                try:
+                    if 'message' in response.json():
+                        publish_feedback = response.json()['message']
+                    else:
+                        publish_feedback = f"ERROR: {response.text}"
+                except ValueError:
+                    publish_feedback = f"ERROR: Returned Response code {response.status_code}"
+                if "ERROR" in publish_feedback.upper():
+                    messages.error(self.request, publish_feedback)
+                else:
+                    messages.success(self.request, publish_feedback)
+            else:
+                messages.error(self.request, f'Publishing {data_type} data is not yet supported.')
+        return redirect(reverse('tom_targets:detail', kwargs={'pk': request.POST.get('target')}))
 

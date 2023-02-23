@@ -58,7 +58,7 @@ function sharePhotometry() {
   };
   var topic = document.getElementById('phot-topic-choices').value;
   $.ajax({
-    url: '{% url "submit-to-hermes" %}',
+    url: '{% url "share-data" %}',
     data: {'topic': JSON.stringify([topic]),
 	   'phot_id': JSON.stringify(checkedIds),
     },

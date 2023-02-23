@@ -109,7 +109,7 @@ function submitToHermes(btnId, data_type) {
     }
   };
   $.ajax({
-    url: '{% url "submit-to-hermes" %}',
+    url: '{% url "share-data" %}',
     headers: {"X-CSRFToken": '{{ csrf_token }}'},
     data: {'target_id': targetid,
 	   'topic': JSON.stringify(topics),
