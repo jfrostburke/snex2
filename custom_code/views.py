@@ -18,6 +18,7 @@ from tom_targets.models import TargetList, Target, TargetExtra, TargetName
 from custom_code.models import TNSTarget, ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons, BrokerTarget
 from custom_code.filters import TNSTargetFilter, CustomTargetFilter, BrokerTargetFilter, BrokerTargetForm
 from tom_targets.templatetags.targets_extras import target_extra_field
+from tom_alerts.models import AlertStreamMessage
 from guardian.mixins import PermissionListMixin
 from guardian.models import GroupObjectPermission
 from guardian.shortcuts import get_objects_for_user, assign_perm, remove_perm, get_users_with_perms
@@ -1772,14 +1773,19 @@ def change_broker_target_status_view(request):
 #    return HttpResponse(json.dumps({'success': 'It worked!'}), content_type='application/json')
 
 class SNEx2BuildHermesMessage(BuildHermesMessage, View):
+    
+    #TODO: Fix these
+    telescope_dict = {'': 'LCO 1m'}
+    instrument_dict = {'': 'Sinistro'}
+    system_dict = {'r_ZTF': 'AB mag'}
 
-    def validate_hermes_phot_table_row(datum, **kwargs):
+    def validate_hermes_phot_table_row(self, datum, **kwargs):
 
         table_row = create_hermes_phot_table_row(datum)
 
-        table_row['telescope'] = telescope_dict[datum.value.get('telescope', '')]
-        table_row['instrument'] = instrument_dict[datum.value.get('instrument', '')]
-        table_row['brightness_unit'] = system_dict[datum.value.get('filter', '')]
+        table_row['telescope'] = self.telescope_dict[datum.value.get('telescope', '')]
+        table_row['instrument'] = self.instrument_dict[datum.value.get('instrument', '')]
+        table_row['brightness_unit'] = self.system_dict[datum.value.get('filter', '')]
 
         return table_row
 
@@ -1802,7 +1808,7 @@ class SNEx2BuildHermesMessage(BuildHermesMessage, View):
         hermes_alert.save()
         for tomtoolkit_photometry in datums:
             tomtoolkit_photometry.message.add(hermes_alert)
-            hermes_photometry_data.append(self.validate_hermes_phot_table_row(tomtoolkit_photometry, **kwargs))
+            hermes_photometry_data.append(self.validate_hermes_phot_table_row(tomtoolkit_photometry))
         alert = {
             'topic': self.topic,
             'title': self.title,
@@ -1828,24 +1834,18 @@ class SNEx2DataShareView(DataShareView):
         """
         data_share_form = DataShareForm(request.POST, request.FILES)
         # Check if data points have been selected.
-        selected_data = request.POST.getlist("share-box")
         if data_share_form.is_valid():
             form_data = data_share_form.cleaned_data
+            data_type = form_data['data_type']
             # 1st determine if pk is data product, Reduced Datum, or Target.
             # Then query relevant Reduced Datums Queryset
-            product_id = kwargs.get('dp_pk', None)
-            if product_id:
-                product = DataProduct.objects.get(pk=product_id)
-                data_type = product.data_product_type
-                reduced_datums = ReducedDatum.objects.filter(data_product=product)
+            selected_data = request.POST.getlist("rd-share-box")
+            if selected_data:
+                reduced_datums = ReducedDatum.objects.filter(id__in=selected_data)
             else:
-                target_id = kwargs.get('tg_pk', None)
+                target_id = form_data['target'].id
                 target = Target.objects.get(pk=target_id)
-                data_type = form_data['data_type']
-                if request.POST.get("share-box", None) is None:
-                    reduced_datums = ReducedDatum.objects.filter(target=target, data_type=data_type)
-                else:
-                    reduced_datums = ReducedDatum.objects.filter(pk__in=selected_data)
+                reduced_datums = ReducedDatum.objects.filter(target=target, data_type=data_type)
             if data_type == 'photometry':
                 share_destination = form_data['share_destination']
                 if 'HERMES' in share_destination.upper():
@@ -1865,10 +1865,10 @@ class SNEx2DataShareView(DataShareView):
                         response = message.publish_photometry_to_hermes(filtered_reduced_datums)
                     else:
                         messages.error(self.request, 'No Data to share. (Check sharing Protocol.)')
-                        return redirect(reverse('tom_targets:detail', kwargs={'pk': request.POST.get('target')}))
+                        return redirect(reverse('tom_targets:detail', kwargs={'pk': form_data['target'].id}))
                 else:
                     messages.error(self.request, 'TOM-TOM sharing is not yet supported.')
-                    return redirect(reverse('tom_targets:detail', kwargs={'pk': request.POST.get('target')}))
+                    return redirect(reverse('tom_targets:detail', kwargs={'pk': form_data['target'].id}))
                     # response = self.share_with_tom(share_destination, product)
                 try:
                     if 'message' in response.json():
@@ -1883,5 +1883,18 @@ class SNEx2DataShareView(DataShareView):
                     messages.success(self.request, publish_feedback)
             else:
                 messages.error(self.request, f'Publishing {data_type} data is not yet supported.')
-        return redirect(reverse('tom_targets:detail', kwargs={'pk': request.POST.get('target')}))
+        context = {'success': 'It worked!'}
+
+        return redirect(reverse('tom_targets:detail', kwargs={'pk': form_data['target'].id}))
+
+
+    def get_share_safe_datums(self, destination, reduced_datums, **kwargs):
+
+        if 'hermes' in destination:
+            message_topic = kwargs.get('topic', None)
+            filtered_datums = reduced_datums.exclude(Q(message__exchange_status='published')
+                                                     & Q(message__topic=message_topic))
+        else:
+            filtered_datums = reduced_datums
+        return filtered_datums
 

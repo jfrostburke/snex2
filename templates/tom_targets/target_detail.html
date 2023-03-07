@@ -212,7 +212,7 @@
       </div>
       <div class="tab-pane" id="photometry">
         {#% lightcurve object %#}
-	{% phot_sharing_table object %}
+	{% snex2_get_photometry_data object %}
 	{% dash_lightcurve object 1000 600 %}
       </div>
       <div class="tab-pane" id="spectroscopy">
