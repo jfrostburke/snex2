@@ -200,7 +200,7 @@ def get_24hr_airmass(target, interval, airmass_limit):
             bad_indices = np.argwhere(
                 (obj_airmass >= airmass_limit) |
                 (obj_airmass <= 1) |
-                (sun_alt > -18*u.deg)  #between astro twilights
+                (sun_alt > -12*u.deg)  #between astro twilights
             )
 
             obj_airmass = [np.nan if i in bad_indices else float(x)
