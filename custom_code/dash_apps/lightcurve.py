@@ -424,7 +424,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis2=yaxis2,
         margin=dict(l=40, r=50, b=40, t=40),
-        legend=dict(x=0.84, y=1.0),
+        legend=dict(x=1.075, y=1.0, bgcolor='rgba(0,0,0,0)'),
         width=width,
         height=height,
         hovermode='closest',
