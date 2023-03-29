@@ -1,7 +1,8 @@
 version: '2'
 services:
     snex2-db:
-        image: postgres:11.1
+        image: postgis/postgis:15-3.3-alpine
+#        image: postgres:11.1
         network_mode: bridge
         environment:
             POSTGRES_DB: "snex2"
