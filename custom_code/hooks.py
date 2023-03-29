@@ -478,14 +478,14 @@ def sync_sequence_with_snex1(params, group_names, userid=67, comment=False, targ
         blocknums = '1'
         slit = 2
 
-    if params.get('cadence_strategy'):
+    if params.get('cadence_strategy') == 'SnexResumeCadenceAfterFailureStrategy':
         cadence = float(params.get('cadence_frequency'))
         autostop = 0
         window = min(cadence, 1)
     else:
-        cadence = 0
+        cadence = float(params.get('cadence_frequency', 1.0))
         autostop = 1
-        window = float(params.get('cadence_frequency'))
+        window = float(params.get('cadence_frequency', 1.0))
 
     if params.get('reminder'):
         nextreminder = _str_to_timestamp(params.get('reminder'))
