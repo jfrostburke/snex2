@@ -1,6 +1,7 @@
 dataclasses
 tomtoolkit==2.11.2a1
 tom-scimma
+ligo.skymap==1.0.3
 tom-nonlocalizedevents
 tom-alertstreams
 gunicorn[gevent]

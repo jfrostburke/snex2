@@ -64,9 +64,9 @@ INSTALLED_APPS = [
     'tom_registration',
     #'debug_toolbar',
     'tom_scimma',
+    'webpack_loader',
     'tom_nonlocalizedevents',
     'tom_alertstreams',
-    'webpack_loader',
 ]
 
 SITE_ID = 2
@@ -153,6 +153,10 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+            'USER': '',
+            'PASSWORD': '',
+            'HOST': '',
+            'PORT': 5432,
         }
     }
 
@@ -453,19 +457,24 @@ WEBPACK_LOADER = {
     'TOM_NONLOCALIZEDEVENTS': {
         'CACHE': not DEBUG,
         'BUNDLE_DIR_NAME': 'tom_nonlocalizedevents/vue/',  # must end with slash
-        'STATS_FILE': os.path.join(BASE_DIR, 'static/tom_nonlocalizedevents/vue/webpack-stats.json'),#os.path.join(VUE_FRONTEND_DIR_TOM_NONLOCAL, 'webpack-stats.json'),
+        'STATS_FILE': os.path.join(BASE_DIR, 'static/tom_nonlocalizedevents/vue/webpack-stats.json'),
+        #'STATS_FILE': os.path.join(VUE_FRONTEND_DIR_TOM_NONLOCAL, 'webpack-stats.json'),
         'POLL_INTERVAL': 0.1,
         'TIMEOUT': None,
         'IGNORE': [r'.+\.hot-update.js', r'.+\.map']
     }
 }
 
+TOM_API_URL = os.getenv('TOM_API_URL', 'http://127.0.0.1:8000')
+HERMES_API_URL = os.getenv('HERMES_API_URL', 'http://hermes-dev.lco.gtn')
+
 ALERT_STREAMS = [
     {
-        'ACTIVE': True,
+        'ACTIVE': False,
         'NAME': 'tom_alertstreams.alertstreams.hopskotch.HopskotchAlertStream',
         'OPTIONS': {
             'URL': 'kafka://kafka.scimma.org/',
+            'GROUP_ID': os.getenv('SCIMMA_AUTH_USERNAME', "") + '-' + 'uniqueidforyourapp12345',
             'USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
             'PASSWORD': os.getenv('SCIMMA_AUTH_PASSWORD', None),
             'TOPIC_HANDLERS': {
@@ -475,6 +484,27 @@ ALERT_STREAMS = [
             },
         },
     },
+    {
+        'ACTIVE': True,
+        'NAME': 'tom_alertstreams.alertstreams.gcn.GCNClassicAlertStream',
+        # The keys of the OPTIONS dictionary become (lower-case) properties of the AlertStream instance.
+        'OPTIONS': {
+            # see https://github.com/nasa-gcn/gcn-kafka-python#to-use for configuration details.
+            'GCN_CLASSIC_CLIENT_ID': os.getenv('GCN_CLASSIC_CLIENT_ID', None),
+            'GCN_CLASSIC_CLIENT_SECRET': os.getenv('GCN_CLASSIC_CLIENT_SECRET', None),
+            'DOMAIN': 'gcn.nasa.gov',  # optional, defaults to 'gcn.nasa.gov'
+            'CONFIG': {  # optional
+                # 'group.id': 'tom_alertstreams-my-custom-group-id',
+                # 'auto.offset.reset': 'earliest',
+                # 'enable.auto.commit': False
+            },
+            'TOPIC_HANDLERS': {
+                'gcn.classic.text.LVC_INITIAL': 'tom_alertstreams.alertstreams.alertstream.alert_logger',
+                'gcn.classic.text.LVC_PRELIMINARY': 'tom_alertstreams.alertstreams.alertstream.alert_logger',
+                'gcn.classic.text.LVC_RETRACTION': 'tom_alertstreams.alertstreams.alertstream.alert_logger',
+            },
+        },
+    }
 ]
 
 if DEBUG:

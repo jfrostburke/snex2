@@ -64,7 +64,7 @@ urlpatterns = [
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),
-    path('nonlocalizedevents/', include('tom_nonlocalizedevents.urls')),
+    path('nonlocalizedevents/', include('tom_nonlocalizedevents.urls', namespace='nonlocalizedevents')),
     path('django_plotly_dash/', include('django_plotly_dash.urls')),
     #path('__debug__/', include('debug_toolbar.urls')),
 ]

@@ -3,7 +3,7 @@ FROM python:3.7.3-slim-stretch
 ENTRYPOINT ["./run.sh"]
 
 RUN apt-get update && apt-get install -y git libpq-dev gcc gfortran mysql-client \
-    libmariadbclient-dev libmagic-dev libcfitsio-bin libffi-dev && apt-get autoclean && rm -rf /var/lib/apt/lists/*
+    libmariadbclient-dev libmagic-dev libcfitsio-bin libffi-dev libgsl-dev && apt-get autoclean && rm -rf /var/lib/apt/lists/*
 
 COPY . /snex2
 
