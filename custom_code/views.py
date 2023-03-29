@@ -1246,8 +1246,7 @@ class ObservationListExtrasView(ListView):
                 obsrecordlist = []
             obsrecordlist_ids = [o.id for o in obsrecordlist if o is not None and self.request.user in get_users_with_perms(o)]
             obsrecords = ObservationRecord.objects.filter(id__in=obsrecordlist_ids)
-            obsrecords = obsrecords.annotate(ipp=KeyTextTransform('ipp_value', 'parameters'))
-            return obsrecords.order_by('-ipp')
+            return obsrecords.order_by('-parameters__ipp_value')
         
         elif val == 'urgency':
             try:
@@ -1259,8 +1258,7 @@ class ObservationListExtrasView(ListView):
             obsrecords = ObservationRecord.objects.filter(id__in=obsrecordlist_ids)
             now = datetime.utcnow()
             recent_obs = obsrecords.annotate(days_since=now-Cast(KeyTextTransform('start', 'parameters'), DateTimeField()))
-            recent_obs = recent_obs.annotate(cadence=KeyTextTransform('cadence_frequency', 'parameters'))
-            recent_obs = recent_obs.filter(cadence__gt=0.0)
+            recent_obs = recent_obs.filter(parameters__cadence_frequency__gt=0.0)
             recent_obs = recent_obs.annotate(urgency=ExpressionWrapper(F('days_since')/(Cast(KeyTextTransform('cadence_frequency', 'parameters'), FloatField())), DateTimeField()))
             return recent_obs.order_by('-urgency')
 

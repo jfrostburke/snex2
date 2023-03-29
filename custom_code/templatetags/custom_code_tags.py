@@ -6,7 +6,6 @@ from django.db.models.functions import Lower
 from django.shortcuts import reverse
 from guardian.shortcuts import get_objects_for_user, get_groups_with_perms
 from django.contrib.auth.models import User, Group
-from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django_comments.models import Comment
 from django.contrib.contenttypes.models import ContentType
 
@@ -870,8 +869,7 @@ def observation_summary(context, target=None, time='previous'):
     else:
         observations = ObservationRecord.objects.all()
 
-    observations = observations.annotate(start=KeyTextTransform('start', 'parameters'))
-    observations = observations.order_by('start')
+    observations = observations.order_by('parameters__start')
 
     if time == 'ongoing':
         cadences = DynamicCadence.objects.filter(active=True, observation_group__in=ObservationGroup.objects.filter(name__in=[o.parameters.get('name', '') for o in observations]))
@@ -1208,8 +1206,7 @@ def scheduling_list_with_form(context, observation, case='notpending'):
     template_observation = obsgroup.observation_records.all().filter(observation_id='template').first()
     if not template_observation and case!='pending':
         obsset = obsgroup.observation_records.all()
-        obsset = obsset.annotate(start=KeyTextTransform('start', 'parameters'))
-        obsset = obsset.order_by('start')
+        obsset = obsset.order_by('parameters__start')
         start = str(obsset.first().parameters['start']).replace('T', ' ')
         requested_str = ''
     else:
@@ -1235,11 +1232,10 @@ def order_by_pending_requests(queryset): #, pagenumber):
 def order_by_reminder_expired(queryset, pagenumber):
     queryset = queryset.exclude(status='CANCELED')
     from django.core.paginator import Paginator
-    queryset = queryset.annotate(reminder=KeyTextTransform('reminder', 'parameters'))
     now = datetime.datetime.now()
    
-    queryset = queryset.filter(reminder__lt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S'))
-    queryset = queryset.order_by('reminder')
+    queryset = queryset.filter(parameters__reminder__lt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S'))
+    queryset = queryset.order_by('parameters__reminder')
 
     paginator = Paginator(queryset, 25)
     page_number = pagenumber.strip('page=')
@@ -1252,11 +1248,10 @@ def order_by_reminder_expired(queryset, pagenumber):
 def order_by_reminder_upcoming(queryset, pagenumber):
     queryset = queryset.exclude(status='CANCELED')
     from django.core.paginator import Paginator
-    queryset = queryset.annotate(reminder=KeyTextTransform('reminder', 'parameters'))
     now = datetime.datetime.now()
    
-    queryset = queryset.filter(reminder__gt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')) 
-    queryset = queryset.order_by('reminder')
+    queryset = queryset.filter(parameters__reminder__gt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')) 
+    queryset = queryset.order_by('parameters__reminder')
 
     paginator = Paginator(queryset, 25)
     page_number = pagenumber.strip('page=')
