@@ -937,7 +937,17 @@ def observation_summary(context, target=None, time='previous'):
             elif parameter.get('observation_mode') == 'RAPID_RESPONSE':
                 parameter_string += '(rapid response) '
 
-            parameter_string += 'with IPP ' + str(parameter.get('ipp_value', ''))
+            instrument_dict = {'2M0-FLOYDS-SCICAM': 'Floyds',
+                               '1M0-SCICAM-SINISTRO': 'Sinistro',
+                               '2M0-SCICAM-MUSCAT': 'Muscat',
+                               '2M0-SPECTRAL-AG': 'Spectra',
+                               '0M4-SCICAM-SBIG': 'SBIG'
+            }
+
+            if parameter.get('instrument_type') in instrument_dict.keys():
+                parameter_string += 'with ' + instrument_dict[parameter.get('instrument_type')]
+
+            parameter_string += ', IPP ' + str(parameter.get('ipp_value', ''))
             parameter_string += ' and airmass < ' + str(parameter.get('max_airmass', ''))
             parameter_string += ' starting on ' + sequence_start #str(parameter.get('start')).split('T')[0]
             endtime = parameter.get('sequence_end', '')
