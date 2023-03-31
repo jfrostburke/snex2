@@ -12,7 +12,7 @@ from tom_targets.models import Target
 from custom_code.models import ReducedDatumExtra, Papers
 import logging
 from django.templatetags.static import static
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from astropy.time import Time
 from dash import no_update
 
@@ -377,9 +377,12 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
 
     plot_data = [
         go.Scatter(
-            x=filter_values['time'],
-            y=filter_values['magnitude'], mode='markers',
-            marker=dict(color=get_color(filter_name, filter_translate)),
+            x=[(datetime.now(timezone.utc) - t.replace(tzinfo=timezone.utc)).total_seconds()/(24*3600) for t in filter_values['time']],
+            y=filter_values['magnitude'], 
+            mode='markers',
+            marker=dict(color=get_color(filter_name, filter_translate),
+                        line=dict(color='black', width=1)
+            ),
             name=filter_translate.get(filter_name, ''),
             error_y=dict(
                 type='data',
@@ -387,7 +390,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
                 visible=True,
                 color=get_color(filter_name, filter_translate)
             ),
-            text=['MJD: ' + str(round(Time(t).mjd, 2)) for t in filter_values['time']],
+            text=['{} (MJD {})'.format(t.strftime('%m/%d/%Y'), str(round(Time(t).mjd, 2))) for t in filter_values['time']],
         ) for filter_name, filter_values in selected_photometry.items()]
 
     if target_extra_field(target, 'redshift') is not None and float(target_extra_field(target, 'redshift')) > 0.01:
@@ -420,7 +423,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
     graph_data = {'data': plot_data}
 
     layout = go.Layout(
-        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        xaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis2=yaxis2,
         margin=dict(l=40, r=50, b=40, t=40),
@@ -436,22 +439,23 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
                 y0=0,
                 y1=1,
                 xref='x',
-                x0=s.timestamp, 
-                x1=s.timestamp,
+                x0=(datetime.now(timezone.utc) - s.timestamp.replace(tzinfo=timezone.utc)).total_seconds()/(24*3600),
+                x1=(datetime.now(timezone.utc) - s.timestamp.replace(tzinfo=timezone.utc)).total_seconds()/(24*3600),
                 opacity=0.2,
                 line=dict(color='black', dash='dash'),
-            ) for s in spec]
+            ) for s in spec] + [{'type': 'line', 'yref': 'paper', 'y0': 0, 'y1': 1, 'xref': 'x',
+                                 'x0': 0.0, 'x1': 0.0, 'opacity': 0.001,
+                                 'line': {'color': 'black', 'dash': 'dash'}
+                            }] #Have to put this in so plotly doesn't autofit the axes after zoom
     )
 
     ### Set the minimum x-axis range to one day
     min_xs = [min(filter_values['time']) for filter_values in selected_photometry.values()]
-    max_xs = [max(filter_values['time']) for filter_values in selected_photometry.values()]
 
-    if len(min_xs) > 0 and len(max_xs) > 0:
-        delta_t = max(max_xs) - min(min_xs)
-        if delta_t.total_seconds()/(24*3600) < 1.0:
-            x_range = [min(min_xs) - timedelta(seconds = (24*3600 - delta_t.total_seconds())/2), max(max_xs) + timedelta(seconds = (24*3600 - delta_t.total_seconds())/2)]
-            layout['xaxis']['range'] = x_range
+    if len(min_xs) > 0:# and len(max_xs) > 0:
+        layout['xaxis']['range'] = [(datetime.now(timezone.utc) - min(min_xs).replace(tzinfo=timezone.utc)).total_seconds()/(24*3600)*1.06, 0]
+        layout['xaxis']['autorange'] = False
+        layout['xaxis']['title'] = 'Days Ago'
 
     graph_data['layout'] = layout
 
