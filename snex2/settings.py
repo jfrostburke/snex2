@@ -470,17 +470,17 @@ HERMES_API_URL = os.getenv('HERMES_API_URL', 'http://hermes-dev.lco.gtn')
 
 ALERT_STREAMS = [
     {
-        'ACTIVE': False,
-        'NAME': 'tom_alertstreams.alertstreams.hopskotch.HopskotchAlertStream',
+        'ACTIVE': True,
+        'NAME': 'custom_code.alertstreams.hopskotch.CustomHopskotchAlertStream',
         'OPTIONS': {
             'URL': 'kafka://kafka.scimma.org/',
             'GROUP_ID': os.getenv('SCIMMA_AUTH_USERNAME', "") + '-' + 'uniqueidforyourapp12345',
             'USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
             'PASSWORD': os.getenv('SCIMMA_AUTH_PASSWORD', None),
             'TOPIC_HANDLERS': {
-                'sys.heartbeat': 'tom_alertstreams.alertstreams.hopskotch.heartbeat_handler',
-                'tomtoolkit.test': 'custom_code.alertstreams.hopskotch.alert_handler',
-                'hermes.test': 'custom_code.alertstreams.hopskotch.alert_handler',
+                'sys.heartbeat': 'custom_code.alertstreams.hopskotch.heartbeat_handler',
+                'tomtoolkit.test': 'custom_code.alertstreams.hopskotch.alert_logger',
+                'hermes.test': 'custom_code.alertstreams.hopskotch.alert_logger',
             },
         },
     },
@@ -499,9 +499,9 @@ ALERT_STREAMS = [
                 # 'enable.auto.commit': False
             },
             'TOPIC_HANDLERS': {
-                'gcn.classic.text.LVC_INITIAL': 'tom_alertstreams.alertstreams.alertstream.alert_logger',
-                'gcn.classic.text.LVC_PRELIMINARY': 'tom_alertstreams.alertstreams.alertstream.alert_logger',
-                'gcn.classic.text.LVC_RETRACTION': 'tom_alertstreams.alertstreams.alertstream.alert_logger',
+                'gcn.classic.text.LVC_INITIAL': 'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
+                'gcn.classic.text.LVC_PRELIMINARY': 'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
+                'gcn.classic.text.LVC_RETRACTION': 'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_retraction',
             },
         },
     }
