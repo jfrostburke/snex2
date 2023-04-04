@@ -15,33 +15,39 @@
     <table class="table">
         <thead>
         <tr>
+	    <th scope="col">Event Type</th>
             <th scope="col">Detail Page</th>
+	    <th scope="col">State</th>
+	    <th scope="col">Updated (in SNEx2)</th>
+	    <th scope="col">Created (in SNEx2)</th>
             <th scope="col">GraceDB</th>
             <th scope="col">Treasure Map</th>
-            <th scope="col">Event Type</th>
         </tr>
         <thead>
         <tbody>
         {% for event in object_list %}
         <tr>
+            <td>{{ event.event_type }}</td>
             <td scope="row">
-  	      {{event.id}}. <b>{{ event.superevent_id }}</b>
-                <a href="{% url 'nonlocalizedevents:detail'  event.id %}"> (Event Details)</a>
-  	      <a href=""> (Follow-up Candidates)</a>
+  	      <b>{{ event.event_id }}</b>
+              <a href="{% url 'nonlocalizedevents:detail' event.id %}"> (Event Details)</a>
+  	      <a href=""> (Follow-up Observations)</a>
             </td>
+	    <td>{{ event.state }}</td>
+	    <td>{{ event.modified | timesince }}</td>
+	    <td>{{ event.created | timesince }}</td>
             <td>
-              <a href="{{ event.gracedb_url }}">{{ event.superevent_id }}</a>
+              <a href="{{ event.gracedb_url }}">{{ event.event_id }}</a>
           </td>
           <td>
-              <a href="{{ event.treasuremap_url }}">{{ event.superevent_id }}</a>
+              <a href="{{ event.treasuremap_url }}">{{ event.event_id }}</a>
           </td>
-        <td>{{ event.superevent_type }}</td>
         </tr>
         {% endfor %}
         </tbody>
     </table>
   {% else %}
-      <p>Superevents from the alert stream listener will be added here.</p>
+      <p>Nonlocalized events from the alert stream listener will be added here.</p>
   {% endif %}
 {% else %}
     <p>Sorry, you don't have permission to view this page.</p>
