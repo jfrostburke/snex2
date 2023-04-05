@@ -108,3 +108,4 @@ venv.bak/
 .idea
 src/
 custom_code/brokers/queries/queries.json
+gw/gw_config.ini
