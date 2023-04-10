@@ -31,7 +31,12 @@
             <td scope="row">
   	      <b>{{ event.event_id }}</b>
               <a href="{% url 'nonlocalizedevents:detail' event.id %}"> (Event Details)</a>
-  	      <a href=""> (Follow-up Observations)</a>
+	      <span>(Galaxy List for Update
+	      {% for sequence in event.sequences.all %}
+	      <a href="{% url 'nonlocalizedevents-galaxies' sequence.id %}"> {{ sequence.sequence_id }} </a>
+	      {% endfor %}
+	      )</span>
+	      <!--a href="{% url 'nonlocalizedevents-galaxies' event.id %}"> (Follow-up Observations)</a-->
             </td>
 	    <td>{{ event.state }}</td>
 	    <td>{{ event.modified | timesince }}</td>

@@ -466,7 +466,7 @@ WEBPACK_LOADER = {
 }
 
 TOM_API_URL = os.getenv('TOM_API_URL', 'http://127.0.0.1:8000')
-HERMES_API_URL = os.getenv('HERMES_API_URL', 'http://hermes-dev.lco.gtn')
+HERMES_API_URL = os.getenv('HERMES_API_URL', 'http://hermes.lco.gtn')
 
 ALERT_STREAMS = [
     {
@@ -499,8 +499,8 @@ ALERT_STREAMS = [
                 # 'enable.auto.commit': False
             },
             'TOPIC_HANDLERS': {
-                'gcn.classic.text.LVC_INITIAL': 'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
-                'gcn.classic.text.LVC_PRELIMINARY': 'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
+                'gcn.classic.text.LVC_INITIAL': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
+                'gcn.classic.text.LVC_PRELIMINARY': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
                 'gcn.classic.text.LVC_RETRACTION': 'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_retraction',
             },
         },

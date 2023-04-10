@@ -44,7 +44,7 @@ def generate_galaxy_list(eventlocalization, completeness=None, credzone=None):
     minL = float(config.get('GALAXIES', 'MINL')) # Estimated brightest KN luminosity
     maxL = float(config.get('GALAXIES', 'MAXL')) # Estimated faintest KN luminosity
     sensitivity = float(config.get('GALAXIES', 'SENSITIVITY')) # Estimatest faintest app mag we can see
-    ngalaxtoshow = float(config.get('GALAXIES', 'NGALAXIES')) # Number of galaxies to show
+    ngalaxtoshow = int(config.get('GALAXIES', 'NGALAXIES')) # Number of galaxies to show
     
     mindistFactor = float(config.get('GALAXIES', 'MINDISTFACTOR')) #reflecting a small chance that the theory is comletely wrong and we can still see something
     
@@ -220,6 +220,7 @@ def generate_galaxy_list(eventlocalization, completeness=None, credzone=None):
                                         dist=galaxies[ind]['DistMpc'], 
                                         score=(p * massNorm / normalization)[ind],
                                         eventlocalization=eventlocalization
+                        )
         newgalaxyrow.save()
    
     logger.info('Finished creating ranked galaxy list for EventLocalization {}'.format(eventlocalization))
