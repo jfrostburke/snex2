@@ -337,7 +337,8 @@ HOOKS = {
     'find_images_from_snex1': 'custom_code.hooks.find_images_from_snex1',
     'change_interest_in_snex1': 'custom_code.hooks.change_interest_in_snex1',
     'sync_paper_with_snex1': 'custom_code.hooks.sync_paper_with_snex1',
-    'sync_comment_with_snex1': 'custom_code.hooks.sync_comment_with_snex1'
+    'sync_comment_with_snex1': 'custom_code.hooks.sync_comment_with_snex1',
+    'cancel_gw_obs': 'gw.hooks.cancel_gw_obs',
 }
 
 BROKERS = {

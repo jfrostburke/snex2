@@ -25,6 +25,7 @@ class GWGalaxyObservationForm(forms.Form):
         self.helper.layout = Layout(
             self.layout(),
         )
+        self.helper.form_id = 'obs-parameters-form'
 
     def layout(self):
 

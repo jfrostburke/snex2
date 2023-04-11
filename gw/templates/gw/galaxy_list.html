@@ -17,7 +17,7 @@
   </div>
   <div class="col-md-6" id="btn-div">
     <div class="row">
-      <div class="col-md-6"><button id="submit-btn" class="btn" style="vertical-align: middle; width: 200px; height: 80px; background-color: rgb(0, 114, 54); border: 1px solid black; color: white; cursor: default;" disabled>Submit Observations</button></div>
+      <div class="col-md-6"><button id="submit-btn" class="btn" style="vertical-align: middle; width: 200px; height: 80px; background-color: rgb(0, 114, 54); border: 1px solid black; color: white; cursor: default;" onclick='submitObs()' disabled>Submit Observations</button></div>
       <div class="col-md-6"><button id="cancel-btn" class="btn" style="vertical-align: middle; width: 200px; height: 80px; background-color: rgb(114, 0, 0); border: 1px solid black; color: white; cursor: default;" disabled>Cancel All Observations</button></div>
     </div>
     <div class="row">
@@ -29,15 +29,13 @@
 <div class="row">
   <div class="col-md-6">
     {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
-  </div>
-  <div class="col-md-6">
     <span class="float-left">{{ galaxy_count }} Galaxies &nbsp;</span>
   </div>
 </div>
 <table class="table">
   <thead class="thead-light">
     <tr>
-      <th><br /><p></p></th>
+      <th><input type="checkbox" id="select-all-checkbox" onClick="selectAll()" checked><br /><p></p></th>
       <th>Name<br /><p></p></th>
       <th>Score<br /><p></p></th>
       <th>RA<br /><p></p></th>
@@ -50,7 +48,10 @@
   <tbody>
   {% for galaxy in galaxies %}
     <tr>
-      <td><b>{{ page_obj.start_index|add:forloop.counter0 }}.</b></td>
+      <td>
+	<div class="row"><b>{{ page_obj.start_index|add:forloop.counter0 }}.</b></div>
+	<div class="row"><input type="checkbox" class="individual-checkbox" id="select-{{ galaxy.id }}" checked></div>
+      </td>
       <td>{{ galaxy.catalog_objname }}</td>
       <td>{{ galaxy.score|floatformat:4 }}</td>
       <td>{{ galaxy.ra|floatformat:4 }}</td>
@@ -76,6 +77,41 @@ function toggleButton(btnId) {
     specifiedBtn.disabled = true;
     specifiedBtn.style.cursor = "default";
   }
+}
+function selectAll() {
+  var allCheckboxes = document.getElementsByClassName("individual-checkbox");
+  var selectAllCheckbox = document.getElementById("select-all-checkbox");
+  for (var i = 0; i < allCheckboxes.length; i++) {
+    var currentCheckbox = allCheckboxes[i];
+    if (selectAllCheckbox.checked === true) {
+      currentCheckbox.checked = true;
+    } else {
+      currentCheckbox.checked = false;
+    }
+  }
+}
+function submitObs() {
+  document.getElementById("submit-btn").value = 'Loading...';
+  var checkboxes = document.getElementsByClassName("individual-checkbox");
+  var checkboxesChecked = [];
+  for (var i=0; i<checkboxes.length; i++) {
+    if (checkboxes[i].checked) {
+      checkboxesChecked.push(checkboxes[i].id.replace('select-', ''));
+    }
+  }
+  $.ajax({
+    url: '{% url "submit-gw-obs" %}',
+	  data: $('#obs-parameters-form').serialize() + "&galaxy_ids=" + JSON.stringify({'galaxy_ids': checkboxesChecked}),
+    dataType: 'json',
+    success: function(response) {
+      if (response.hasOwnProperty('failure')){
+	alert(response.failure);
+	document.getElementById("submit-btn").value = "Failed";
+      } else {
+	document.getElementById("submit-btn").value = response.success;
+      }
+    }
+  });
 }
 </script>
 {% endblock content %}

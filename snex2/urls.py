@@ -63,6 +63,7 @@ urlpatterns = [
     path('change-broker-target-status/', change_broker_target_status_view, name='change-broker-target-status'),
     path('share-data/', SNEx2DataShareView.as_view(), name='share-data'),
     path('nonlocalizedevents/<int:id>/galaxies/', GWFollowupGalaxyListView.as_view(), name='nonlocalizedevents-galaxies'),
+    path('submit-gw-obs/', submit_galaxy_observations_view, name='submit-gw-obs'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),
