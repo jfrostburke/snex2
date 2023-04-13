@@ -58,7 +58,7 @@
     {% else %}
     <div class="row">
     {% endif %}
-      <a>The IPP is {{ q.ipp }}</a>
+      <a>The IPP is {{ q.parameters.ipp_value }}</a>
     </div>
     {% elif value == 'URGENCY' %}
     {% if 'SUPA202' in q.parameters.proposal %}

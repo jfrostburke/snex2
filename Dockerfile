@@ -1,9 +1,9 @@
-FROM python:3.7.3-slim-stretch
+FROM python:3.8-slim
 
 ENTRYPOINT ["./run.sh"]
 
-RUN apt-get update && apt-get install -y git libpq-dev gcc gfortran mysql-client \
-    libmariadbclient-dev libmagic-dev libcfitsio-bin libffi-dev libgsl-dev && apt-get autoclean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y git libpq-dev gcc gfortran mariadb-client \
+    libmariadb-dev libmagic-dev libcfitsio-bin libffi-dev libgsl-dev && apt-get autoclean && rm -rf /var/lib/apt/lists/*
 
 COPY . /snex2
 

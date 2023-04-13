@@ -15,7 +15,7 @@ import numpy as np
 from django.contrib.auth.models import User
 from django.conf import settings
 
-from sqlalchemy import create_engine, pool, and_
+from sqlalchemy import create_engine, pool, and_, or_, not_
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
 from contextlib import contextmanager
@@ -478,14 +478,14 @@ def sync_sequence_with_snex1(params, group_names, userid=67, comment=False, targ
         blocknums = '1'
         slit = 2
 
-    if params.get('cadence_strategy'):
+    if params.get('cadence_strategy') == 'SnexResumeCadenceAfterFailureStrategy':
         cadence = float(params.get('cadence_frequency'))
         autostop = 0
         window = min(cadence, 1)
     else:
-        cadence = 0
+        cadence = float(params.get('cadence_frequency', 1.0))
         autostop = 1
-        window = float(params.get('cadence_frequency'))
+        window = float(params.get('cadence_frequency', 1.0))
 
     if params.get('reminder'):
         nextreminder = _str_to_timestamp(params.get('reminder'))
@@ -826,3 +826,62 @@ def sync_comment_with_snex1(comment, tablename, userid, targetid, snex1_rowid, w
         db_session.flush()
 
     logger.info('Synced comment for table {} from user {}'.format(tablename, userid)) 
+
+
+def get_unreduced_spectra(allspec=True):
+    '''
+    Hook to find unreduced spectra for FLOYDS inbox
+    '''
+
+    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+
+    token = os.environ['LCO_APIKEY']
+
+    response = requests.get('https://observe.lco.global/api/proposals?active=True&limit=50/',
+                             headers={'Authorization': 'Token ' + token}).json()
+
+    proposals = [prop['id'] for prop in response['results']]
+    
+    with _get_session(db_address=_snex1_address) as db_session:
+        speclcoraw = _load_table('speclcoraw', db_address=_snex1_address)
+        targetnames = _load_table('targetnames', db_address=_snex1_address)
+        targets = _load_table('targets', db_address=_snex1_address)
+        classifications = _load_table('classifications', db_address=_snex1_address)
+        spec = _load_table('spec', db_address=_snex1_address)
+
+        original_filenames = [s.original for s in db_session.query(spec).filter(and_(spec.original!='None', spec.original!=None))]
+
+        unreduced_spectra = db_session.query(speclcoraw).join(
+                targets, speclcoraw.targetid==targets.id
+        ).join(
+                targetnames, speclcoraw.targetid==targetnames.targetid
+        ).join(
+                classifications, targets.classificationid==classifications.id, isouter=True
+        ).filter(
+            and_(
+                not_(speclcoraw.filename.in_(original_filenames)), 
+                speclcoraw.propid.in_(proposals),
+                speclcoraw.filename.contains('e00.fits'),
+                or_(
+                    classifications.name != 'Standard', 
+                    classifications.name == None
+                ), 
+                or_(
+                    and_(
+                        speclcoraw.type != 'LAMPFLAT', 
+                        speclcoraw.type != 'ARC'
+                    ), 
+                speclcoraw.type == None
+            ), 
+            not_(speclcoraw.filepath.contains('bad')), 
+            not_(targetnames.name.contains('test_'))
+            )
+        )
+        targetids = [s.targetid for s in unreduced_spectra]
+        propids = [s.propid for s in unreduced_spectra]
+        dateobs = [s.dateobs for s in unreduced_spectra]
+        paths = [s.filepath for s in unreduced_spectra]
+        filenames = [s.filename for s in unreduced_spectra]
+        imgpaths = [s.filepath.replace('/supernova/data/floyds', '/snex2/data/floyds') + s.filename.replace('.fits', '.png') for s in unreduced_spectra]
+
+    return targetids, propids, dateobs, paths, filenames, imgpaths

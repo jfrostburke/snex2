@@ -5,6 +5,7 @@ from django.db.models import Q, DateTimeField, FloatField, F, ExpressionWrapper
 from django.db.models.functions import Cast
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.views.generic import View
+from django.views.generic.base import TemplateView
 from django.views.generic.list import ListView
 from django.views.generic.edit import FormView, UpdateView
 from django.views.generic.detail import DetailView
@@ -46,8 +47,8 @@ from plotly import offline
 import plotly.graph_objs as go
 from tom_dataproducts.models import ReducedDatum, DataProduct
 from django.utils.safestring import mark_safe
-from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras, get_best_name, dash_spectra_page, scheduling_list_with_form
-from custom_code.hooks import _get_tns_params, _return_session
+from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras, get_best_name, dash_spectra_page, scheduling_list_with_form, smart_name_list
+from custom_code.hooks import _get_tns_params, _return_session, get_unreduced_spectra
 from custom_code.thumbnails import make_thumb
 
 from .forms import CustomTargetCreateForm, CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, ReferenceStatusForm
@@ -540,16 +541,22 @@ def save_comments_view(request):
 
 
 def cancel_observation(obs):
+     
+    # Get the last non-template ObservationRecord and cancel it through the facility
+    if 'template' in obs.observation_id:
+        last_obs = obs.observationgroup_set.first().observation_records.all().exclude(observation_id__contains='template').order_by('-id').first()
+    else:
+        last_obs = obs
     
-    facility = get_service_class(obs.facility)()
+    facility = get_service_class(last_obs.facility)()
     
-    if obs.status not in TERMINAL_OBSERVING_STATES:
-        success = facility.cancel_observation(obs.observation_id)
+    if last_obs.status not in TERMINAL_OBSERVING_STATES:
+        success = facility.cancel_observation(last_obs.observation_id)
         if not success:
             return False
 
-        obs.status = 'CANCELED'
-        obs.save()
+        last_obs.status = 'CANCELED'
+        last_obs.save()
     
     ## Change status of DynamicCadence
     obs_group = obs.observationgroup_set.first()
@@ -730,7 +737,12 @@ def scheduling_view(request):
                 facility = get_service_class(obs.facility)()
                 form = facility.get_form(form_data['observation_type'])(observing_parameters)
                 if form.is_valid():
-                    observation_ids = facility.submit_observation(form.observation_payload())
+                    observation_errors = facility.validate_observation(form.observation_payload())
+                    if observation_errors:
+                        logger.error(msg=f'Unable to submit next cadenced observation: {observation_errors}')
+                        response_data = {'failure': 'Unable to submit next cadenced observation'}
+                        raise Snex1ConnectionError(message='Observation portal returned errors {}'.format(observation_errors))
+
                 else:
                     logger.error(msg=f'Unable to submit next cadenced observation: {form.errors}')
                     response_data = {'failure': 'Unable to submit next cadenced observation'}
@@ -739,7 +751,7 @@ def scheduling_view(request):
 
                 # Creation of corresponding ObservationRecord objects for the observations
                 new_observations = []
-                for observation_id in observation_ids:
+                for observation_id in ['template']:#observation_ids:
                     # Create Observation record
                     record = ObservationRecord.objects.create(
                         target=Target.objects.get(id=form_data['target_id']),
@@ -747,6 +759,9 @@ def scheduling_view(request):
                         parameters=form.serialize_parameters(),#observing_parameters,
                         observation_id=observation_id
                     )
+                    # Add the request user
+                    record.parameters['start_user'] = request.user.first_name
+                    record.save()
                     new_observations.append(record)
         
                 if len(new_observations) > 1 or form_data.get('cadence'):
@@ -818,22 +833,22 @@ def scheduling_view(request):
                         record.parameters['name'] = snex_id
                         record.save()
             
-                # Now run the hook to add each observation record to SNEx1
-                for record in new_observations:
-                    # Get the requestsgroup ID from the LCO API using the observation ID
-                    obs_id = int(record.observation_id)
-                    LCO_SETTINGS = settings.FACILITIES['LCO']
-                    PORTAL_URL = LCO_SETTINGS['portal_url']
-                    portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
+                ## Now run the hook to add each observation record to SNEx1
+                #for record in new_observations:
+                #    # Get the requestsgroup ID from the LCO API using the observation ID
+                #    obs_id = int(record.observation_id)
+                #    LCO_SETTINGS = settings.FACILITIES['LCO']
+                #    PORTAL_URL = LCO_SETTINGS['portal_url']
+                #    portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
 
-                    query_params = urlencode({'request_id': obs_id})
+                #    query_params = urlencode({'request_id': obs_id})
 
-                    r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
-                    requestgroups = r.json()
-                    if requestgroups['count'] == 1:
-                        requestgroup_id = int(requestgroups['results'][0]['id'])
+                #    r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
+                #    requestgroups = r.json()
+                #    if requestgroups['count'] == 1:
+                #        requestgroup_id = int(requestgroups['results'][0]['id'])
 
-                    run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id, wrapped_session=db_session)
+                #    run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id, wrapped_session=db_session)
                 
                 response_data = {'success': 'Modified'}
                 db_session.commit()
@@ -1233,8 +1248,7 @@ class ObservationListExtrasView(ListView):
                 obsrecordlist = []
             obsrecordlist_ids = [o.id for o in obsrecordlist if o is not None and self.request.user in get_users_with_perms(o)]
             obsrecords = ObservationRecord.objects.filter(id__in=obsrecordlist_ids)
-            obsrecords = obsrecords.annotate(ipp=KeyTextTransform('ipp_value', 'parameters'))
-            return obsrecords.order_by('-ipp')
+            return obsrecords.order_by('-parameters__ipp_value')
         
         elif val == 'urgency':
             try:
@@ -1246,8 +1260,7 @@ class ObservationListExtrasView(ListView):
             obsrecords = ObservationRecord.objects.filter(id__in=obsrecordlist_ids)
             now = datetime.utcnow()
             recent_obs = obsrecords.annotate(days_since=now-Cast(KeyTextTransform('start', 'parameters'), DateTimeField()))
-            recent_obs = recent_obs.annotate(cadence=KeyTextTransform('cadence_frequency', 'parameters'))
-            recent_obs = recent_obs.filter(cadence__gt=0.0)
+            recent_obs = recent_obs.filter(parameters__cadence_frequency__gt=0.0)
             recent_obs = recent_obs.annotate(urgency=ExpressionWrapper(F('days_since')/(Cast(KeyTextTransform('cadence_frequency', 'parameters'), FloatField())), DateTimeField()))
             return recent_obs.order_by('-urgency')
 
@@ -1289,10 +1302,10 @@ class CustomObservationCreateView(ObservationCreateView):
         # Submit the observation
         facility = self.get_facility_class()
         target = self.get_target()
-        observation_ids = facility().submit_observation(form.observation_payload())
+        errors = facility().validate_observation(form.observation_payload()) #TODO: Do something with errors
         records = []
 
-        for observation_id in observation_ids:
+        for observation_id in ['template']:#observation_ids:
             # Create Observation record
             record = ObservationRecord.objects.create(
                 target=target,
@@ -1301,6 +1314,9 @@ class CustomObservationCreateView(ObservationCreateView):
                 parameters=form.serialize_parameters(),
                 observation_id=observation_id
             )
+            # Add the request user
+            record.parameters['start_user'] = self.request.user.first_name
+            record.save()
             records.append(record)
 
         if len(records) > 1 or form.cleaned_data.get('cadence_strategy'):
@@ -1358,22 +1374,22 @@ class CustomObservationCreateView(ObservationCreateView):
                 record.parameters['name'] = snex_id
                 record.save()
             
-        # Now run the hook to add each observation record to SNEx1
-        for record in records:
-            # Get the requestsgroup ID from the LCO API using the observation ID
-            obs_id = int(record.observation_id)
-            LCO_SETTINGS = settings.FACILITIES['LCO']
-            PORTAL_URL = LCO_SETTINGS['portal_url']
-            portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
+        ## Now run the hook to add each observation record to SNEx1
+        #for record in records:
+        #    # Get the requestsgroup ID from the LCO API using the observation ID
+        #    obs_id = int(record.observation_id)
+        #    LCO_SETTINGS = settings.FACILITIES['LCO']
+        #    PORTAL_URL = LCO_SETTINGS['portal_url']
+        #    portal_headers = {'Authorization': 'Token {0}'.format(LCO_SETTINGS['api_key'])}
 
-            query_params = urlencode({'request_id': obs_id})
+        #    query_params = urlencode({'request_id': obs_id})
 
-            r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
-            requestgroups = r.json()
-            if requestgroups['count'] == 1:
-                requestgroup_id = int(requestgroups['results'][0]['id'])
+        #    r = requests.get('{}/api/requestgroups?{}'.format(PORTAL_URL, query_params), headers=portal_headers)
+        #    requestgroups = r.json()
+        #    if requestgroups['count'] == 1:
+        #        requestgroup_id = int(requestgroups['results'][0]['id'])
 
-            run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id)
+        #    run_hook('sync_observation_with_snex1', snex_id, record.parameters, requestgroup_id)
 
         return redirect(
             reverse('tom_targets:detail', kwargs={'pk': target.id})
@@ -1898,3 +1914,44 @@ class SNEx2DataShareView(DataShareView):
             filtered_datums = reduced_datums
         return filtered_datums
 
+
+class FloydsInboxView(TemplateView):
+
+    template_name = 'custom_code/floyds_inbox.html'
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        targetids, propids, dateobs, paths, filenames, imgpaths = get_unreduced_spectra()
+
+        inbox_rows = []
+        for i in range(len(targetids)):
+            current_dict = {}
+            t = Target.objects.get(id=targetids[i])
+            current_dict['targetid'] = targetids[i]
+            current_dict['targetnames'] = smart_name_list(t)
+            current_dict['propid'] = propids[i]
+            current_dict['dateobs'] = dateobs[i]
+            current_dict['path'] = paths[i]
+            current_dict['filename'] = filenames[i]
+            
+            with open(imgpaths[i], 'rb') as imagefile:
+                b64_image = base64.b64encode(imagefile.read())
+                thumb = b64_image.decode('utf-8')
+            current_dict['img'] = 'data:image/png;base64,{}'.format(thumb) 
+            
+            inbox_rows.append(current_dict)
+
+        context['inbox_rows'] = inbox_rows
+
+        return context
+
+
+class AuthorshipInformation(TemplateView):
+
+    template_name = 'custom_code/authorship.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context

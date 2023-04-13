@@ -1,7 +1,8 @@
 version: '2'
 services:
     snex2-db:
-        image: postgres:11.1
+        image: postgis/postgis:15-3.3-alpine
+#        image: postgres:11.1
         network_mode: bridge
         environment:
             POSTGRES_DB: "snex2"
@@ -57,9 +58,68 @@ services:
             - SWIFT_USERNAME=${SWIFT_USERNAME}
             - SWIFT_SECRET=${SWIFT_SECRET}
             - LASAIR_IRIS_TOKEN=${LASAIR_IRIS_TOKEN}
+            - SCIMMA_AUTH_USERNAME=${SCIMMA_AUTH_USERNAME}
+            - SCIMMA_AUTH_PASSWORD=${SCIMMA_AUTH_PASSWORD}
         volumes:
             - ${SNEX_THUMBNAIL_PATH}:/snex2/data/thumbs/
             - ${SNEX_FITS_PATH}:/snex2/data/fits/
             - ${SNEX_0m4_FITS_PATH}:/snex2/data/fits/0m4/
             - ${SNEX_2m_FITS_PATH}:/snex2/data/fits/fts/
             - ${SNEX_MUSCAT_FITS_PATH}:/snex2/data/fits/2m0a/
+            - ${SNEX_FLOYDS_PATH}:/snex2/data/floyds/
+    snex2-dev:
+        image: snex2-dev:latest
+        network_mode: bridge
+        links:
+            - "snex2-db:snex2-db"
+        ports:
+            - 8890:8080
+        restart: "always"
+        mem_limit: "12g"
+        logging:
+            options:
+                max-file: "3"
+                max-size: "10m"
+        environment:
+            - DB_NAME=snex2-dev
+            - DB_HOST=snex2-db
+            - DB_PORT=5432
+            - SNEX2_USER=${SNEX2_USER}
+            - SNEX2_DB_USER=${SNEX2_DB_USER}
+            - SNEX2_DB_PASSWORD=${SNEX2_DB_PASSWORD}
+            - SNEX1_DB_USER=${SNEX1_DB_USER}
+            - SNEX1_DB_PASSWORD=${SNEX1_DB_PASSWORD}
+            - SNEX2_DB_BACKEND=postgres
+            - LCO_APIKEY=${SNEX2_LCO_APIKEY}
+            - SNEXBOT_APIKEY=${SNEX2_SNEXBOT_APIKEY}
+            - AWS_ACCESS_KEY_ID=${SNEX2_AWS_ACCESS_KEY_ID}
+            - AWS_S3_REGION_NAME=${SNEX2_AWS_REGION_NAME}
+            - AWS_SECRET_ACCESS_KEY=${SNEX2_AWS_SECRET_ACCESS_KEY}
+            - AWS_STORAGE_BUCKET_NAME=${SNEX2_AWS_STORAGE_BUCKET_NAME}
+            - TWITTER_APIKEY=${SNEX2_TWITTER_APIKEY}
+            - TWITTER_SECRET=${SNEX2_TWITTER_SECRET}
+            - TWITTER_ACCESSTOKEN=${SNEX2_TWITTER_ACCESSTOKEN}
+            - TWITTER_ACCESSSECRET=${SNEX2_TWITTER_ACCESSSECRET}
+            - GEMINI_EMAIL=${SNEX2_GEMINI_EMAIL}
+            - GEMINI_SOUTH_PROGRAMID=${SNEX2_GEMINI_SOUTH_PROGRAMID}
+            - GEMINI_SOUTH_PASSWORD=${SNEX2_GEMINI_SOUTH_PASSWORD}
+            - GEMINI_SOUTH_SERVER=${SNEX2_GEMINI_SOUTH_SERVER}
+            - GEMINI_NORTH_PROGRAMID=${SNEX2_GEMINI_NORTH_PROGRAMID}
+            - GEMINI_NORTH_PASSWORD=${SNEX2_GEMINI_NORTH_PASSWORD}
+            - GEMINI_NORTH_SERVER=${SNEX2_GEMINI_NORTH_SERVER}
+            - SNEX_EMAIL_PASSWORD=${SNEX_EMAIL_PASSWORD}
+            - TNS_APIKEY=${TNS_APIKEY}
+            - TNS_APIID=${TNS_APIID}
+            - SWIFT_USERNAME=${SWIFT_USERNAME}
+            - SWIFT_SECRET=${SWIFT_SECRET}
+            - LASAIR_IRIS_TOKEN=${LASAIR_IRIS_TOKEN}
+            - SCIMMA_AUTH_USERNAME=${SCIMMA_AUTH_USERNAME}
+            - SCIMMA_AUTH_PASSWORD=${SCIMMA_AUTH_PASSWORD}
+            - HERMES_BASE_URL=${HERMES_BASE_URL}
+        volumes:
+            - ${SNEX_THUMBNAIL_PATH}:/snex2/data/thumbs/
+            - ${SNEX_FITS_PATH}:/snex2/data/fits/
+            - ${SNEX_0m4_FITS_PATH}:/snex2/data/fits/0m4/
+            - ${SNEX_2m_FITS_PATH}:/snex2/data/fits/fts/
+            - ${SNEX_MUSCAT_FITS_PATH}:/snex2/data/fits/2m0a/
+            - ${SNEX_FLOYDS_PATH}:/snex2/data/floyds/

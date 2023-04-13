@@ -28,7 +28,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'ks#e!w3m*y1g_=)%vmrdcyn*5dt0$)o^mq2f=vtj#myw#&amp;p3%i'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv('SNEX2_DEBUG', False)
 
 ALLOWED_HOSTS = ['*']
 
@@ -62,12 +62,14 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
     'tom_registration',
-    #'debug_toolbar',
     'tom_scimma',
-    'webpack_loader',
     'tom_nonlocalizedevents',
     'tom_alertstreams',
+    'webpack_loader',
 ]
+
+if DEBUG:
+    INSTALLED_APPS.append('debug_toolbar')
 
 SITE_ID = 2
 
@@ -83,9 +85,11 @@ MIDDLEWARE = [
     'tom_common.middleware.ExternalServiceMiddleware',
     'tom_common.middleware.AuthStrategyMiddleware',
     'tom_registration.middleware.RedirectAuthenticatedUsersFromRegisterMiddleware',
-    #'debug_toolbar.middleware.DebugToolbarMiddleware',
 
 ]
+
+if DEBUG:
+    MIDDLEWARE.append('debug_toolbar.middleware.DebugToolbarMiddleware')
 
 ROOT_URLCONF = 'snex2.urls'
 
@@ -133,6 +137,17 @@ DATA_SHARING = {
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 WSGI_APPLICATION = 'snex2.wsgi.application'
+
+DATA_SHARING = {
+    'hermes': {
+        'DISPLAY_NAME': os.getenv('HERMES_DISPLAY_NAME', 'Hermes'),
+        'BASE_URL': os.getenv('HERMES_BASE_URL', 'http://hermes-dev.lco.gtn/'),
+        'SCIMMA_AUTH_USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
+        'CREDENTIAL_USERNAME': os.getenv('SCIMMA_CREDENTIAL_USERNAME', None),
+        'CREDENTIAL_PASSWORD': os.getenv('SCIMMA_CREDENTIAL_PASSWORD', None),
+        'USER_TOPICS': ['hermes.test', 'tomtoolkit.test']
+    },
+}
 
 
 # Database
@@ -218,8 +233,9 @@ MEDIA_URL = '/data/'
 
 # Using AWS
 
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+if not DEBUG:
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRECT_ACCESS_KEY', '')

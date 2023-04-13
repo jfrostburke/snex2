@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
 
 from django.urls import include
 from custom_code.views import *
@@ -65,10 +66,13 @@ urlpatterns = [
     path('nonlocalizedevents/<int:id>/galaxies/', GWFollowupGalaxyListView.as_view(), name='nonlocalizedevents-galaxies'),
     path('submit-gw-obs/', submit_galaxy_observations_view, name='submit-gw-obs'),
     path('cancel-gw-obs/', cancel_galaxy_observations_view, name='cancel-gw-obs'),
+    path('floyds-inbox/', FloydsInboxView.as_view(), name='floyds-inbox'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),
     path('nonlocalizedevents/', include('tom_nonlocalizedevents.urls', namespace='nonlocalizedevents')),
     path('django_plotly_dash/', include('django_plotly_dash.urls')),
-    #path('__debug__/', include('debug_toolbar.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns.append(path('__debug__/', include('debug_toolbar.urls')))

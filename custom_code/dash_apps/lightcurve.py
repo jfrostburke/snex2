@@ -4,12 +4,15 @@ import dash_html_components as html
 import plotly.graph_objs as go
 from dash.dependencies import Input, Output, State
 import json
+import numpy as np
 from django_plotly_dash import DjangoDash
 from tom_dataproducts.models import ReducedDatum
+from tom_targets.templatetags.targets_extras import target_extra_field
+from tom_targets.models import Target
 from custom_code.models import ReducedDatumExtra, Papers
 import logging
 from django.templatetags.static import static
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from astropy.time import Time
 from dash import no_update
 
@@ -124,8 +127,9 @@ app.layout = html.Div([
                     ), width=6),
                     dbc.Col(dcc.RadioItems(
                         id='reduction-type-radio',
-                        options=[{'label': 'Automatic', 'value': ''},
-                                 {'label': 'Manual', 'value': 'manual'}
+                        options=[{'label': 'All', 'value': 'all'},
+                                 {'label': 'Only Automatic', 'value': ''},
+                                 {'label': 'Only Manual', 'value': 'manual'}
                         ],
                         value='',
                         inputStyle={"margin-right": "5px", "margin-left": "5px"}
@@ -188,7 +192,7 @@ def update_reduction_type(selected_subtraction, old_reduction_type):
     if selected_subtraction == 'Subtracted':
         return 'manual'
     elif selected_subtraction == 'Unsubtracted' and old_reduction_type == 'manual':
-        return ''
+        return 'all'
     return old_reduction_type
 
 #Unselect final reduction if automatically reduced data is selected
@@ -197,7 +201,7 @@ def update_reduction_type(selected_subtraction, old_reduction_type):
         [Input('reduction-type-radio', 'value'),
          State('final-reduction-checklist', 'value')])
 def update_final_reduction(selected_reduction, old_final_value):
-    if not selected_reduction:
+    if not selected_reduction or selected_reduction == 'all':
         return ''
     return old_final_value
 
@@ -207,7 +211,7 @@ def update_final_reduction(selected_reduction, old_final_value):
         [Input('reduction-type-radio', 'value'),
          State('subtracted-radio', 'value')])
 def update_subtracted_type(selected_reduction, old_subtracted_type):
-    if not selected_reduction and old_subtracted_type != 'Unsubtracted':
+    if (not selected_reduction or selected_reduction == 'all') and old_subtracted_type != 'Unsubtracted':
         return 'Unsubtracted'
     elif selected_reduction == 'manual' and old_subtracted_type == 'Unsubtracted':
         return no_update
@@ -264,6 +268,7 @@ def update_template_value(selected_subtraction):
 def update_graph(selected_telescope, subtracted_value, selected_algorithm, selected_template, selected_photometry_type, reduction_type, final_reduction_value, selected_paper, selected_groups, value, width, height):
     def get_color(filter_name, filter_translate):
         colors = {'U': 'rgb(59,0,113)',
+            'u': 'rgb(59,0,113)',
             'B': 'rgb(0,87,255)',
             'V': 'rgb(120,255,0)',
             'g': 'rgb(0,204,255)',
@@ -283,11 +288,12 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
     logger.info('Plotting dash lightcurve for target %s', value)
     target_id = value
     filter_translate = {'U': 'U', 'B': 'B', 'V': 'V',
-        'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
+        'up': 'u', 'u': 'u', 'g': 'g', 'gp': 'g', 'r': 'r', 'rp': 'r', 'i': 'i', 'ip': 'i',
         'g_ZTF': 'g_ZTF', 'r_ZTF': 'r_ZTF', 'i_ZTF': 'i_ZTF', 'UVW2': 'UVW2', 'UVM2': 'UVM2',
         'UVW1': 'UVW1'}
     photometry_data = {}
     subtracted_photometry_data = {}
+    target = Target.objects.get(id=target_id)
     datumextras = ReducedDatumExtra.objects.filter(target_id=target_id, key='upload_extras', data_type='photometry')
     
     datums = []
@@ -308,7 +314,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
     
     ### Get the data for the selected telescope
     if not selected_telescope:
-        datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry'))
+        datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', value__has_key='filter'))
     
     else:
         for de in datumextras:
@@ -321,11 +327,11 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
                     de_value.get('reducer_group', '') in selected_groups,
                     (not selected_paper or de_value.get('used_in', '')==selected_paper or de_value.get('used_in', '') in papers_for_target)]):
                 dp_id = de_value.get('data_product_id', '')
-                datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id=dp_id))
+                datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id=dp_id, value__has_key='filter'))
         
         ### Finally, get the data that was automatically uploaded from snex1 db
         if 'LCO' in selected_telescope and not final_reduction:
-            datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id__isnull=True))
+            datums.append(ReducedDatum.objects.filter(target_id=target_id, data_type='photometry', data_product_id__isnull=True, value__has_key='filter'))
     
     ### Plot the data
     if not datums:
@@ -355,7 +361,7 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
                     subtracted_photometry_data[subtracted_filt].setdefault('time', []).append(rd.timestamp)
                     subtracted_photometry_data[subtracted_filt].setdefault('magnitude', []).append(value.get('magnitude',None))
                     subtracted_photometry_data[subtracted_filt].setdefault('error', []).append(value.get('error', None))
-            elif value.get('reduction_type', '')==reduction_type:
+            elif value.get('reduction_type', '') == reduction_type or reduction_type == 'all':
 
                 filt = filter_translate.get(value.get('filter', ''), '')
 
@@ -368,11 +374,15 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
         selected_photometry = photometry_data
     elif subtracted_value == 'Subtracted':
         selected_photometry = subtracted_photometry_data
+
     plot_data = [
         go.Scatter(
-            x=filter_values['time'],
-            y=filter_values['magnitude'], mode='markers',
-            marker=dict(color=get_color(filter_name, filter_translate)),
+            x=[(datetime.now(timezone.utc) - t.replace(tzinfo=timezone.utc)).total_seconds()/(24*3600) for t in filter_values['time']],
+            y=filter_values['magnitude'], 
+            mode='markers',
+            marker=dict(color=get_color(filter_name, filter_translate),
+                        line=dict(color='black', width=1)
+            ),
             name=filter_translate.get(filter_name, ''),
             error_y=dict(
                 type='data',
@@ -380,16 +390,44 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
                 visible=True,
                 color=get_color(filter_name, filter_translate)
             ),
-            text=['MJD: ' + str(round(Time(t).mjd, 2)) for t in filter_values['time']],
+            text=['{} (MJD {})'.format(t.strftime('%m/%d/%Y'), str(round(Time(t).mjd, 2))) for t in filter_values['time']],
         ) for filter_name, filter_values in selected_photometry.items()]
+
+    if target_extra_field(target, 'redshift') is not None and float(target_extra_field(target, 'redshift')) > 0.01:
+        ydata = []
+        for filter_name, filter_values in selected_photometry.items():
+            if filter_name is not None:
+                ydata.append(np.asarray(filter_values['magnitude']) + np.asarray(filter_values['error']))
+                ydata.append(np.asarray(filter_values['magnitude']) - np.asarray(filter_values['error']))
+        if ydata:
+            ydata = np.concatenate(ydata)
+            ymin = np.min(ydata)
+            ymax = np.max(ydata)
+            ymin_view = ymin - 0.05 * (ymax-ymin)
+            ymax_view = ymax + 0.05 * (ymax-ymin)
+        else:
+            ymin_view = 0
+            ymax_view = 0
+
+        dm = 5*np.log10(float(target_extra_field(target, 'redshift'))*3e5/70.0*1e6) - 5
+        yaxis2 = {'range': (ymax_view-dm, ymin_view-dm),
+                  'showgrid': False,
+                  'overlaying': 'y',
+                  'side': 'right',
+        }
+        plot_data.append(go.Scatter(x=[], y=[], yaxis='y2'))
+
+    else:
+        yaxis2 = None
 
     graph_data = {'data': plot_data}
 
     layout = go.Layout(
-        xaxis=dict(gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        xaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
         yaxis=dict(autorange='reversed',gridcolor='#D3D3D3',showline=True,linecolor='#D3D3D3',mirror=True),
+        yaxis2=yaxis2,
         margin=dict(l=40, r=50, b=40, t=40),
-        legend=dict(x=0.84, y=1.0),
+        legend=dict(x=1.075, y=1.0, bgcolor='rgba(0,0,0,0)'),
         width=width,
         height=height,
         hovermode='closest',
@@ -401,22 +439,23 @@ def update_graph(selected_telescope, subtracted_value, selected_algorithm, selec
                 y0=0,
                 y1=1,
                 xref='x',
-                x0=s.timestamp, 
-                x1=s.timestamp,
+                x0=(datetime.now(timezone.utc) - s.timestamp.replace(tzinfo=timezone.utc)).total_seconds()/(24*3600),
+                x1=(datetime.now(timezone.utc) - s.timestamp.replace(tzinfo=timezone.utc)).total_seconds()/(24*3600),
                 opacity=0.2,
                 line=dict(color='black', dash='dash'),
-            ) for s in spec]
+            ) for s in spec] + [{'type': 'line', 'yref': 'paper', 'y0': 0, 'y1': 1, 'xref': 'x',
+                                 'x0': 0.0, 'x1': 0.0, 'opacity': 0.001,
+                                 'line': {'color': 'black', 'dash': 'dash'}
+                            }] #Have to put this in so plotly doesn't autofit the axes after zoom
     )
 
     ### Set the minimum x-axis range to one day
     min_xs = [min(filter_values['time']) for filter_values in selected_photometry.values()]
-    max_xs = [max(filter_values['time']) for filter_values in selected_photometry.values()]
 
-    if len(min_xs) > 0 and len(max_xs) > 0:
-        delta_t = max(max_xs) - min(min_xs)
-        if delta_t.total_seconds()/(24*3600) < 1.0:
-            x_range = [min(min_xs) - timedelta(seconds = (24*3600 - delta_t.total_seconds())/2), max(max_xs) + timedelta(seconds = (24*3600 - delta_t.total_seconds())/2)]
-            layout['xaxis']['range'] = x_range
+    if len(min_xs) > 0:# and len(max_xs) > 0:
+        layout['xaxis']['range'] = [(datetime.now(timezone.utc) - min(min_xs).replace(tzinfo=timezone.utc)).total_seconds()/(24*3600)*1.06, 0]
+        layout['xaxis']['autorange'] = False
+        layout['xaxis']['title'] = 'Days Ago'
 
     graph_data['layout'] = layout
 

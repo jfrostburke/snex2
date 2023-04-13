@@ -498,3 +498,44 @@ class NEDLVSCatalog(models.Model):
         blank=True, null=True, 
         help_text='The mass-to-light ratio used to calculate m_star (Section 2.4 of Cook et al.)'
     )
+
+
+class TimeUsed(models.Model):
+    semester_name = models.TextField(
+        verbose_name='Semester Name', help_text='Name of the semester', null=False, blank=False
+    )
+
+    telescope_class = models.TextField(
+        verbose_name='Telescope Class', help_text='Class of telescope (1M or 2M)'
+    )
+
+    std_time_used = models.FloatField(
+        verbose_name='Standard Time Used', help_text='Hours of standard time that have been used', default=0.0, blank=True
+    )
+
+    std_time_allocated = models.FloatField(
+        verbose_name='Standard Time Allocated', help_text='Hours of standard time allocated for this semester', default=0.0, blank=True
+    )
+    
+    tc_time_used = models.FloatField(
+        verbose_name='Time Critical Time Used', help_text='Hours of Time Critical time that have been used', default=0.0, blank=True
+    )
+
+    tc_time_allocated = models.FloatField(
+        verbose_name='Time Critical Time Allocated', help_text='Hours of Time Critical time allocated for this semester', default=0.0, blank=True
+    )
+
+    rr_time_used = models.FloatField(
+        verbose_name='Rapid Response Time Used', help_text='Hours of Rapid Response time that have been used', default=0.0, blank=True
+    )
+
+    rr_time_allocated = models.FloatField(
+        verbose_name='Rapid Response Time Allocated', help_text='Hours of Rapid Response time allocated for this semester', default=0.0, blank=True
+    )
+
+    frac_of_semester = models.FloatField(
+        verbose_name='Fraction of Semester', help_text='Fraction of this semester completed', default=0.0, blank=True
+    )
+
+    class Meta:
+        unique_together = ['semester_name', 'telescope_class']

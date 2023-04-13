@@ -1,4 +1,4 @@
-{% load static bootstrap4 gw_tags %}
+{% load static bootstrap4 custom_code_tags gw_tags %}
 <!doctype html>
 <html lang="en">
   <head>
@@ -58,6 +58,9 @@
           <li class="nav-item {% if request.resolver_match.namespace == 'dataproducts' %}active{% endif %}">
               <a class="nav-link" href="{% url 'tom_dataproducts:list' %}" style="font-family: 'Montserrat', sans-serif;">Data</a>
           </li>
+	  <li class="nav-item {% if request.resolver_match.namespace == 'floyds-inbox' %}active{% endif %}">
+	      <a class="nav-link" href="{% url 'floyds-inbox' %}" style="font-family: 'Montserrat', sans-serif;">Floyds Inbox</a>
+	  </li>
           <li class="nav-item {% if 'user' in request.resolver_match.url_name %}active{% endif %}">
             <a class="nav-link" href="{% url 'user-list' %}" style="font-family: 'Montserrat', sans-serif;">Users</a>
           </li>
@@ -77,8 +80,14 @@
 	    </div>
 	  </li>
         </ul>
-        <ul class="navbar-nav ml-auto">
+        <ul class="navbar-nav mr-auto">
         {% if user.is_authenticated %}
+	  <li class="nav-item">
+	    {% time_usage_bars '1M0' %}
+	  </li>
+	  <li>
+	    {% time_usage_bars '2M0' %}
+	  </li>
           <li class="nav-item">
             {% if user.first_name or user.last_name %}
             <a class="nav-link" href="{% url 'user-update' user.id %}">{{ user.first_name }} {{ user.last_name }}</a>
@@ -112,3 +121,5 @@
     {% endblock %}
   </body>
 </html>
+<!--script type="text/javascript">document.body.style.zoom="80%"
+</script-->

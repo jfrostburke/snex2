@@ -6,7 +6,6 @@ from django.db.models.functions import Lower
 from django.shortcuts import reverse
 from guardian.shortcuts import get_objects_for_user, get_groups_with_perms
 from django.contrib.auth.models import User, Group
-from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django_comments.models import Comment
 from django.contrib.contenttypes.models import ContentType
 
@@ -28,7 +27,7 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 
-from custom_code.models import ScienceTags, TargetTags, ReducedDatumExtra, Papers, InterestedPersons
+from custom_code.models import *
 from custom_code.forms import CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, SpecSchedulingForm, ReferenceStatusForm, ThumbnailForm
 from urllib.parse import urlencode
 from tom_observations.utils import get_sidereal_visibility
@@ -201,7 +200,7 @@ def get_24hr_airmass(target, interval, airmass_limit):
             bad_indices = np.argwhere(
                 (obj_airmass >= airmass_limit) |
                 (obj_airmass <= 1) |
-                (sun_alt > -18*u.deg)  #between astro twilights
+                (sun_alt > -12*u.deg)  #between astro twilights
             )
 
             obj_airmass = [np.nan if i in bad_indices else float(x)
@@ -871,8 +870,7 @@ def observation_summary(context, target=None, time='previous'):
     else:
         observations = ObservationRecord.objects.all()
 
-    observations = observations.annotate(start=KeyTextTransform('start', 'parameters'))
-    observations = observations.order_by('start')
+    observations = observations.order_by('parameters__start')
 
     if time == 'ongoing':
         cadences = DynamicCadence.objects.filter(active=True, observation_group__in=ObservationGroup.objects.filter(name__in=[o.parameters.get('name', '') for o in observations]))
@@ -901,6 +899,8 @@ def observation_summary(context, target=None, time='previous'):
             requested_str = ''
         else:
             sequence_start = str(observation.parameters.get('sequence_start', '')).split('T')[0]
+            if not sequence_start:
+                sequence_start = str(observation.parameters.get('start', '')).split('T')[0]
             requested_str = ', requested by {}'.format(str(observation.parameters.get('start_user', '')))
 
         parameter = observation.parameters
@@ -938,7 +938,17 @@ def observation_summary(context, target=None, time='previous'):
             elif parameter.get('observation_mode') == 'RAPID_RESPONSE':
                 parameter_string += '(rapid response) '
 
-            parameter_string += 'with IPP ' + str(parameter.get('ipp_value', ''))
+            instrument_dict = {'2M0-FLOYDS-SCICAM': 'Floyds',
+                               '1M0-SCICAM-SINISTRO': 'Sinistro',
+                               '2M0-SCICAM-MUSCAT': 'Muscat',
+                               '2M0-SPECTRAL-AG': 'Spectra',
+                               '0M4-SCICAM-SBIG': 'SBIG'
+            }
+
+            if parameter.get('instrument_type') in instrument_dict.keys():
+                parameter_string += 'with ' + instrument_dict[parameter.get('instrument_type')]
+
+            parameter_string += ', IPP ' + str(parameter.get('ipp_value', ''))
             parameter_string += ' and airmass < ' + str(parameter.get('max_airmass', ''))
             parameter_string += ' starting on ' + sequence_start #str(parameter.get('start')).split('T')[0]
             endtime = parameter.get('sequence_end', '')
@@ -1207,14 +1217,15 @@ def scheduling_list_with_form(context, observation, case='notpending'):
     template_observation = obsgroup.observation_records.all().filter(observation_id='template').first()
     if not template_observation and case!='pending':
         obsset = obsgroup.observation_records.all()
-        obsset = obsset.annotate(start=KeyTextTransform('start', 'parameters'))
-        obsset = obsset.order_by('start')
+        obsset = obsset.order_by('parameters__start')
         start = str(obsset.first().parameters['start']).replace('T', ' ')
         requested_str = ''
     else:
         if case == 'pending':
             template_observation = observation
-        start = str(template_observation.parameters['sequence_start']).replace('T', ' ')
+        start = str(template_observation.parameters.get('sequence_start', '')).replace('T', ' ')
+        if not start:
+            start = str(template_observation.parameters.get('start', '')).replace('T', ' ')
         requested_str = str(template_observation.parameters.get('start_user', ''))
     
     return get_scheduling_form(observation, context['request'].user.id, start, requested_str, case=case)
@@ -1232,11 +1243,10 @@ def order_by_pending_requests(queryset): #, pagenumber):
 def order_by_reminder_expired(queryset, pagenumber):
     queryset = queryset.exclude(status='CANCELED')
     from django.core.paginator import Paginator
-    queryset = queryset.annotate(reminder=KeyTextTransform('reminder', 'parameters'))
     now = datetime.datetime.now()
    
-    queryset = queryset.filter(reminder__lt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S'))
-    queryset = queryset.order_by('reminder')
+    queryset = queryset.filter(parameters__reminder__lt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S'))
+    queryset = queryset.order_by('parameters__reminder')
 
     paginator = Paginator(queryset, 25)
     page_number = pagenumber.strip('page=')
@@ -1249,11 +1259,10 @@ def order_by_reminder_expired(queryset, pagenumber):
 def order_by_reminder_upcoming(queryset, pagenumber):
     queryset = queryset.exclude(status='CANCELED')
     from django.core.paginator import Paginator
-    queryset = queryset.annotate(reminder=KeyTextTransform('reminder', 'parameters'))
     now = datetime.datetime.now()
    
-    queryset = queryset.filter(reminder__gt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')) 
-    queryset = queryset.order_by('reminder')
+    queryset = queryset.filter(parameters__reminder__gt=datetime.datetime.strftime(now, '%Y-%m-%dT%H:%M:%S')) 
+    queryset = queryset.order_by('parameters__reminder')
 
     paginator = Paginator(queryset, 25)
     page_number = pagenumber.strip('page=')
@@ -2066,3 +2075,51 @@ def snex2_share_data(target, user):
                'target_data_share_form': form,
                'sharing_destinations': form.fields['share_destination'].choices}
     return context
+
+
+@register.inclusion_tag('custom_code/partials/time_usage_bars.html', takes_context=True)
+def time_usage_bars(context, telescope):
+    
+    tu = TimeUsed.objects.filter(telescope_class=telescope).order_by('-id').first()
+    
+    total_time_used = tu.std_time_used + tu.tc_time_used + tu.rr_time_used
+    total_time_allocated = tu.std_time_allocated + tu.tc_time_allocated + tu.rr_time_allocated
+    total_frac_used = total_time_used/total_time_allocated
+    
+    if total_frac_used > tu.frac_of_semester:
+        barcolor = 'red'
+    else:
+        barcolor = '#004459'
+    
+    barwidth = int(100*tu.frac_of_semester)
+    usedbarwidth = max(int(total_frac_used*100.0), 1)
+
+    tooltip = "Standard time: {} of {} hours ({}%)\n".format(
+            round(tu.std_time_used, 2), round(tu.std_time_allocated, 2),
+            round(tu.std_time_used/tu.std_time_allocated * 100, 2))
+
+    if tu.tc_time_allocated > 0.0:
+        tooltip += "TC time: {} of {} hours ({}%)\n".format(
+                round(tu.tc_time_used, 2), round(tu.tc_time_allocated, 2),
+                round(tu.tc_time_used/tu.tc_time_allocated * 100, 2))
+    else:
+        tooltip += "TC time: {} of {} hours\n".format(
+                round(tu.tc_time_used, 2), round(tu.tc_time_allocated, 2))
+    
+    if tu.rr_time_allocated > 0.0:
+        tooltip += "RR time: {} of {} hours ({}%)\n".format(
+            round(tu.rr_time_used, 2), round(tu.rr_time_allocated, 2),
+            round(tu.rr_time_used/tu.rr_time_allocated * 100, 2))
+    else:
+        tooltip += "RR time: {} of {} hours\n".format(
+                round(tu.rr_time_used, 2), round(tu.rr_time_allocated, 2))
+
+    tooltip += "[We're currently {}% through the semester]".format(round(tu.frac_of_semester*100, 2))
+    
+    return {'telescope': telescope.replace('0', '').lower(),
+            'barwidth': barwidth,
+            'barcolor': barcolor,
+            'usedbarwidth': usedbarwidth,
+            'tooltip': tooltip,
+    }
+ 
