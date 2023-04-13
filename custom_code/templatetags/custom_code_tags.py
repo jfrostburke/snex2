@@ -1,6 +1,6 @@
 from plotly import offline
 import plotly.graph_objs as go
-from django import template
+from django import template, forms
 from django.conf import settings
 from django.db.models.functions import Lower
 from django.shortcuts import reverse
@@ -13,6 +13,7 @@ from tom_targets.models import Target, TargetExtra, TargetList
 from tom_targets.forms import TargetVisibilityForm
 from tom_observations import utils, facility
 from tom_dataproducts.models import DataProduct, ReducedDatum
+from tom_dataproducts.forms import DataShareForm
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
 from tom_common.hooks import run_hook
 
@@ -2005,17 +2006,75 @@ def broker_target_lightcurve(target):
         }
 
 
-@register.inclusion_tag('custom_code/phot_sharing_table.html', takes_context=True)
-def phot_sharing_table(context, target):
+@register.inclusion_tag('tom_dataproducts/partials/photometry_datalist_for_target.html', takes_context=True)
+def snex2_get_photometry_data(context, target):
 
     user = context['request'].user
-    datums = get_objects_for_user(user,
+    photometry = get_objects_for_user(user,
                                   'tom_dataproducts.view_reduceddatum',
                                   klass=ReducedDatum.objects.filter(
                                     target=target,
-                                    data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])).order_by('timestamp')
+                                    data_type=settings.DATA_PRODUCT_TYPES['photometry'][0],
+                                    value__has_key='filter')).order_by('timestamp')
+    data = []
+    for reduced_datum in photometry:
+        rd_data = {'id': reduced_datum.pk,
+                   'timestamp': reduced_datum.timestamp,
+                   'source': reduced_datum.source_name,
+                   'filter': reduced_datum.value.get('filter', ''),
+                   'telescope': reduced_datum.value.get('telescope', ''),
+                   'error': reduced_datum.value.get('error', '')
+                   }
 
-    return {'photometry': datums}
+        if 'limit' in reduced_datum.value.keys():
+            rd_data['magnitude'] = reduced_datum.value['limit']
+            rd_data['limit'] = True
+        else:
+            rd_data['magnitude'] = reduced_datum.value['magnitude']
+            rd_data['limit'] = False
+
+        messages = []
+        for message in reduced_datum.message.all():
+            if message.exchange_status == 'published':
+                messages.append(message.exchange_status + ' to ' + message.topic)
+            else:
+                messages.append(message.exchange_status + ' from ' + message.topic)
+        rd_data['messages'] = messages
+
+        data.append(rd_data)
+
+    initial = {'submitter': user,
+               'target': target,
+               'data_type': 'photometry',
+               'share_title': f"Updated data for {target.name} from {getattr(settings, 'TOM_NAME', 'TOM Toolkit')}.",
+               }
+    form = DataShareForm(initial=initial)
+    form.fields['share_title'].widget = forms.HiddenInput()
+    form.fields['data_type'].widget = forms.HiddenInput()
+
+    context = {'data': data,
+               'target': target,
+               'target_data_share_form': form,
+               'sharing_destinations': form.fields['share_destination'].choices}
+    return context
+
+
+@register.inclusion_tag('tom_dataproducts/partials/share_target_data.html')
+def snex2_share_data(target, user):
+    """
+    Publish data to Hermes
+    """
+    initial = {'submitter': user,
+               'target': target,
+               'share_title': f"Updated data for {target.name} from {getattr(settings, 'TOM_NAME', 'TOM Toolkit')}.",
+               }
+    form = DataShareForm(initial=initial)
+    form.fields['share_title'].widget = forms.HiddenInput()
+
+    context = {'target': target,
+               'target_data_share_form': form,
+               'sharing_destinations': form.fields['share_destination'].choices}
+    return context
 
 
 @register.inclusion_tag('custom_code/partials/time_usage_bars.html', takes_context=True)

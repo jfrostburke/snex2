@@ -1,0 +1,26 @@
+{% load bootstrap4 %}
+{% include 'tom_dataproducts/partials/js9_scripts.html' %}
+{% load tom_common_extras %}
+{% if sharing_destinations %}
+<form method="POST" action="{% url 'share-data' %}" enctype="multipart/form-data">
+  {% csrf_token %}
+  {% for hidden in target_data_share_form.hidden_fields %}
+    {{ hidden }}
+  {% endfor %}
+  <div class="form-row" style="padding-inline:1rem">
+    <div class="col-sm-8">
+      {% bootstrap_field target_data_share_form.share_destination %}
+    </div>
+  </div>
+  <div class="form-row" style="padding-inline:1rem">
+    <div class="col-sm-8">
+      {% bootstrap_field target_data_share_form.data_type %}
+    </div>
+    <div class="col-sm-8">
+      <input type="submit" class="btn btn-primary" value="Submit" name="share_targetdata_form">
+    </div>
+  </div>
+</form>
+{% else %}
+    <em style="padding-inline:1rem">Not Configured</em>
+{% endif %}

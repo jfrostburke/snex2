@@ -22,6 +22,7 @@ from custom_code.views import *
 from custom_code.api_views import CustomDataProductViewSet, CustomObservationRecordViewSet
 from rest_framework.routers import DefaultRouter
 from custom_code.dash_apps import lightcurve, spectra, spectra_individual
+from gw.views import *
 
 custom_router = DefaultRouter()
 custom_router.register(r'photometry-upload', CustomDataProductViewSet, 'photometry-upload')
@@ -61,10 +62,15 @@ urlpatterns = [
     path('scheduling/<str:key>/', ObservationListExtrasView.as_view(), name='observation-list'),
     path('alerts/broker-targets/', BrokerTargetView.as_view(), name='broker-targets'),
     path('change-broker-target-status/', change_broker_target_status_view, name='change-broker-target-status'),
+    path('share-data/', SNEx2DataShareView.as_view(), name='share-data'),
+    path('nonlocalizedevents/<int:id>/galaxies/', GWFollowupGalaxyListView.as_view(), name='nonlocalizedevents-galaxies'),
+    path('submit-gw-obs/', submit_galaxy_observations_view, name='submit-gw-obs'),
+    path('cancel-gw-obs/', cancel_galaxy_observations_view, name='cancel-gw-obs'),
     path('floyds-inbox/', FloydsInboxView.as_view(), name='floyds-inbox'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),
+    path('nonlocalizedevents/', include('tom_nonlocalizedevents.urls', namespace='nonlocalizedevents')),
     path('django_plotly_dash/', include('django_plotly_dash.urls')),
 ]
 

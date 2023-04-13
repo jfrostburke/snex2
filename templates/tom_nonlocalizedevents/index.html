@@ -1,0 +1,61 @@
+{% extends 'tom_common/base.html' %}
+{% load static gw_tags %}
+{% block title %}Non-Localized Event List{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Non-Localized Event List</h3>
+  </div>
+</nav>
+{% if user|has_gw_permissions %}
+  {% if object_list %}
+    <table class="table">
+        <thead>
+        <tr>
+	    <th scope="col">Event Type</th>
+            <th scope="col">Detail Page</th>
+	    <th scope="col">State</th>
+	    <th scope="col">Updated (in SNEx2)</th>
+	    <th scope="col">Created (in SNEx2)</th>
+            <th scope="col">GraceDB</th>
+            <th scope="col">Treasure Map</th>
+        </tr>
+        <thead>
+        <tbody>
+        {% for event in object_list %}
+        <tr>
+            <td>{{ event.event_type }}</td>
+            <td scope="row">
+  	      <b>{{ event.event_id }}</b>
+              <a href="{% url 'nonlocalizedevents:detail' event.id %}"> (Event Details)</a>
+	      <span>(Galaxy List for Update
+	      {% for sequence in event.sequences.all %}
+	      <a href="{% url 'nonlocalizedevents-galaxies' sequence.id %}"> {{ sequence.sequence_id }} </a>
+	      {% endfor %}
+	      )</span>
+	      <!--a href="{% url 'nonlocalizedevents-galaxies' event.id %}"> (Follow-up Observations)</a-->
+            </td>
+	    <td>{{ event.state }}</td>
+	    <td>{{ event.modified | timesince }}</td>
+	    <td>{{ event.created | timesince }}</td>
+            <td>
+              <a href="{{ event.gracedb_url }}">{{ event.event_id }}</a>
+          </td>
+          <td>
+              <a href="{{ event.treasuremap_url }}">{{ event.event_id }}</a>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+  {% else %}
+      <p>Nonlocalized events from the alert stream listener will be added here.</p>
+  {% endif %}
+{% else %}
+    <p>Sorry, you don't have permission to view this page.</p>
+{% endif %}
+
+{% endblock content %}

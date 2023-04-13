@@ -1,0 +1,16 @@
+{% extends 'tom_common/base.html' %}
+{% load static gw_tags %}
+{% block title %}Event Detail{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+{% if user|has_gw_permissions %}
+  <h1>Superevent Detail</h1>
+  {{ object.id }}
+  {{ object.superevent_id }}
+  {{ object.superevent_url }}
+{% else %}
+  <p>Sorry, you don't have permission to view this page.</p>
+{% endif %}
+{% endblock content %}

@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'tom_observations',
     'tom_dataproducts',
     'custom_code',
+    'gw',
     'rest_framework',
     'rest_framework.authtoken',
     'django_plotly_dash.apps.DjangoPlotlyDashConfig',
@@ -108,6 +109,31 @@ TEMPLATES = [
     },
 ]
 
+
+# Configuration for the TOM receiving data from this TOM
+DATA_SHARING = {
+    'hermes': {
+        'DISPLAY_NAME': os.getenv('HERMES_DISPLAY_NAME', 'Hermes'),
+        'BASE_URL': os.getenv('HERMES_BASE_URL', 'http://hermes-dev.lco.gtn/'),
+        'SCIMMA_AUTH_USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
+        'CREDENTIAL_USERNAME': os.getenv('SCIMMA_CREDENTIAL_USERNAME', None,),
+        'CREDENTIAL_PASSWORD': os.getenv('SCIMMA_CREDENTIAL_PASSWORD', None),
+        'USER_TOPICS': ['hermes.test', 'tomtoolkit.test']
+    },
+    'tom-demo-dev': {
+        'BASE_URL': os.getenv('TOM_DEMO_BASE_URL', 'http://tom-demo-dev.lco.gtn/'),
+        'USERNAME': os.getenv('TOM_DEMO_USERNAME', 'set TOM_DEMO_USERNAME value in environment'),
+        'PASSWORD': os.getenv('TOM_DEMO_PASSWORD', 'set TOM_DEMO_PASSWORD value in environment'),
+    },
+    'localhost-tom': {
+        # for testing; share with yourself
+        'BASE_URL': os.getenv('LOCALHOST_TOM_BASE_URL', 'http://127.0.0.1:8000/'),
+        'USERNAME': os.getenv('LOCALHOST_TOM_USERNAME', 'set LOCALHOST_TOM_USERNAME value in environment'),
+        'PASSWORD': os.getenv('LOCALHOST_TOM_PASSWORD', 'set LOCALHOST_TOM_PASSWORD value in environment'),
+    }
+}
+
+
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 WSGI_APPLICATION = 'snex2.wsgi.application'
@@ -142,6 +168,10 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+            'USER': '',
+            'PASSWORD': '',
+            'HOST': '',
+            'PORT': 5432,
         }
     }
 
@@ -323,7 +353,8 @@ HOOKS = {
     'find_images_from_snex1': 'custom_code.hooks.find_images_from_snex1',
     'change_interest_in_snex1': 'custom_code.hooks.change_interest_in_snex1',
     'sync_paper_with_snex1': 'custom_code.hooks.sync_paper_with_snex1',
-    'sync_comment_with_snex1': 'custom_code.hooks.sync_comment_with_snex1'
+    'sync_comment_with_snex1': 'custom_code.hooks.sync_comment_with_snex1',
+    'cancel_gw_obs': 'gw.hooks.cancel_gw_obs',
 }
 
 BROKERS = {
@@ -336,6 +367,7 @@ TOM_ALERT_CLASSES = [
     'tom_alerts.brokers.gaia.GaiaBroker',
     'tom_alerts.brokers.tns.TNSBroker',
     'tom_alerts.brokers.alerce.ALeRCEBroker',
+    'tom_scimma.scimma.SCIMMABroker',
 ]
 
 TOM_FACILITY_CLASSES = [
@@ -436,6 +468,61 @@ PLOTLY_DASH = {
     'cache_arguments': False,
     #'cache_timeout_initial_arguments': 120,
 }
+
+VUE_FRONTEND_DIR_TOM_NONLOCAL = os.path.join(STATIC_ROOT, 'tom_nonlocalizedevents/vue')
+WEBPACK_LOADER = {
+    'TOM_NONLOCALIZEDEVENTS': {
+        'CACHE': not DEBUG,
+        'BUNDLE_DIR_NAME': 'tom_nonlocalizedevents/vue/',  # must end with slash
+        'STATS_FILE': os.path.join(BASE_DIR, 'static/tom_nonlocalizedevents/vue/webpack-stats.json'),
+        #'STATS_FILE': os.path.join(VUE_FRONTEND_DIR_TOM_NONLOCAL, 'webpack-stats.json'),
+        'POLL_INTERVAL': 0.1,
+        'TIMEOUT': None,
+        'IGNORE': [r'.+\.hot-update.js', r'.+\.map']
+    }
+}
+
+TOM_API_URL = os.getenv('TOM_API_URL', 'http://127.0.0.1:8000')
+HERMES_API_URL = os.getenv('HERMES_API_URL', 'http://hermes.lco.gtn')
+
+ALERT_STREAMS = [
+    {
+        'ACTIVE': True,
+        'NAME': 'custom_code.alertstreams.hopskotch.CustomHopskotchAlertStream',
+        'OPTIONS': {
+            'URL': 'kafka://kafka.scimma.org/',
+            'GROUP_ID': os.getenv('SCIMMA_AUTH_USERNAME', "") + '-' + 'uniqueidforyourapp12345',
+            'USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
+            'PASSWORD': os.getenv('SCIMMA_AUTH_PASSWORD', None),
+            'TOPIC_HANDLERS': {
+                'sys.heartbeat': 'custom_code.alertstreams.hopskotch.heartbeat_handler',
+                'tomtoolkit.test': 'custom_code.alertstreams.hopskotch.alert_logger',
+                'hermes.test': 'custom_code.alertstreams.hopskotch.alert_logger',
+            },
+        },
+    },
+    {
+        'ACTIVE': True,
+        'NAME': 'tom_alertstreams.alertstreams.gcn.GCNClassicAlertStream',
+        # The keys of the OPTIONS dictionary become (lower-case) properties of the AlertStream instance.
+        'OPTIONS': {
+            # see https://github.com/nasa-gcn/gcn-kafka-python#to-use for configuration details.
+            'GCN_CLASSIC_CLIENT_ID': os.getenv('GCN_CLASSIC_CLIENT_ID', None),
+            'GCN_CLASSIC_CLIENT_SECRET': os.getenv('GCN_CLASSIC_CLIENT_SECRET', None),
+            'DOMAIN': 'gcn.nasa.gov',  # optional, defaults to 'gcn.nasa.gov'
+            'CONFIG': {  # optional
+                # 'group.id': 'tom_alertstreams-my-custom-group-id',
+                # 'auto.offset.reset': 'earliest',
+                # 'enable.auto.commit': False
+            },
+            'TOPIC_HANDLERS': {
+                'gcn.classic.text.LVC_INITIAL': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
+                'gcn.classic.text.LVC_PRELIMINARY': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
+                'gcn.classic.text.LVC_RETRACTION': 'gw.gw_event_handler.handle_retraction_with_galaxies',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_retraction',
+            },
+        },
+    }
+]
 
 if DEBUG:
     INTERNAL_IPS = [

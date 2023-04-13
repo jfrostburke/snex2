@@ -1,0 +1,141 @@
+{% extends 'tom_common/base.html' %}
+{% load static gw_tags bootstrap4 crispy_forms_tags targets_extras custom_code_tags %}
+{% block title %}Galaxy List{% endblock %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Galaxy List for {{ superevent_id }}</h3>
+  </div>
+</nav>
+{% if user|has_gw_permissions %}
+<div class="row">
+  <div class="col-md-6">
+    <span class="float-left">{% crispy obs_form %}</span>
+  </div>
+  <div class="col-md-6" id="btn-div">
+    <div class="row">
+      <div class="col-md-6"><button id="submit-btn" class="btn" style="vertical-align: middle; width: 200px; height: 80px; background-color: rgb(0, 114, 54); border: 1px solid black; color: white; cursor: default;" onclick='submitObs()' disabled>Submit Observations</button></div>
+      <div class="col-md-6"><button id="cancel-btn" class="btn" style="vertical-align: middle; width: 200px; height: 80px; background-color: rgb(114, 0, 0); border: 1px solid black; color: white; cursor: default;" onclick='cancelObs()' disabled>Cancel All Observations</button></div>
+    </div>
+    <div class="row">
+      <div class="col-md-6"><input type="checkbox" onclick='toggleButton("submit-btn")'><span>Check if ready to submit</span></div>
+      <div class="col-md-6"><input type="checkbox" onclick='toggleButton("cancel-btn")'><span>Check if ready to cancel</span></div>
+    </div>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-6">
+    {% bootstrap_pagination page_obj extra=request.GET.urlencode %}
+    <span class="float-left">{{ galaxy_count }} Galaxies &nbsp;</span>
+  </div>
+</div>
+<table class="table">
+  <thead class="thead-light">
+    <tr>
+      <th><input type="checkbox" id="select-all-checkbox" onClick="selectAll()" checked><br /><p></p></th>
+      <th>Name<br /><p></p></th>
+      <th>Score<br /><p></p></th>
+      <th>RA<br /><p></p></th>
+      <th>Dec<br /><p></p></th>
+      <th>Distance<br /><p></p></th>
+      <th>Visibility<br /><p></p></th>
+      <th>Reference<br /><p></p></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for galaxy in galaxies %}
+    <tr>
+      <td>
+	<div class="row"><b>{{ page_obj.start_index|add:forloop.counter0 }}.</b></div>
+	<div class="row"><input type="checkbox" class="individual-checkbox" id="select-{{ galaxy.id }}" checked></div>
+      </td>
+      <td>{{ galaxy.catalog_objname }}</td>
+      <td>{{ galaxy.score|floatformat:4 }}</td>
+      <td>{{ galaxy.ra|floatformat:4 }}</td>
+      <td>{{ galaxy.dec|floatformat:4 }}</td>
+      <td>{{ galaxy.dist|floatformat:0 }} Mpc</td>
+      <td>{% airmass_collapse galaxy %}</td>
+      <td style="border-top:none;">
+        <div id="aladin-{{ galaxy.id }}" style="display: inline-block;">{% aladin_collapse galaxy %}</div>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% bootstrap_pagination page_obj extra=request.GET.urlencode %}
+{% endif %}
+<script>
+function toggleButton(btnId) {
+  var specifiedBtn = document.getElementById(btnId);
+  if (specifiedBtn.disabled === true) {
+    specifiedBtn.disabled = false;
+    specifiedBtn.style.cursor = "pointer";
+  } else {
+    specifiedBtn.disabled = true;
+    specifiedBtn.style.cursor = "default";
+  }
+}
+function selectAll() {
+  var allCheckboxes = document.getElementsByClassName("individual-checkbox");
+  var selectAllCheckbox = document.getElementById("select-all-checkbox");
+  for (var i = 0; i < allCheckboxes.length; i++) {
+    var currentCheckbox = allCheckboxes[i];
+    if (selectAllCheckbox.checked === true) {
+      currentCheckbox.checked = true;
+    } else {
+      currentCheckbox.checked = false;
+    }
+  }
+}
+function submitObs() {
+  document.getElementById("submit-btn").innerHTML = 'Submitting...';
+  var checkboxes = document.getElementsByClassName("individual-checkbox");
+  var checkboxesChecked = [];
+  for (var i=0; i<checkboxes.length; i++) {
+    if (checkboxes[i].checked) {
+      checkboxesChecked.push(checkboxes[i].id.replace('select-', ''));
+    }
+  }
+  $.ajax({
+    url: '{% url "submit-gw-obs" %}',
+    data: $('#obs-parameters-form').serialize() + "&galaxy_ids=" + JSON.stringify({'galaxy_ids': checkboxesChecked}),
+    dataType: 'json',
+    success: function(response) {
+      if (response.hasOwnProperty('failure')) {
+	alert(response.failure);
+	document.getElementById("submit-btn").innerHTML = "Failed";
+      } else {
+	alert(response.failed_obs);
+	document.getElementById("submit-btn").innerHTML = response.success;
+      }
+    }
+  });
+}
+function cancelObs() {
+  document.getElementById("cancel-btn").innerHTML = 'Canceling...'; 
+  var checkboxes = document.getElementsByClassName("individual-checkbox");
+  var checkboxesChecked = [];
+  for (var i=0; i<checkboxes.length; i++) {
+    if (checkboxes[i].checked) {
+      checkboxesChecked.push(checkboxes[i].id.replace('select-', ''));
+    }
+  }
+  $.ajax({
+    url: '{% url "cancel-gw-obs" %}',
+    data: {'galaxy_ids': JSON.stringify(checkboxesChecked)},
+    dataType: 'json',
+    success: function(response) {
+      if (response.hasOwnProperty('failure')) {
+	alert(response.failure);
+	document.getElementById("cancel-btn").innerHTML = "Failed";
+      } else {
+	document.getElementById("cancel-btn").innerHTML = response.success;
+      }
+    }
+  });
+}
+</script>
+{% endblock content %}

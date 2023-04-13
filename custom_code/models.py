@@ -255,6 +255,251 @@ class BrokerTarget(models.Model):
     )
 
 
+class GladeCatalog(models.Model):
+
+    pgc_no = models.IntegerField(
+        verbose_name='PGC number', help_text='Principal Galaxies Catalog number',
+        blank=True, null=True
+    )
+
+    gwgc_name = models.CharField(
+        max_length=100, default='', blank=True, null=True, verbose_name='GWGC name',
+        help_text='Name in the GWGC catalog'
+    )
+
+    hyperleda_name = models.CharField(
+        max_length=100, default='', blank=True, null=True, verbose_name='HyperLEDA name',
+        help_text='Name in the HyperLEDA catalog'
+    )
+
+    twomass_name = models.CharField(
+        max_length=100, default='', blank=True, null=True, verbose_name='2MASS name',
+        help_text='Name in the 2MASS XSC catalog'
+    )
+
+    wisexscos_name = models.CharField(
+        max_length=100, default='', blank=True, null=True, verbose_name='WISExSCOS name',
+        help_text='Name in the WISExSuperCOSMOS catalog'
+    )
+
+    sdss_dr16q_name = models.CharField(
+        max_length=100, default='', blank=True, null=True, verbose_name='SDSS-DR16Q name',
+        help_text='Name in the SDSS-DR16Q catalog'
+    )
+
+    object_type_flag = models.CharField(
+        max_length=2, default='', blank=True, null=True, verbose_name='Object type flag',
+        help_text='Q: source is from SDSS-DR16Q catalog; G: source is from another catalog and has not been identified as a quasar'
+    )
+
+
+    ra = models.FloatField(
+        verbose_name='Right Ascension', help_text='Right Ascension, in degrees.'
+    )
+    
+    dec = models.FloatField(
+        verbose_name='Declination', help_text='Declination, in degrees.'
+    )
+
+    mag = models.JSONField(
+        blank=True, null=True, verbose_name='Magnitudes', help_text='Magnitude information'
+    )
+
+    z_helio = models.FloatField(
+        blank=True, null=True, help_text='Heliocentric redshift'
+    )
+
+    z_cmb = models.FloatField(
+        blank=True, null=True, help_text='CMB-frame redshift'
+    )
+
+    z_flag = models.IntegerField(
+        blank=True, null=True, help_text='0: CMB frame redshift and lum distance values are not corrected for peculiar velocity; 1: they are corrected values'
+    )
+
+    v_err = models.FloatField(
+        blank=True, null=True, help_text='Error of redshift from peculiar velocity estimation'
+    )
+
+    z_err = models.FloatField(
+        blank=True, null=True, help_text='Measurement error of heliocentric redshift'
+    )
+
+    d_l = models.FloatField(
+        blank=True, null=True, verbose_name='luminosity distance', help_text='Luminosity distance, in Mpc'
+    )
+
+    d_l_err = models.FloatField(
+        blank=True, null=True, verbose_name='luminosity distance err', help_text='Error in luminosity distance, in Mpc'
+    )
+
+    dist_flag = models.IntegerField(
+        blank=True, null=True, verbose_name='distance flag', help_text='0: no measured redshift or distance; 1: distance from phot z; 2: redshift from lum dist; 3: distance from spec z'
+    )
+
+    m_star = models.FloatField(
+        blank=True, null=True, help_text='Stellar mass, in 10^10 M_solar'
+    )
+
+    m_star_err = models.FloatField(
+        blank=True, null=True, help_text='Absolute error of stellar mass, in 10^10 M_solar'
+    )
+
+    m_star_flag = models.IntegerField(
+        blank=True, null=True, help_text='0: M_star calculated assuming no active star formation; 1: M_star calculated assuming active star formation'
+    )
+
+    merger_rate = models.FloatField(
+        blank=True, null=True, help_text='Log10 of estimated BNS merger rate in galaxy, in Gyr^-1'
+    )
+
+    merger_rate_err = models.FloatField(
+        blank=True, null=True, help_text='Absolute error of estimated BNS merger rate in galaxy'
+    )
+
+
+class NEDLVSCatalog(models.Model):
+
+    name = models.CharField(
+        max_length=100, default='', blank=True, null=True, verbose_name='Preferred NED name',
+        help_text='Preferred object name in NED'
+    )
+
+    ra = models.FloatField(
+        verbose_name='Right Ascension', help_text='Right Ascension, in degrees.'
+    )
+    
+    dec = models.FloatField(
+        verbose_name='Declination', help_text='Declination, in degrees.'
+    )
+    
+    object_type = models.CharField(
+        max_length=10, default='', blank=True, null=True, verbose_name='Object flag',
+        help_text='Preferred object type in NED (see Table 1 in Cook et al.)'
+    )
+
+    z = models.FloatField(
+        blank=True, null=True, help_text='Heliocentric redshift'
+    )
+    
+    z_err = models.FloatField(
+        blank=True, null=True, help_text='Measurement error of heliocentric redshift'
+    )
+
+    z_tech = models.CharField(
+        max_length=10, default='', blank=True, null=True, 
+        help_text='Technique used to measure redshift (SPEC, PHOT, UNKN, INFD, MOD, None or NULL)'
+    )
+
+    z_qual = models.BooleanField(
+        null=True, blank=True, default=False, verbose_name='Redshift qualifier',
+        help_text='Qualifier flag indicating reliability of redshift (True=unreliable)'
+    )
+
+    z_qual_flag = models.BooleanField(
+        null=True, blank=True, default=False, verbose_name='Redshift qualifier flag',
+        help_text='Boolean flag indicating that the zqual flag has been updated in NED-LVS'
+    )
+
+    z_refcode = models.CharField(
+        max_length=20, default='', blank=True, null=True,
+        help_text='Reference code for the publication that provided the redshift'
+    )
+
+    z_dist = models.FloatField(
+        blank=True, null=True, help_text='Redshift-independent luminosity distance computed as the weighted average of measurements in either the primary or secondary indicators'
+    )
+
+    z_dist_err = models.FloatField(
+        blank=True, null=True, help_text='Uncertainty in z_dist'
+    )
+
+    z_dist_method = models.CharField(
+        max_length=31, default='', blank=True, null=True,
+        help_text='Method used to measure the redshift-independent distance when a single method is used to compute the weighted average, otherwise "Wavg" when a mixture of methods are used (Cepheid, SNIa, TRGB, Wavg, etc.)'
+    )
+
+    z_dist_indicator = models.CharField(
+        max_length=20, default='', blank=True, null=True,
+        help_text='Measurement type indicator for redshift-independent distance (Primary or Secondary)'
+    )
+
+    z_dist_refcode = models.CharField(
+        max_length=20, default='', blank=True, null=True,
+        help_text='Reference code for the publication that provided the distance when a single measurement was chosen, otherwise "Mix" indicates an average of multiple measurements was used (refcode or Mix)'
+    )
+
+    d_l = models.FloatField(
+        blank=True, null=True, verbose_name='luminosity distance', 
+        help_text='Luminosity distance, in Mpc'
+    )
+
+    d_l_err = models.FloatField(
+        blank=True, null=True, verbose_name='luminosity distance err', 
+        help_text='Error in luminosity distance, in Mpc'
+    )
+
+    dist_method = models.CharField(
+        max_length=31, default='', blank=True, null=True, 
+        help_text='Method used in the selected distance (Redshift or zIndependent)'
+    )
+
+    ebv = models.FloatField(
+        blank=True, null=True, verbose_name='E(B-V)',
+        help_text='Foreground MW reddening E(B-V) from Schlafly & Finkbeiner (2011)'
+    )
+
+    extinction = models.JSONField(
+        blank=True, null=True, verbose_name='Extinctions', 
+        help_text='MW extinctions assuming Fitzpatrick et al. (1999)'
+    )
+    
+    mag = models.JSONField(
+        blank=True, null=True, verbose_name='Magnitudes', help_text='Apparent magnitudes'
+    )
+
+    lum = models.JSONField(
+        blank=True, null=True, verbose_name='Luminosities', help_text='Monochromatic luminosities'
+    )
+
+    galex_phot = models.CharField(
+        max_length=10, default='', blank=True, null=True,
+        help_text='Flag indicating which catalog was used for GALEX photometry (ASC, MSC, z0MGS)'
+    )
+
+    tmass_phot = models.CharField(
+        max_length=10, default='', blank=True, null=True,
+        help_text='Flag indicating which catalog was used for 2MASS photometry (PSC, XSC, LGA)'
+    )
+    
+    wise_phot = models.CharField(
+        max_length=10, default='', blank=True, null=True,
+        help_text='Flag indicating which catalog was used for WISE photometry (Pfit, APER, z0MGS)'
+    ) 
+    
+    sfr = models.JSONField(
+        blank=True, null=True, verbose_name='Star Formation Rates', help_text='Star formation rate using either W4 luminosity scaling relation, or  FUV+W4 luminosity scaling relation (Section 2.4 of Cook et al.)'
+    )
+
+    et_flag = models.BooleanField(
+        blank=True, null=True, default=False,
+        help_text='Boolean flag indicating an object is an early-type galaxy determined via IR or UV-IR colors (Section 4.3 of Cook et al.; True=colors indicate an early-type galaxy), and that the SFRs may be overestimated to varying degrees.'
+    )
+
+    m_star = models.FloatField(
+        blank=True, null=True, help_text='Stellar mass using a W1 luminosity scaling relationship (Section 2.4 of Cook et al.)'
+    )
+
+    m_star_err = models.FloatField(
+        blank=True, null=True, help_text='Uncertainty in m_star'
+    )
+
+    ml_ratio = models.FloatField(
+        blank=True, null=True, 
+        help_text='The mass-to-light ratio used to calculate m_star (Section 2.4 of Cook et al.)'
+    )
+
+
 class TimeUsed(models.Model):
     semester_name = models.TextField(
         verbose_name='Semester Name', help_text='Name of the semester', null=False, blank=False

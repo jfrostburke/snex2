@@ -1,0 +1,19 @@
+{
+  "status": "done",
+  "assets": {
+    "css/superevent_vue_app.css": {
+      "name": "css/superevent_vue_app.css",
+      "path": "css/superevent_vue_app.css"
+    },
+    "js/superevent_vue_app.js": {
+      "name": "js/superevent_vue_app.js",
+      "path": "js/superevent_vue_app.js"
+    }
+  },
+  "chunks": {
+    "superevent_vue_app": [
+      "css/superevent_vue_app.css",
+      "js/superevent_vue_app.js"
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{% extends 'tom_common/base.html' %}
+{% load render_bundle from webpack_loader %}
+{% load static gw_tags %}
+{% block additional_css %}
+<link rel="stylesheet" href="{% static 'tom_targets/css/targets_snexclone.css' %}">
+{% endblock %}
+{% block content %}
+{% if user|has_gw_permissions %}
+    <div id="superevent_identifier" style="display: none">{{ superevent_id }}</div>
+
+    <div id="superevent-sequences">
+      <superevent-sequences pk="{{ superevent_pk }}" event_id="{{ superevent_id }}" sequences="{{ sequences }}" tom_api_url="{{ tom_api_url }}" hermes_api_url="{{ hermes_api_url }}"></superevent-sequences>
+    </div>
+
+    {% render_bundle 'superevent_vue_app' config='TOM_NONLOCALIZEDEVENTS' %}
+{% endif %}
+{% endblock %}
