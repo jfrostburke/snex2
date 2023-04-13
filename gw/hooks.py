@@ -10,6 +10,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+_snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
+
 
 def cancel_gw_obs(galaxy_ids=[], sequence_id=None, wrapped_session=None):
     """
@@ -32,8 +34,6 @@ def cancel_gw_obs(galaxy_ids=[], sequence_id=None, wrapped_session=None):
 
     targetextras = TargetExtra.objects.filter(key='gwfollowupgalaxy_id', value__in=[g.id for g in galaxies])
     targets = [t.target for t in targetextras]
-
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
 
     if wrapped_session:
         db_session = wrapped_session
@@ -65,5 +65,8 @@ def cancel_gw_obs(galaxy_ids=[], sequence_id=None, wrapped_session=None):
 
     else:
         db_session.flush()
-
-    logger.info('Finished canceling GW follow-up observations')
+    
+    if galaxy_ids:
+        logger.info('Finished canceling GW follow-up observations for galaxies {}'.format(galaxy_ids))
+    else:
+        logger.info('Finished canceling GW follow-up observations for sequence {}'.format(sequence_id))

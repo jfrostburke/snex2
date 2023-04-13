@@ -502,7 +502,7 @@ ALERT_STREAMS = [
             'TOPIC_HANDLERS': {
                 'gcn.classic.text.LVC_INITIAL': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
                 'gcn.classic.text.LVC_PRELIMINARY': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
-                'gcn.classic.text.LVC_RETRACTION': 'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_retraction',
+                'gcn.classic.text.LVC_RETRACTION': 'gw.gw_event_handler.handle_retraction_with_galaxies',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_retraction',
             },
         },
     }

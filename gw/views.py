@@ -55,6 +55,7 @@ def submit_galaxy_observations_view(request):
 
     try:
         #db_session = _return_session()
+        failed_obs = []
         with transaction.atomic():
             for galaxy in galaxies:
                 newtarget, created = Target.objects.get_or_create(
@@ -123,14 +124,18 @@ def submit_galaxy_observations_view(request):
                     observation_errors = facility.validate_observation(form.observation_payload())
 
                     if observation_errors:
-                        logger.error(msg=f'Unable to submit observation: {observation_errors}')
-                        response_data = {'failure': 'Unable to submit observation for {}'.format(newtarget.name)}
-                        raise Snex1ConnectionError(message='Observation portal returned errors {}'.format(observation_errors))
+                        logger.error(msg=f'Unable to submit observation for {newtarget.name}: {observation_errors}')
+                        failed_obs.append(newtarget.name)
+                        continue
+                        #response_data = {'failure': 'Unable to submit observation for {}'.format(newtarget.name)}
+                        #raise Snex1ConnectionError(message='Observation portal returned errors {}'.format(observation_errors))
 
                 else:
-                    logger.error(msg=f'Unable to submit observation: {form.errors}')
-                    response_data = {'failure': 'Unable to submit observation'}
-                    raise Snex1ConnectionError(message='Observation portal returned errors {}'.format(form.errors))
+                    logger.error(msg=f'Unable to submit observation for {newtarget.name}: {form.errors}')
+                    failed_obs.append(newtarget.name)
+                    continue
+                    #response_data = {'failure': 'Unable to submit observation'}
+                    #raise Snex1ConnectionError(message='Observation portal returned errors {}'.format(form.errors))
 
                 new_observations = []
                 # Create Observation record
@@ -188,8 +193,12 @@ def submit_galaxy_observations_view(request):
                 ### Submit pointing to TreasureMap
 
             raise Snex1ConnectionError(message="We got to the end but raise an error to roll back the db")
-
-        response_data = {'success': 'Submitted'}
+        if not failed_obs:
+            failed_obs_str = 'All observations submitted successfully'
+        else:
+            failed_obs_str = 'Observations failed to submit for the following galaxies: ' + ','.join(failed_obs)
+        response_data = {'success': 'Submitted',
+                         'failed_obs': failed_obs_str}
         #db_session.commit()
 
     except Exception as e:
@@ -210,7 +219,7 @@ def cancel_galaxy_observations_view(request):
     try:
         db_session = _return_session()
 
-        galaxy_ids = json.loads(request.GET['galaxy_ids'])['galaxy_ids']
+        galaxy_ids = json.loads(request.GET['galaxy_ids'])
         with transaction.atomic():
             run_hook('cancel_gw_obs', galaxy_ids=galaxy_ids, wrapped_session=db_session)
 

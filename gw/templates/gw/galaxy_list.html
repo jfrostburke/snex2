@@ -18,7 +18,7 @@
   <div class="col-md-6" id="btn-div">
     <div class="row">
       <div class="col-md-6"><button id="submit-btn" class="btn" style="vertical-align: middle; width: 200px; height: 80px; background-color: rgb(0, 114, 54); border: 1px solid black; color: white; cursor: default;" onclick='submitObs()' disabled>Submit Observations</button></div>
-      <div class="col-md-6"><button id="cancel-btn" class="btn" style="vertical-align: middle; width: 200px; height: 80px; background-color: rgb(114, 0, 0); border: 1px solid black; color: white; cursor: default;" disabled>Cancel All Observations</button></div>
+      <div class="col-md-6"><button id="cancel-btn" class="btn" style="vertical-align: middle; width: 200px; height: 80px; background-color: rgb(114, 0, 0); border: 1px solid black; color: white; cursor: default;" onclick='cancelObs()' disabled>Cancel All Observations</button></div>
     </div>
     <div class="row">
       <div class="col-md-6"><input type="checkbox" onclick='toggleButton("submit-btn")'><span>Check if ready to submit</span></div>
@@ -91,7 +91,7 @@ function selectAll() {
   }
 }
 function submitObs() {
-  document.getElementById("submit-btn").value = 'Loading...';
+  document.getElementById("submit-btn").innerHTML = 'Submitting...';
   var checkboxes = document.getElementsByClassName("individual-checkbox");
   var checkboxesChecked = [];
   for (var i=0; i<checkboxes.length; i++) {
@@ -101,14 +101,38 @@ function submitObs() {
   }
   $.ajax({
     url: '{% url "submit-gw-obs" %}',
-	  data: $('#obs-parameters-form').serialize() + "&galaxy_ids=" + JSON.stringify({'galaxy_ids': checkboxesChecked}),
+    data: $('#obs-parameters-form').serialize() + "&galaxy_ids=" + JSON.stringify({'galaxy_ids': checkboxesChecked}),
     dataType: 'json',
     success: function(response) {
-      if (response.hasOwnProperty('failure')){
+      if (response.hasOwnProperty('failure')) {
 	alert(response.failure);
-	document.getElementById("submit-btn").value = "Failed";
+	document.getElementById("submit-btn").innerHTML = "Failed";
       } else {
-	document.getElementById("submit-btn").value = response.success;
+	alert(response.failed_obs);
+	document.getElementById("submit-btn").innerHTML = response.success;
+      }
+    }
+  });
+}
+function cancelObs() {
+  document.getElementById("cancel-btn").innerHTML = 'Canceling...'; 
+  var checkboxes = document.getElementsByClassName("individual-checkbox");
+  var checkboxesChecked = [];
+  for (var i=0; i<checkboxes.length; i++) {
+    if (checkboxes[i].checked) {
+      checkboxesChecked.push(checkboxes[i].id.replace('select-', ''));
+    }
+  }
+  $.ajax({
+    url: '{% url "cancel-gw-obs" %}',
+    data: {'galaxy_ids': JSON.stringify(checkboxesChecked)},
+    dataType: 'json',
+    success: function(response) {
+      if (response.hasOwnProperty('failure')) {
+	alert(response.failure);
+	document.getElementById("cancel-btn").innerHTML = "Failed";
+      } else {
+	document.getElementById("cancel-btn").innerHTML = response.success;
       }
     }
   });

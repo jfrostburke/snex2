@@ -5,7 +5,7 @@ from astropy.io import fits
 from dateutil.parser import parse
 from ligo.skymap import distance
 
-from tom_nonlocalizedevents.alertstream_handlers.gw_event_handler import extract_fields, EXPECTED_FIELDS, get_moc_url_from_skymap_fits_url
+from tom_nonlocalizedevents.alertstream_handlers.gw_event_handler import extract_fields, EXPECTED_FIELDS, get_moc_url_from_skymap_fits_url, handle_retraction
 from tom_nonlocalizedevents.models import NonLocalizedEvent, EventSequence, EventLocalization
 from gw.find_galaxies import generate_galaxy_list
 
@@ -77,3 +77,27 @@ def handle_message(message):
             warning_msg = (f'{"Creating" if es_created else "Updating"} EventSequence without EventLocalization:'
                            f'{event_sequence} for NonLocalizedEvent: {nonlocalizedevent}')
             logger.warning(warning_msg)
+
+
+def handle_retraction_with_galaxies(message):
+
+    retraction = handle_retraction(message)
+    
+    if not isinstance(message, bytes):
+        bytes_message = message.value()
+    else:
+        bytes_message = message
+    fields = extract_fields(bytes_message.decode('utf-8'), ['TRIGGER_NUM'])
+
+    try:
+        retracted_event = NonLocalizedEvent.objects.get(event_id=fields['TRIGGER_NUM'])
+    except NonLocalizedEvent.DoesNotExist:
+        logger.warning((f"Got a Retraction notice for event id {fields['TRIGGER_NUM']}"
+                        f"which does not exist in the database"))
+        return
+
+    ### Get the ids of the sequences associated with this event and cancel the galaxy observations
+    sequences = retracted_event.sequences.all()
+    for sequence in sequences:
+        run_hook('cancel_gw_obs', galaxy_ids=[], sequence_id=sequence.id)
+
