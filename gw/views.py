@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from tom_nonlocalizedevents.models import NonLocalizedEvent, EventSequence, EventLocalization
 from gw.models import GWFollowupGalaxy
 from gw.forms import GWGalaxyObservationForm
+from gw.treasure_map_utils import build_tm_pointings, submit_tm_pointings
 from tom_common.hooks import run_hook
 from tom_targets.models import Target, TargetExtra
 from tom_observations.facility import get_service_class
@@ -56,6 +57,7 @@ def submit_galaxy_observations_view(request):
     try:
         #db_session = _return_session()
         failed_obs = []
+        all_pointings = []
         with transaction.atomic():
             for galaxy in galaxies:
                 newtarget, created = Target.objects.get_or_create(
@@ -191,6 +193,13 @@ def submit_galaxy_observations_view(request):
                     ### TODO: Log the target in a new snex1 table?
 
                 ### Submit pointing to TreasureMap
+                pointings = build_tm_pointings(newtarget, observing_parameters)
+
+                all_pointings += pointings
+
+            submitted = submit_tm_pointings(galaxy.eventlocalization.sequences.first(), all_pointings)
+            if not submitted:
+                logger.error('Submitting to Treasure Map failed for these observations')
 
             raise Snex1ConnectionError(message="We got to the end but raise an error to roll back the db")
         if not failed_obs:
