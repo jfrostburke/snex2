@@ -483,7 +483,7 @@ WEBPACK_LOADER = {
 }
 
 TOM_API_URL = os.getenv('TOM_API_URL', 'http://127.0.0.1:8000')
-HERMES_API_URL = os.getenv('HERMES_API_URL', 'http://hermes.lco.gtn')
+HERMES_API_URL = os.getenv('HERMES_API_URL', 'https://hermes.lco.global')
 
 ALERT_STREAMS = [
     {
