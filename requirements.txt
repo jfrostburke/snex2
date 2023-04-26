@@ -25,3 +25,4 @@ matplotlib
 mysqlclient==1.4.6
 lasair
 importlib-metadata==4.13.0
+sep

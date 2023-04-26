@@ -6,53 +6,56 @@
 {% endblock %}
 {% block content %}
 {% if user|has_gw_permissions %}
-  <table class="header-table" cellpadding="0" cellspacing="0" style="background: #174460; font-family: 'Open Sans', sans-serif; color: white; width: 104.45%; margin-left: -39px; margin-top: -100px;">
-    <tr height="89">
-      <td align="left">
-	      <span style="display: inline-block; font-size: 30px; margin-left: 30px;">{{ galaxy.catalog_objname }} (for {{ superevent_id }})</span>
-      </td>
+<nav class="navbar navbar-expand-md fixed-top fixed-top-2">
+  <div class="collapse navbar-collapse" id="targetInfo">
+    <h3>Galaxy Observations for {{ superevent_id }}</h3>
+  </div>
+</nav>
+<div class="row">
+  <div class="col-md-6">
+    <span class="float-left">{{ galaxy_count }} Galaxies &nbsp;</span>
+  </div>
+  <div class="col-md-6">
+    <span class="float-right"><a href="{% url 'nonlocalizedevents:detail' superevent_index %}">View this SuperEvent</a></span>
+  </div>
+</div>
+<table class="table">
+  <thead class="thead-light">
+    <tr>
+      <th>Name<br /><p></p></th>
+      <th>Score<br /><p></p></th>
+      <th>Coords<br /><p></p></th>
+      <th>Distance<br /><p></p></th>
+      <th>Reference<br /><p></p></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for row in rows %}
+    <tr>
+      <td>{{ row.galaxy.catalog_objname }}<br></td>
+      <td>{{ row.galaxy.score|floatformat:4 }}</td>
+      <td>{{ row.galaxy.ra|floatformat:4 }}<br>
+          {{ row.galaxy.dec|floatformat:4 }}</td>
+      <td>{{ row.galaxy.dist|floatformat:0 }} Mpc</td>
       <td>
-        <span style="display: inline-block; font-size: 20px;">{{ galaxy.ra|floatformat:4 }}, {{ galaxy.dec|floatformat:4 }}</span>
-      </td>
-      <td align="left">
-        <span style="display: inline-block; font-size: 20px;">Score: {{ galaxy.score|floatformat:4 }}</span>
-      </td>
-      <td>
-        <span style="display: inline-block; font-size: 20px;">Distance: {{ galaxy.dist|floatformat:0 }} Mpc</span>
+        <div id="aladin-{{ row.galaxy.id }}" style="display: inline-block;">{% aladin_collapse row.galaxy %}</div>
       </td>
     </tr>
-  </table>
-  <div class="row">
-    <div class="col-md-12">
-      <table class="table table-hover">
-        <thead>
-          <tr>
-	    <th>Obs. Date<br>
-	    Filter<br>
-            Exposure Time<br>
-            </th>
-	    <th></th>
-	    <th></th>
-	    <th></th>
-	    <th>Triplet</th>
-	    <th></th>
-	    <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for triplet in triplets %}
-          <tr>
-	    <td colspan="2">{{ triplet.obsdate }}<br> {{ triplet.filter }}<br> {{ triplet.exposure_time }}</td>
-	    <td colspan="5">{% plot_triplets triplet %}</td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="5">No images taken yet</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+    {% for triplet in row.triplets %}
+    <tr>
+      <td style="border-top: none;"></td>
+      <td style="border-top: none;" colspan="2">
+	      <span><b>Date: </b>{{ triplet.obsdate }}</span><br>
+	      <span><b>Filter: </b>{{ triplet.filter }}</span><br>
+	      <span><b>Exp. Time: </b>{{ triplet.exposure_time }} s</span>
+      </td>
+      <td style="border-top: none;" colspan="3">
+	    {% plot_triplets triplet row.galaxy 'list' %}
+      </td>
+    </tr>
+    {% endfor %}
+  {% endfor %}
+  </tbody>
+</table>
 {% endif %}
 {% endblock %}

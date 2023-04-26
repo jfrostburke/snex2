@@ -6,8 +6,11 @@ from django.db.models import F
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.views.generic import ListView
+from django.views.generic.base import TemplateView
 from guardian.shortcuts import assign_perm
 import json
+from astropy.io import fits
+import sep
 from datetime import datetime, timedelta
 from tom_nonlocalizedevents.models import NonLocalizedEvent, EventSequence, EventLocalization
 from gw.models import GWFollowupGalaxy
@@ -45,6 +48,95 @@ class GWFollowupGalaxyListView(LoginRequiredMixin, ListView):
         context['superevent_id'] = EventSequence.objects.get(id=self.kwargs['id']).nonlocalizedevent.event_id
         context['galaxy_count'] = len(self.get_queryset())
         context['obs_form'] = GWGalaxyObservationForm()
+        return context
+
+
+class EventSequenceGalaxiesTripletView(TemplateView, LoginRequiredMixin):
+
+    template_name = 'gw/galaxy_observations.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        sequence = EventSequence.objects.get(id=self.kwargs['id'])
+        loc = sequence.localization
+        galaxies = GWFollowupGalaxy.objects.filter(eventlocalization=loc)
+        galaxies = galaxies.annotate(name=F("id"))
+        context['galaxy_count'] = len(galaxies)
+        #TODO: Filter galaxies by observations, but for now we'll just take a subset and fake it
+
+        context['superevent_id'] = sequence.nonlocalizedevent.event_id 
+        context['superevent_index'] = sequence.nonlocalizedevent.id
+
+        rows = []
+
+        #TODO: Populate this dynamically
+        for galaxy in galaxies[:3]:
+
+            row = {'galaxy': galaxy,
+                   'triplets': [{
+                       'obsdate': '2023-04-19',
+                       'filter': 'g',
+                       'exposure_time': 200,
+                       'original': {'filename': '/home/cpellegrino/Downloads/obs.fits'},
+                       'template': {'filename': '/home/cpellegrino/Downloads/ref.fits'},
+                       'diff': {'filename': '/home/cpellegrino/Downloads/sub.fits'}
+                   },
+                   {
+                       'obsdate': '2023-04-19',
+                       'filter': 'g',
+                       'exposure_time': 200,
+                       'original': {'filename': '/home/cpellegrino/Downloads/obs.fits'},
+                       'template': {'filename': '/home/cpellegrino/Downloads/ref.fits'},
+                       'diff': {'filename': '/home/cpellegrino/Downloads/sub.fits'}
+                   }]
+            }
+            rows.append(row)
+
+        context['rows'] = rows
+
+        return context
+
+
+class GWFollowupGalaxyTripletView(TemplateView, LoginRequiredMixin):
+
+    template_name = 'gw/galaxy_observations_individual.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        galaxy = GWFollowupGalaxy.objects.get(id=self.kwargs['id'])
+        context['galaxy'] = galaxy
+
+        loc = galaxy.eventlocalization
+        context['superevent_id'] = loc.nonlocalizedevent.event_id 
+        context['superevent_index'] = loc.nonlocalizedevent.id
+
+        rows = []
+
+        #TODO: Populate this dynamically
+
+        triplets = [{
+            'obsdate': '2023-04-19',
+            'filter': 'g',
+            'exposure_time': 200,
+            'original': {'filename': '/home/cpellegrino/Downloads/obs.fits'},
+            'template': {'filename': '/home/cpellegrino/Downloads/ref.fits'},
+            'diff': {'filename': '/home/cpellegrino/Downloads/sub.fits'}
+        }]
+
+        ### Run SExtractor to get sources to plot
+        for triplet in triplets:
+            hdu = fits.open(triplet['diff']['filename'])
+            img = hdu[0].data
+            hdu.close()
+
+            bkg = sep.Background(img.byteswap().newbyteorder())
+            sources = sep.extract(img-bkg, 5.0, err=bkg.globalrms)
+            triplet['sources'] = sources
+
+        context['triplets'] = triplets
+
         return context
 
 

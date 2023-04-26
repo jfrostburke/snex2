@@ -55,7 +55,9 @@
 	<div class="row"><b>{{ page_obj.start_index|add:forloop.counter0 }}.</b></div>
 	<div class="row"><input type="checkbox" class="individual-checkbox" id="select-{{ galaxy.id }}" checked></div>
       </td>
-      <td>{{ galaxy.catalog_objname }}</td>
+      <td>{{ galaxy.catalog_objname }}<br>
+	<span><a href="{% url 'nonlocalizedevents-galaxies-triplets' galaxy.id %}">View Galaxy Observations</a></span>
+      </td>
       <td>{{ galaxy.score|floatformat:4 }}</td>
       <td>{{ galaxy.ra|floatformat:4 }}</td>
       <td>{{ galaxy.dec|floatformat:4 }}</td>
