@@ -24,16 +24,19 @@ def has_gw_permissions(user):
     return False
 
 
-@register.inclusion_tag('tom_targets/partials/target_distribution.html')
-def galaxy_distribution(galaxies):
-    locations = galaxies.values_list('ra', 'dec', 'name')
+@register.inclusion_tag('tom_targets/partials/target_distribution.html', takes_context=True)
+def galaxy_distribution(context, galaxies):
+    request = context['request']
+    page_number = int(request.GET.get('page', 1))
+    locations = galaxies.values_list('ra', 'dec')#, 'name')
     data = []
-    for location in locations:
+    for i, location in enumerate(locations):
+        obj_number = (page_number-1)*30 + i + 1
         data.append(
             dict(
                 lon=[location[0]-0.25, location[0]-0.25, location[0]+0.25, location[0]+0.25, location[0]-0.25],
                 lat=[location[1]-0.25, location[1]+0.25, location[1]+0.25, location[1]-0.25, location[1]-0.25],
-                text=[location[2], location[2], location[2], location[2], location[2]],
+                text=[obj_number, obj_number, obj_number, obj_number, obj_number],
                 hoverinfo='lon+lat+text',
                 mode='lines',
                 type='scattergeo',
@@ -152,4 +155,10 @@ def plot_triplets(context, triplet, galaxy, display_type):
     plot_context['subplots'] = figure
 
     return plot_context
+
+
+@register.inclusion_tag('gw/partials/nonlocalizedevent_info.html')
+def event_info(sequence):
+
+    return {'sequence': sequence, 'localization': sequence.localization}
 

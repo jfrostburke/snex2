@@ -45,6 +45,7 @@ class GWFollowupGalaxyListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        context['sequence'] = EventSequence.objects.get(id=self.kwargs['id'])
         context['superevent_id'] = EventSequence.objects.get(id=self.kwargs['id']).nonlocalizedevent.event_id
         context['galaxy_count'] = len(self.get_queryset())
         context['obs_form'] = GWGalaxyObservationForm()
@@ -59,6 +60,7 @@ class EventSequenceGalaxiesTripletView(TemplateView, LoginRequiredMixin):
         context = super().get_context_data(**kwargs)
 
         sequence = EventSequence.objects.get(id=self.kwargs['id'])
+        context['sequence'] = sequence
         loc = sequence.localization
         galaxies = GWFollowupGalaxy.objects.filter(eventlocalization=loc)
         galaxies = galaxies.annotate(name=F("id"))
@@ -71,7 +73,7 @@ class EventSequenceGalaxiesTripletView(TemplateView, LoginRequiredMixin):
         rows = []
 
         #TODO: Populate this dynamically
-        for galaxy in galaxies[:3]:
+        for galaxy in galaxies[:1]:
 
             row = {'galaxy': galaxy,
                    'triplets': [{
@@ -82,14 +84,15 @@ class EventSequenceGalaxiesTripletView(TemplateView, LoginRequiredMixin):
                        'template': {'filename': '/home/cpellegrino/Downloads/ref.fits'},
                        'diff': {'filename': '/home/cpellegrino/Downloads/sub.fits'}
                    },
-                   {
-                       'obsdate': '2023-04-19',
-                       'filter': 'g',
-                       'exposure_time': 200,
-                       'original': {'filename': '/home/cpellegrino/Downloads/obs.fits'},
-                       'template': {'filename': '/home/cpellegrino/Downloads/ref.fits'},
-                       'diff': {'filename': '/home/cpellegrino/Downloads/sub.fits'}
-                   }]
+                   #{
+                   #    'obsdate': '2023-04-19',
+                   #    'filter': 'g',
+                   #    'exposure_time': 200,
+                   #    'original': {'filename': '/home/cpellegrino/Downloads/obs.fits'},
+                   #    'template': {'filename': '/home/cpellegrino/Downloads/ref.fits'},
+                   #    'diff': {'filename': '/home/cpellegrino/Downloads/sub.fits'}
+                   #}
+                   ]
             }
             rows.append(row)
 
