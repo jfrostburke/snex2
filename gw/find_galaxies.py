@@ -53,7 +53,7 @@ def generate_galaxy_list(eventlocalization, completeness=None, credzone=None):
     #MB_star = float(config.get('GALAXIES', 'MB_STAR'))
     
     try:
-        map_data = Table.read(eventlocalization.skymap_moc_file_url.replace('.multiorder.fits','.fits.gz'))
+        map_data = Table.read(eventlocalization.skymap_url.replace('.multiorder.fits','.fits.gz'))
         prob = np.asarray(map_data['PROB'])
         distmu = np.asarray(map_data['DISTMU'])
         distsigma = np.asarray(map_data['DISTSIGMA'])
@@ -69,9 +69,8 @@ def generate_galaxy_list(eventlocalization, completeness=None, credzone=None):
 
     # Load the galaxy catalog.
     logger.info('Loading Galaxy Catalog')
-    hdu = fits.open(catalog_path)
-    galaxies = Table(hdu[1].data)
-    hdu.close()
+    galaxies = Table.read(catalog_path)
+    
     ### If using luminosity, remove galaxies with no Lum_X, like so:q
     #galaxies = galaxies[~np.isnan(galaxies['Lum_W1'])]
     ### If using mass, make cuts on DistMpc and Mstar

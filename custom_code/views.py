@@ -27,7 +27,8 @@ from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.conf import settings
-from django.contrib.postgres.fields.jsonb import KeyTextTransform
+#from django.contrib.postgres.fields.jsonb import KeyTextTransform
+from django.db.models.fields.json import KeyTextTransform
 
 import os
 from urllib.parse import urlencode

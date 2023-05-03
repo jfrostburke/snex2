@@ -114,7 +114,7 @@ TEMPLATES = [
 DATA_SHARING = {
     'hermes': {
         'DISPLAY_NAME': os.getenv('HERMES_DISPLAY_NAME', 'Hermes'),
-        'BASE_URL': os.getenv('HERMES_BASE_URL', 'http://hermes-dev.lco.gtn/'),
+        'BASE_URL': os.getenv('HERMES_BASE_URL', 'https://hermes-dev.lco.global/'),
         'SCIMMA_AUTH_USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
         'CREDENTIAL_USERNAME': os.getenv('SCIMMA_CREDENTIAL_USERNAME', None,),
         'CREDENTIAL_PASSWORD': os.getenv('SCIMMA_CREDENTIAL_PASSWORD', None),
@@ -138,18 +138,6 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 WSGI_APPLICATION = 'snex2.wsgi.application'
 
-DATA_SHARING = {
-    'hermes': {
-        'DISPLAY_NAME': os.getenv('HERMES_DISPLAY_NAME', 'Hermes'),
-        'BASE_URL': os.getenv('HERMES_BASE_URL', 'http://hermes-dev.lco.gtn/'),
-        'SCIMMA_AUTH_USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
-        'CREDENTIAL_USERNAME': os.getenv('SCIMMA_CREDENTIAL_USERNAME', None),
-        'CREDENTIAL_PASSWORD': os.getenv('SCIMMA_CREDENTIAL_PASSWORD', None),
-        'USER_TOPICS': ['hermes.test', 'tomtoolkit.test']
-    },
-}
-
-
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 if os.environ.get('SNEX2_DB_BACKEND') == 'postgres':
@@ -166,12 +154,18 @@ if os.environ.get('SNEX2_DB_BACKEND') == 'postgres':
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-            'USER': '',
-            'PASSWORD': '',
-            'HOST': '',
-            'PORT': 5432,
+            #'ENGINE': 'django.db.backends.sqlite3',
+            #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+            #'USER': '',
+            #'PASSWORD': '',
+            #'HOST': '',
+            #'PORT': 5432,
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'snex2',
+            'USER': 'postgres',
+            'PASSWORD': 'postgres',
+            'HOST': '127.0.0.1',
+            'PORT': '5432'
         }
     }
 
@@ -485,24 +479,28 @@ WEBPACK_LOADER = {
 TOM_API_URL = os.getenv('TOM_API_URL', 'http://127.0.0.1:8000')
 HERMES_API_URL = os.getenv('HERMES_API_URL', 'https://hermes.lco.global')
 
+SAVE_TEST_ALERTS = True
+
 ALERT_STREAMS = [
     {
         'ACTIVE': True,
         'NAME': 'custom_code.alertstreams.hopskotch.CustomHopskotchAlertStream',
         'OPTIONS': {
             'URL': 'kafka://kafka.scimma.org/',
-            'GROUP_ID': os.getenv('SCIMMA_AUTH_USERNAME', "") + '-' + 'uniqueidforyourapp12345',
-            'USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
-            'PASSWORD': os.getenv('SCIMMA_AUTH_PASSWORD', None),
+            'USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', ''),
+            'PASSWORD': os.getenv('SCIMMA_AUTH_PASSWORD', ''),
+            # Group ID must be prefixed with SCiMMA SCRAM credential username to open the SCiMMA kafka stream
+            'GROUP_ID': os.getenv('SCIMMA_AUTH_USERNAME', '') + '-' + os.getenv('HOPSKOTCH_GROUP_ID', 'hermes-dev'),
             'TOPIC_HANDLERS': {
-                'sys.heartbeat': 'custom_code.alertstreams.hopskotch.heartbeat_handler',
+                'hermes.*': 'custom_code.alertstreams.hopskotch.alert_logger',
                 'tomtoolkit.test': 'custom_code.alertstreams.hopskotch.alert_logger',
-                'hermes.test': 'custom_code.alertstreams.hopskotch.alert_logger',
+                #'igwn.gwalert': 'tom_nonlocalizedevents.alertstream_handlers.igwn_event_handler.handle_igwn_message',
+                'igwn.gwalert': 'gw.gw_event_handler.handle_igwn_message_with_galaxies',
             },
         },
     },
     {
-        'ACTIVE': True,
+        'ACTIVE': False,
         'NAME': 'tom_alertstreams.alertstreams.gcn.GCNClassicAlertStream',
         # The keys of the OPTIONS dictionary become (lower-case) properties of the AlertStream instance.
         'OPTIONS': {
@@ -516,9 +514,9 @@ ALERT_STREAMS = [
                 # 'enable.auto.commit': False
             },
             'TOPIC_HANDLERS': {
-                'gcn.classic.text.LVC_INITIAL': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
-                'gcn.classic.text.LVC_PRELIMINARY': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
-                'gcn.classic.text.LVC_RETRACTION': 'gw.gw_event_handler.handle_retraction_with_galaxies',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_retraction',
+                'gcn.classic.text.LVC_INITIAL': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gcn_event_handler.handle_message',
+                'gcn.classic.text.LVC_PRELIMINARY': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gcn_event_handler.handle_message',
+                'gcn.classic.text.LVC_RETRACTION': 'gw.gw_event_handler.handle_retraction_with_galaxies',#'tom_nonlocalizedevents.alertstream_handlers.gcn_event_handler.handle_retraction',
             },
         },
     }

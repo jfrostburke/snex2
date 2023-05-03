@@ -5,7 +5,7 @@ ligo.skymap==1.0.3
 tom-nonlocalizedevents
 tom-alertstreams
 gunicorn[gevent]
-django==3.2.16
+django==4.2
 django-heroku
 django-storages
 boto3
