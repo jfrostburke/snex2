@@ -60,6 +60,12 @@ services:
             - LASAIR_IRIS_TOKEN=${LASAIR_IRIS_TOKEN}
             - SCIMMA_AUTH_USERNAME=${SCIMMA_AUTH_USERNAME}
             - SCIMMA_AUTH_PASSWORD=${SCIMMA_AUTH_PASSWORD}
+            - GCN_CLASSIC_CLIENT_ID=${GCN_CLASSIC_CLIENT_ID}
+            - GCN_CLASSIC_CLIENT_SECRET=${GCN_CLASSIC_CLIENT_SECRET}
+            - CREDENTIAL_USERNAME=${CREDENTIAL_USERNAME}
+            - CREDENTIAL_PASSWORD=${CREDENTIAL_PASSWORD}
+            - TM_TOKEN=${TM_TOKEN}
+            - HERMES_BASE_URL=${HERMES_BASE_URL}
         volumes:
             - ${SNEX_THUMBNAIL_PATH}:/snex2/data/thumbs/
             - ${SNEX_FITS_PATH}:/snex2/data/fits/
@@ -116,6 +122,11 @@ services:
             - LASAIR_IRIS_TOKEN=${LASAIR_IRIS_TOKEN}
             - SCIMMA_AUTH_USERNAME=${SCIMMA_AUTH_USERNAME}
             - SCIMMA_AUTH_PASSWORD=${SCIMMA_AUTH_PASSWORD}
+            - GCN_CLASSIC_CLIENT_ID=${GCN_CLASSIC_CLIENT_ID}
+            - GCN_CLASSIC_CLIENT_SECRET=${GCN_CLASSIC_CLIENT_SECRET}
+            - CREDENTIAL_USERNAME=${CREDENTIAL_USERNAME}
+            - CREDENTIAL_PASSWORD=${CREDENTIAL_PASSWORD}
+            - TM_TOKEN=${TM_TOKEN}
             - HERMES_BASE_URL=${HERMES_BASE_URL}
         volumes:
             - ${SNEX_THUMBNAIL_PATH}:/snex2/data/thumbs/
@@ -123,4 +134,5 @@ services:
             - ${SNEX_0m4_FITS_PATH}:/snex2/data/fits/0m4/
             - ${SNEX_2m_FITS_PATH}:/snex2/data/fits/fts/
             - ${SNEX_MUSCAT_FITS_PATH}:/snex2/data/fits/2m0a/
+            - ${SNEX_GW_FITS_PATH}:/snex2/data/fits/gw/
             - ${SNEX_FLOYDS_PATH}:/snex2/data/floyds/
