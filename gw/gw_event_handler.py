@@ -10,6 +10,7 @@ from tom_nonlocalizedevents.alertstream_handlers.gcn_event_handler import extrac
 from tom_nonlocalizedevents.alertstream_handlers.igwn_event_handler import handle_igwn_message
 from tom_nonlocalizedevents.models import NonLocalizedEvent, EventSequence, EventLocalization
 from gw.find_galaxies import generate_galaxy_list
+from gw.models import GWFollowupGalaxy
 from tom_common.hooks import run_hook
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,10 @@ def handle_igwn_message_with_galaxies(message, metadata):
     nonlocalizedevent, event_sequence = handle_igwn_message(message, metadata)
 
     localization = event_sequence.localization
+    existing_galaxies_for_localization = GWFollowupGalaxy.objects.filter(eventlocalization=localization)
+    if len(existing_galaxies_for_localization) > 0:
+        ### Already found galaxies for this localization, so don't do it again
+        return
     try:
         generate_galaxy_list(localization)
     except Exception as e:

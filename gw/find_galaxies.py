@@ -53,11 +53,7 @@ def generate_galaxy_list(eventlocalization, completeness=None, credzone=None):
     #MB_star = float(config.get('GALAXIES', 'MB_STAR'))
     
     try:
-        map_data = Table.read(eventlocalization.skymap_url.replace('.multiorder.fits','.fits.gz'))
-        prob = np.asarray(map_data['PROB'])
-        distmu = np.asarray(map_data['DISTMU'])
-        distsigma = np.asarray(map_data['DISTSIGMA'])
-        distnorm = np.asarray(map_data['DISTNORM'])
+        prob, distmu, distsigma, distnorm = hp.read_map(eventlocalization.skymap_url.replace('.multiorder.fits','.fits.gz'), field=[0,1,2,3], verbose=False)
 
     except Exception as e:
         logger.warning('Failed to read sky map for {}'.format(eventlocalization))
