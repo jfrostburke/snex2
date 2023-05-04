@@ -9,6 +9,7 @@ from django.views.generic import ListView
 from django.views.generic.base import TemplateView
 from guardian.shortcuts import assign_perm
 import json
+import os
 from astropy.io import fits
 import sep
 from datetime import datetime, timedelta
@@ -25,6 +26,9 @@ from custom_code.views import Snex1ConnectionError
 import logging
 
 logger = logging.getLogger(__name__)
+
+BASE_DIR = settings.BASE_DIR
+
 
 class GWFollowupGalaxyListView(LoginRequiredMixin, ListView):
 
@@ -80,17 +84,17 @@ class EventSequenceGalaxiesTripletView(TemplateView, LoginRequiredMixin):
                        'obsdate': '2023-04-19',
                        'filter': 'g',
                        'exposure_time': 200,
-                       'original': {'filename': '/home/cpellegrino/Downloads/obs.fits'},
-                       'template': {'filename': '/home/cpellegrino/Downloads/ref.fits'},
-                       'diff': {'filename': '/home/cpellegrino/Downloads/sub.fits'}
+                       'original': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/obs.fits')},
+                       'template': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/ref.fits')},
+                       'diff': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/sub.fits')}
                    },
                    #{
                    #    'obsdate': '2023-04-19',
                    #    'filter': 'g',
                    #    'exposure_time': 200,
-                   #    'original': {'filename': '/home/cpellegrino/Downloads/obs.fits'},
-                   #    'template': {'filename': '/home/cpellegrino/Downloads/ref.fits'},
-                   #    'diff': {'filename': '/home/cpellegrino/Downloads/sub.fits'}
+                   #    'original': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/obs.fits')},
+                   #    'template': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/ref.fits')},
+                   #    'diff': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/sub.fits')}
                    #}
                    ]
             }
@@ -123,9 +127,9 @@ class GWFollowupGalaxyTripletView(TemplateView, LoginRequiredMixin):
             'obsdate': '2023-04-19',
             'filter': 'g',
             'exposure_time': 200,
-            'original': {'filename': '/home/cpellegrino/Downloads/obs.fits'},
-            'template': {'filename': '/home/cpellegrino/Downloads/ref.fits'},
-            'diff': {'filename': '/home/cpellegrino/Downloads/sub.fits'}
+            'original': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/obs.fits')},
+            'template': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/ref.fits')},
+            'diff': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/sub.fits')}
         }]
 
         ### Run SExtractor to get sources to plot
