@@ -13,7 +13,7 @@ services:
         ports:
             - 5435:5432/tcp
     snex2:
-        image: jfrostburke/snex2:latest
+        image: lcogt/snex2:latest
         network_mode: bridge
         links:
             - "snex2-db:snex2-db"
