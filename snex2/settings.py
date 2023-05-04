@@ -431,9 +431,12 @@ HINT_LEVEL = 20
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.CryptPasswordHasher',
     #'django.contrib.auth.hashers.Argon2PasswordHasher',
     #'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
 ]
+
+CSRF_TRUSTED_ORIGINS = ['https://test.supernova.exchange']
 
 TOM_REGISTRATION = {
     'REGISTRATION_AUTHENTICATION_BACKEND': 'django.contrib.auth.backends.AllowAllUsersModelBackend',
