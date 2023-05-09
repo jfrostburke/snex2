@@ -10,6 +10,10 @@
     <h3>Non-Localized Event List</h3>
   </div>
 </nav>
+<div class="row" style="align-items: baseline;">
+  <input type="checkbox" id="checkbox-mock" onclick='toggleMockEvents()'>
+  <label for="checkbox-mock">Toggle Mock Event Display</label>
+</div>
 {% if user|has_gw_permissions %}
   {% if object_list %}
     <table class="table">
@@ -26,7 +30,11 @@
         <thead>
         <tbody>
         {% for event in object_list %}
-        <tr>
+	{% if event.event_id|first == 'M' %}
+        <tr class="row-mock">
+	{% else %}
+	<tr>
+	{% endif %}
             <td>{{ event.event_type }}</td>
             <td scope="row">
   	      <b>{{ event.event_id }}</b>
@@ -61,5 +69,17 @@
 {% else %}
     <p>Sorry, you don't have permission to view this page.</p>
 {% endif %}
-
+<script>
+function toggleMockEvents() {
+  var toggleCheck = document.getElementById('checkbox-mock');
+  var mockRows = document.getElementsByClassName('row-mock');
+  for (var i=0; i<mockRows.length; i++) {
+    if (toggleCheck.checked) {
+      mockRows[i].style.display = 'none';
+    } else {
+      mockRows[i].style.display = 'table-row';
+    }
+  }
+}
+</script>
 {% endblock content %}
