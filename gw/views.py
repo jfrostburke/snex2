@@ -154,7 +154,7 @@ def submit_galaxy_observations_view(request):
     galaxies = GWFollowupGalaxy.objects.filter(id__in=galaxy_ids)
 
     try:
-        #db_session = _return_session()
+        db_session = _return_session()
         failed_obs = []
         all_pointings = []
         with transaction.atomic():
@@ -166,7 +166,7 @@ def submit_galaxy_observations_view(request):
                         type='SIDEREAL'
                 )
 
-                #run_hook('target_post_save', target=newtarget, created=created, group_names=['GWO4'], wrapped_session=db_session)
+                run_hook('target_post_save', target=newtarget, created=created, group_names=['GWO4'], wrapped_session=db_session)
 
                 ### Create TargetExtra linking the Target with the GWFollowupGalaxy
                 if created:
@@ -273,50 +273,50 @@ def submit_galaxy_observations_view(request):
                         assign_perm('tom_observations.delete_observationrecord', groups, record)
 
                     ## Add the sequence to SNEx1
-                    #snex_id = run_hook(
-                    #    'sync_sequence_with_snex1',
-                    #    form.serialize_parameters(),
-                    #    ['GWO4'],
-                    #    userid=request.user.id,
-                    #    wrapped_session=db_session
-                    #)
+                    snex_id = run_hook(
+                        'sync_sequence_with_snex1',
+                        form.serialize_parameters(),
+                        ['GWO4'],
+                        userid=request.user.id,
+                        wrapped_session=db_session
+                    )
 
-                    #if len(new_observations) > 1 or form_data.get('cadence'):
-                    #    observation_group.name = str(snex_id)
-                    #    observation_group.save()
+                    if len(new_observations) > 1 or form_data.get('cadence'):
+                        observation_group.name = str(snex_id)
+                        observation_group.save()
 
-                    #    for record in new_observations:
-                    #        record.parameters['name'] = snex_id
-                    #        record.save()
+                        for record in new_observations:
+                            record.parameters['name'] = snex_id
+                            record.save()
 
                     ### TODO: Log the target in a new snex1 table?
 
                 ### Submit pointing to TreasureMap
-                pointings = build_tm_pointings(newtarget, observing_parameters)
+                #pointings = build_tm_pointings(newtarget, observing_parameters)
 
-                all_pointings += pointings
+                #all_pointings += pointings
 
-            submitted = submit_tm_pointings(galaxy.eventlocalization.sequences.first(), all_pointings)
-            if not submitted:
-                logger.error('Submitting to Treasure Map failed for these observations')
+            #submitted = submit_tm_pointings(galaxy.eventlocalization.sequences.first(), all_pointings)
+            #if not submitted:
+            #    logger.error('Submitting to Treasure Map failed for these observations')
 
-            raise Snex1ConnectionError(message="We got to the end but raise an error to roll back the db")
+            #raise Snex1ConnectionError(message="We got to the end but raise an error to roll back the db")
         if not failed_obs:
             failed_obs_str = 'All observations submitted successfully'
         else:
             failed_obs_str = 'Observations failed to submit for the following galaxies: ' + ','.join(failed_obs)
         response_data = {'success': 'Submitted',
                          'failed_obs': failed_obs_str}
-        #db_session.commit()
+        db_session.commit()
 
     except Exception as e:
         logger.error('Creating galaxy Target objects and scheduling observations failed with error: {}'.format(e))
         response_data = {'failure': 'Creating galaxy Target objects and scheduling observations failed'}
-        #db_session.rollback()
+        db_session.rollback()
 
     finally:
         print('Done')
-        #db_session.close()
+        db_session.close()
 
     return HttpResponse(json.dumps(response_data), content_type='application/json')
 
