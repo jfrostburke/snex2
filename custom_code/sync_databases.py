@@ -3,6 +3,7 @@
 from sqlalchemy import create_engine, and_, update, insert, pool
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.sql import func, select
 
 import json
 from contextlib import contextmanager
@@ -440,6 +441,8 @@ def update_target(action, db_address=_SNEX2_DB):
                     existing_target_query = db_session.query(Target).filter(criteria).first()
                     if not existing_target_query:
                         db_session.add(Target(id=target_id, name=t_name, ra=t_ra, dec=t_dec, modified=t_modified, created=t_created, type='SIDEREAL', epoch=2000, scheme=''))
+                        if 'postgresql' in db_address:
+                            db_session.execute(select(func.setval('tom_targets_target_id_seq', target_id + 1)))
                         update_permissions(t_groupid, 47, target_id, 12) #Change target
                         update_permissions(t_groupid, 48, target_id, 12) #Delete target
                         update_permissions(t_groupid, 49, target_id, 12) #View target
