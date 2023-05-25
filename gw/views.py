@@ -272,30 +272,34 @@ def submit_galaxy_observations_view(request):
                             active=True
                         )
 
-                    groups = Group.objects.filter(name='GWO4')
+                groups = Group.objects.filter(name='GWO4')
+                for record in new_observations:
+                    assign_perm('tom_observations.view_observationrecord', groups, record)
+                    assign_perm('tom_observations.change_observationrecord', groups, record)
+                    assign_perm('tom_observations.delete_observationrecord', groups, record)
+
+                ## Add the sequence to SNEx1
+                snex_id = run_hook(
+                    'sync_sequence_with_snex1',
+                    form.serialize_parameters(),
+                    ['GWO4'],
+                    userid=request.user.id,
+                    wrapped_session=db_session
+                )
+
+                if len(new_observations) > 1 or form_data.get('cadence'):
+                    observation_group.name = str(snex_id)
+                    observation_group.save()
+
                     for record in new_observations:
-                        assign_perm('tom_observations.view_observationrecord', groups, record)
-                        assign_perm('tom_observations.change_observationrecord', groups, record)
-                        assign_perm('tom_observations.delete_observationrecord', groups, record)
+                        record.parameters['name'] = snex_id
+                        record.save()
 
-                    ## Add the sequence to SNEx1
-                    snex_id = run_hook(
-                        'sync_sequence_with_snex1',
-                        form.serialize_parameters(),
-                        ['GWO4'],
-                        userid=request.user.id,
-                        wrapped_session=db_session
-                    )
-
-                    if len(new_observations) > 1 or form_data.get('cadence'):
-                        observation_group.name = str(snex_id)
-                        observation_group.save()
-
-                        for record in new_observations:
-                            record.parameters['name'] = snex_id
-                            record.save()
-
-                    ### TODO: Log the target in a new snex1 table?
+                ### Log the target in SNEx1 and ingest template images
+                run_hook('ingest_gw_galaxy_into_snex1', 
+                         newtarget.id, 
+                         galaxy.eventlocalization.nonlocalizedevent.event_id,
+                         wrapped_session=db_session)
 
                 ### Submit pointing to TreasureMap
                 #pointings = build_tm_pointings(newtarget, observing_parameters)
