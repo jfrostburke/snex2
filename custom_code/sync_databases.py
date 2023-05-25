@@ -442,7 +442,7 @@ def update_target(action, db_address=_SNEX2_DB):
                     if not existing_target_query:
                         db_session.add(Target(id=target_id, name=t_name, ra=t_ra, dec=t_dec, modified=t_modified, created=t_created, type='SIDEREAL', epoch=2000, scheme=''))
                         if 'postgresql' in db_address:
-                            db_session.execute(select(func.setval('tom_targets_target_id_seq', target_id + 1)))
+                            db_session.execute(select(func.setval('tom_targets_target_id_seq', target_id)))
                         update_permissions(t_groupid, 47, target_id, 12) #Change target
                         update_permissions(t_groupid, 48, target_id, 12) #Delete target
                         update_permissions(t_groupid, 49, target_id, 12) #View target
