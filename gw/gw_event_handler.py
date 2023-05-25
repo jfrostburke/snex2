@@ -12,28 +12,31 @@ from tom_nonlocalizedevents.models import NonLocalizedEvent, EventSequence, Even
 from gw.find_galaxies import generate_galaxy_list
 from gw.models import GWFollowupGalaxy
 from tom_common.hooks import run_hook
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
 
 def handle_igwn_message_with_galaxies(message, metadata):
 
+    alert = message.content[0]
+    if alert.get('superevent_id', '').startswith('M') and not settings.SAVE_TEST_ALERTS:
+        return None, None
+
     ### First, check if the message contains a retraction
     ### and handle that case differently
-    alert = message.content[0]
     if alert.get('alert_type', '') == 'RETRACTION':
-        NonLocalizedEvent.objects.update_or_create(
+        nonlocalizedevent, nle_created = NonLocalizedEvent.objects.update_or_create(
             event_id=alert['superevent_id'],
             event_type=NonLocalizedEvent.NonLocalizedEventType.GRAVITATIONAL_WAVE,
             defaults={'state': NonLocalizedEvent.NonLocalizedEventState.RETRACTED}
         )
         
-        retracted_event = NonLocalizedEvent.objects.get(event_id=alert['superevent_id'])
-        sequences = retracted_event.sequences.all()
+        sequences = nonlocalizedevent.sequences.all()
         for sequence in sequences:
             run_hook('cancel_gw_obs', galaxy_ids=[], sequence_id=sequence.id)        
 
-        return
+        return nonlocalizedevent, None
 
     nonlocalizedevent, event_sequence = handle_igwn_message(message, metadata)
 
@@ -41,12 +44,14 @@ def handle_igwn_message_with_galaxies(message, metadata):
     existing_galaxies_for_localization = GWFollowupGalaxy.objects.filter(eventlocalization=localization)
     if len(existing_galaxies_for_localization) > 0:
         ### Already found galaxies for this localization, so don't do it again
-        return
+        return nonlocalizedevent, event_sequence
     try:
         generate_galaxy_list(localization)
     except Exception as e:
         logger.error('Could not generate galaxy list with exception {}'.format(e))
         logger.error(traceback.format_exc())
+
+    return nonlocalizedevent, event_sequence
 
 
 def handle_message(message):
