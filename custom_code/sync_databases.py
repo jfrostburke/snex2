@@ -62,7 +62,7 @@ def load_table(tablename, db_address=_SNEX1_DB):
     """
     Base = automap_base()
     engine = create_engine(db_address, poolclass=pool.NullPool)
-    Base.prepare(engine, reflect=True)
+    Base.prepare(autoload_with=engine)
 
     table = getattr(Base.classes, tablename)
     return table
