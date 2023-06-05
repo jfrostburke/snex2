@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-from sqlalchemy import create_engine, and_, update, insert, pool
+from sqlalchemy import create_engine, and_, update, insert, pool, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
-from sqlalchemy.sql import func, select
+from sqlalchemy.sql import func
 
 import json
 from contextlib import contextmanager
