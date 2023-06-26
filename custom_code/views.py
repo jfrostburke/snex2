@@ -169,9 +169,8 @@ def target_redirect_view(request):
 
     target_search_coords = None
     if ':' in search_entry or '.' in search_entry:
-        target_search_coords = search_entry.split(' ')
-        if len(target_search_coords) < 2:
-            target_search_coords = search_entry.split(',')
+        search_entry = search_entry.replace(',', ' ')
+        target_search_coords = search_entry.split()
 
     if target_search_coords is not None:
         ra = target_search_coords[0]
@@ -206,8 +205,10 @@ def target_redirect_view(request):
             target_id = target_match_list[0].id
             return(redirect('/targets/{}/'.format(target_id)))
         
-        else:
+        elif len(target_match_list) > 1:
             return(redirect('/targets/?cone_search={ra}%2C{dec}%2C{radius}'.format(ra=ra,dec=dec,radius=radius)))
+        else:
+            return(redirect('/create-target/?ra={ra}&dec={dec}'.format(ra=ra,dec=dec)))
 
     else:
         target_match_list = Target.objects.filter(Q(name__icontains=search_entry) | Q(aliases__name__icontains=search_entry) | Q(name__icontains=search_entry.lower().replace('SN ','')) | Q(aliases__name__icontains=search_entry.lower().replace('AT ',''))).distinct()
@@ -216,8 +217,10 @@ def target_redirect_view(request):
             target_id = target_match_list[0].id
             return(redirect('/targets/{}/'.format(target_id)))
 
-        else: 
+        elif len(target_match_list) > 1: 
             return(redirect('/targets/?name={}'.format(search_entry)))
+        else:
+            return(redirect('/create-target/?name={name}'.format(name=search_entry)))
 
 
 def add_tag_view(request):
