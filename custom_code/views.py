@@ -39,6 +39,7 @@ from datetime import datetime, date, timedelta
 import json
 from statistics import median
 from collections import OrderedDict
+from io import StringIO
 
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
@@ -1959,3 +1960,33 @@ class AuthorshipInformation(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context
+
+
+def download_photometry_view(request, targetid):
+
+    user = request.user
+    target = Target.objects.get(id=int(targetid))
+
+    if settings.TARGET_PERMISSIONS_ONLY:
+        datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
+
+    else:
+        datums = get_objects_for_user(user,
+                                      'tom_dataproducts.view_reduceddatum',
+                                      klass=ReducedDatum.objects.filter(
+                                        target=target,
+                                        data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
+
+    datums = datums.order_by('timestamp')
+    newfile = StringIO()
+
+    newfile.write('mjd mag err filter subtracted?\n')
+
+    for d in datums:
+        if all(k in d.value.keys() for k in ['magnitude', 'error', 'filter', 'background_subtracted']):
+            newfile.write('{} {} {} {} {}\n'.format(round(Time(d.timestamp).mjd, 2), d.value['magnitude'], d.value['error'], d.value['filter'], d.value['background_subtracted']))
+
+    response = HttpResponse(newfile.getvalue(), content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename={}.txt'.format(target.name.replace(' ',''))
+    return response
+
