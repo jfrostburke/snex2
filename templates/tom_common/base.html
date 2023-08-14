@@ -69,7 +69,7 @@
           </li>
 	  {% if user|has_gw_permissions %}
 	  <li class="nav-item {% if request.resolver_match.namespace == 'nonlocalizedevents' %}active{% endif %}">
-	    <a class="nav-link" href="/nonlocalizedevents/" style="font-family: 'Montserrat', sans-serif; font-size:1.25vw;">Non-Localized Events</a>
+	    <a class="nav-link" href="/nonlocalizedevents/" style="font-family: 'Montserrat', sans-serif; font-size:1.25vw; white-space: nowrap">GW Events</a>
 	  </li>
 	  {% endif %}
 	  <li class="nav-item" style="align-self: center;padding: 0px; width:10vw">
