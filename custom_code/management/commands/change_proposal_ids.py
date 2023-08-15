@@ -36,7 +36,7 @@ class Command(BaseCommand):
         ### Do the same thing for the template records
         templatelist = [c.observation_group.observation_records.filter(observation_id='template').first() for c in DynamicCadence.objects.filter(active=True)]
 
-        template_ids_to_update = [t.id for t in templatelist if t is not None and o.parameters['proposal'] == options['oldid']]
+        template_ids_to_update = [t.id for t in templatelist if t is not None and t.parameters['proposal'] == options['oldid']]
         templates_to_update = ObservationRecord.objects.filter(id__in=template_ids_to_update)
 
         for templ in templates_to_update:
