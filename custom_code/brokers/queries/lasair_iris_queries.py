@@ -71,7 +71,7 @@ class LasairIrisQuery:
 
             g_nondets = {}
             r_nondets = {}
-            for epoch in lc[0]:
+            for epoch in lc[0]['candidates']:
                 if epoch['fid'] == 1 and epoch.get('magpsf', ''):
                     g_dets[str(epoch['jd'] - 2400000.5)] = [epoch['magpsf'], epoch['sigmapsf']]
                 elif epoch['fid'] == 2 and epoch.get('magpsf', ''):

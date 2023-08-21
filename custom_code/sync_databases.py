@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-from sqlalchemy import create_engine, and_, update, insert, pool
+from sqlalchemy import create_engine, and_, update, insert, pool, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.sql import func
 
 import json
 from contextlib import contextmanager
@@ -61,7 +62,7 @@ def load_table(tablename, db_address=_SNEX1_DB):
     """
     Base = automap_base()
     engine = create_engine(db_address, poolclass=pool.NullPool)
-    Base.prepare(engine, reflect=True)
+    Base.prepare(autoload_with=engine)
 
     table = getattr(Base.classes, tablename)
     return table
@@ -440,6 +441,8 @@ def update_target(action, db_address=_SNEX2_DB):
                     existing_target_query = db_session.query(Target).filter(criteria).first()
                     if not existing_target_query:
                         db_session.add(Target(id=target_id, name=t_name, ra=t_ra, dec=t_dec, modified=t_modified, created=t_created, type='SIDEREAL', epoch=2000, scheme=''))
+                        if 'postgresql' in db_address:
+                            db_session.execute(select(func.setval('tom_targets_target_id_seq', target_id)))
                         update_permissions(t_groupid, 47, target_id, 12) #Change target
                         update_permissions(t_groupid, 48, target_id, 12) #Delete target
                         update_permissions(t_groupid, 49, target_id, 12) #View target
