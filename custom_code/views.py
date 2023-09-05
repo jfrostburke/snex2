@@ -1982,8 +1982,8 @@ def download_photometry_view(request, targetid):
     newfile.write('mjd mag err filter subtracted?\n')
 
     for d in datums:
-        if all(k in d.value.keys() for k in ['magnitude', 'error', 'filter', 'background_subtracted']):
-            newfile.write('{} {} {} {} {}\n'.format(round(Time(d.timestamp).mjd, 2), d.value['magnitude'], d.value['error'], d.value['filter'], d.value['background_subtracted']))
+        if all(k in d.value.keys() for k in ['magnitude', 'error', 'filter']):
+            newfile.write('{} {} {} {} {}\n'.format(round(Time(d.timestamp).mjd, 2), d.value['magnitude'], d.value['error'], d.value['filter'], d.value.get('background_subtracted', False)))
 
     response = HttpResponse(newfile.getvalue(), content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename={}.txt'.format(target.name.replace(' ',''))
