@@ -232,7 +232,7 @@ if not DEBUG:
     #STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
     STORAGES = {
         "staticfiles": {
-            "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+            "BACKEND": "storages.backends.s3boto3.S3Storage",
             "OPTIONS": {
                "AWS_STORAGE_BUCKET_NAME": os.getenv('AWS_STORAGE_BUCKET_NAME', ''),
                "AWS_S3_REGION_NAME": os.getenv('AWS_S3_REGION_NAME', ''),
@@ -241,7 +241,7 @@ if not DEBUG:
             }
         },
         "default": {
-            "BACKEND": "storages.backends.s3boto3.S3StaticStorage",
+            "BACKEND": "storages.backends.s3boto3.S3Storage",
             "OPTIONS": {
                "AWS_STORAGE_BUCKET_NAME": os.getenv('AWS_STORAGE_BUCKET_NAME', ''),
                "AWS_S3_REGION_NAME": os.getenv('AWS_S3_REGION_NAME', ''),
