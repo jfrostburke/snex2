@@ -1,9 +1,10 @@
 dataclasses
 tomtoolkit==2.12.0
 tom-scimma
-ligo.skymap==1.0.3
+ligo.skymap
 tom-nonlocalizedevents
 tom-alertstreams
+gevent==21.12.0
 gunicorn[gevent]
 django==4.2
 django-heroku
