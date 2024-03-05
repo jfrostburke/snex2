@@ -1,7 +1,6 @@
 dataclasses
 tomtoolkit==2.12.0
 tom-scimma
-ligo.skymap
 tom-nonlocalizedevents
 tom-alertstreams
 gevent==21.12.0
@@ -27,3 +26,4 @@ mysqlclient==1.4.6
 lasair
 importlib-metadata==4.13.0
 sep
+ligo.skymap

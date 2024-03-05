@@ -483,7 +483,7 @@ EMAIL_HOST_PASSWORD = str(os.getenv('SNEX_EMAIL_PASSWORD', ''))
 DATA_UPLOAD_MAX_MEMORY_SIZE = 7000000
 
 SNEX1_DB_URL = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'
-SNEX1_DB_URL = SNEX1_DB_URL.format(os.getenv('SNEX1_DB_USER', ''), os.getenv('SNEX1_DB_PASSWORD', '')
+SNEX1_DB_URL = SNEX1_DB_URL.format(os.getenv('SNEX1_DB_USER', ''), os.getenv('SNEX1_DB_PASSWORD', ''))
 
 PLOTLY_DASH = {
     'cache_arguments': False,
