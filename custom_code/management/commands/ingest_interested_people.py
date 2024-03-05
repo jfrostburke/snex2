@@ -15,10 +15,10 @@ from tom_targets.models import Target
 from custom_code.management.commands.ingest_observations import get_session, load_table, update_permissions, get_snex2_params
 from custom_code.models import InterestedPersons
 from django.contrib.auth.models import User
+from django.conf import settings
 
-_SNEX1_DB = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ.get('SNEX1_DB_USER'), os.environ.get('SNEX1_DB_PASSWORD'))
 
-engine1 = create_engine(_SNEX1_DB)
+engine1 = create_engine(settings.SNEX1_DB_URL)
 
 
 class Command(BaseCommand):
@@ -30,8 +30,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        interests = load_table('interests', db_address=_SNEX1_DB)
-        users = load_table('users', db_address=_SNEX1_DB)
+        interests = load_table('interests', db_address=settings.SNEX1_DB_URL)
+        users = load_table('users', db_address=settings.SNEX1_DB_URL)
         if not options.get('days_ago'):
             print('could not find days ago, using default value of 1')
             dg = 1
@@ -39,7 +39,7 @@ class Command(BaseCommand):
             dg = int(options['days_ago'])
         days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=dg)
 
-        with get_session(db_address=_SNEX1_DB) as db_session:
+        with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
         
             interested_people = db_session.query(interests).filter(or_(interests.interested > days_ago, interests.uninterested > days_ago))
             for interest in interested_people:

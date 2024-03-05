@@ -6,12 +6,10 @@ from tom_nonlocalizedevents.models import EventSequence
 from custom_code.views import cancel_observation, Snex1ConnectionError
 from custom_code.hooks import _return_session
 import logging
+from django.conf import settings
 
 
 logger = logging.getLogger(__name__)
-
-_snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-
 
 def cancel_gw_obs(galaxy_ids=[], sequence_id=None, wrapped_session=None):
     """
@@ -39,7 +37,7 @@ def cancel_gw_obs(galaxy_ids=[], sequence_id=None, wrapped_session=None):
         db_session = wrapped_session
 
     else:
-        db_session = _return_session(_snex1_address)
+        db_session = _return_session(settings.SNEX1_DB_URL)
     
     for target in targets:
         ### Cancel any observation requests for this target

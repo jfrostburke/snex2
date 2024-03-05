@@ -42,7 +42,7 @@ def _get_session(db_address):
         session.close()
 
 
-def _return_session(db_address='mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])):
+def _return_session(db_address=settings.SNEX1_DB_URL):
     ### This one is not run within a with loop, must be closed manually
     Base = automap_base()
     engine = create_engine(db_address, poolclass=pool.NullPool)
@@ -243,17 +243,16 @@ def target_post_save(target, created, group_names=None, wrapped_session=None):
         #            pass
 
     else:
-        _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-    
+
         if wrapped_session:
             db_session = wrapped_session
     
         else:
-            db_session = _return_session(_snex1_address)
+            db_session = _return_session(settings.SNEX1_DB_URL)
     
-        Targets = _load_table('targets', db_address=_snex1_address)
-        Targetnames = _load_table('targetnames', db_address=_snex1_address)
-        Groups = _load_table('groups', db_address=_snex1_address)
+        Targets = _load_table('targets', db_address=settings.SNEX1_DB_URL)
+        Targetnames = _load_table('targetnames', db_address=settings.SNEX1_DB_URL)
+        Groups = _load_table('groups', db_address=settings.SNEX1_DB_URL)
         # Insert into SNEx 1 db
         if group_names:
             groupidcode = 0
@@ -276,17 +275,16 @@ def target_post_save(target, created, group_names=None, wrapped_session=None):
         else:
             db_session.flush()
 
+
 def targetextra_post_save(targetextra, created):
     '''
     Hook to sync target classifications and redshifts
     with SNEx1
     '''
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-    
     if not settings.DEBUG:
-        with _get_session(db_address=_snex1_address) as db_session:
-            Targets = _load_table('targets', db_address=_snex1_address)
-            Classifications = _load_table('classifications', db_address=_snex1_address)
+        with _get_session(db_address=settings.SNEX1_DB_URL) as db_session:
+            Targets = _load_table('targets', db_address=settings.SNEX1_DB_URL)
+            Classifications = _load_table('classifications', db_address=settings.SNEX1_DB_URL)
 
             if targetextra.key == 'classification': # Update the classification in the targets table in the SNex 1 db
                 targetid = targetextra.target_id # Get the targetid of our saved entry
@@ -307,11 +305,9 @@ def targetname_post_save(targetname, created):
     '''
     Hook to sync target name with SNEx1
     '''
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-
     if not settings.DEBUG:
-        with _get_session(db_address=_snex1_address) as db_session:
-            Names = _load_table('targetnames', db_address=_snex1_address)
+        with _get_session(db_address=settings.SNEX1_DB_URL) as db_session:
+            Names = _load_table('targetnames', db_address=settings.SNEX1_DB_URL)
 
             targetid = int(targetname.target_id) # Get the targetid of our saved entry
             name = targetname.name 
@@ -326,7 +322,6 @@ def sync_observation_with_snex1(snex_id, params, requestgroup_id, wrapped_sessio
     Hook to sync an obervation record submitted through SNEx2
     to the obslog table in the SNEx1 database
     '''
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
     instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
                        '1M0-SCICAM-SINISTRO': 'sinistro',
                        '2M0-SCICAM-MUSCAT': 'muscat'}
@@ -335,10 +330,10 @@ def sync_observation_with_snex1(snex_id, params, requestgroup_id, wrapped_sessio
         db_session = wrapped_session
 
     else:
-        db_session = _return_session(_snex1_address)
+        db_session = _return_session(settings.SNEX1_DB_URL)
 
     #with _get_session(db_address=_snex1_address) as db_session:
-    Obslog = _load_table('obslog', db_address=_snex1_address)
+    Obslog = _load_table('obslog', db_address=settings.SNEX1_DB_URL)
     
     filtlist = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
     if params['observation_type'] == 'IMAGING':
@@ -419,7 +414,6 @@ def sync_sequence_with_snex1(params, group_names, userid=67, comment=False, targ
     to the obsrequests table in the SNEx1 database
     '''
 
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
     instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
                        '1M0-SCICAM-SINISTRO': 'sinistro',
                        '2M0-SCICAM-MUSCAT': 'muscat'}
@@ -428,13 +422,13 @@ def sync_sequence_with_snex1(params, group_names, userid=67, comment=False, targ
         db_session = wrapped_session
 
     else:
-        db_session = _return_session(_snex1_address)
+        db_session = _return_session(settings.SNEX1_DB_URL)
 
     #with _get_session(db_address=_snex1_address) as db_session:
-    Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
-    Groups = _load_table('groups', db_address=_snex1_address)
-    Notes = _load_table('notes', db_address=_snex1_address)
-    Users = _load_table('users', db_address=_snex1_address)
+    Obsrequests = _load_table('obsrequests', db_address=settings.SNEX1_DB_URL)
+    Groups = _load_table('groups', db_address=settings.SNEX1_DB_URL)
+    Notes = _load_table('notes', db_address=settings.SNEX1_DB_URL)
+    Users = _load_table('users', db_address=settings.SNEX1_DB_URL)
 
     # Get the idcodes from the groups in the group_list
     groupidcode = 0
@@ -572,18 +566,16 @@ def cancel_sequence_in_snex1(snex_id, comment=False, tableid=None, userid=67, ta
     that was canceled in SNEx2
     '''
     
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-    
     if wrapped_session:
         db_session = wrapped_session
 
     else:
-        db_session = _return_session(_snex1_address)
+        db_session = _return_session(settings.SNEX1_DB_URL)
         
     #with _get_session(db_address=_snex1_address) as db_session:
-    Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
-    Notes = _load_table('notes', db_address=_snex1_address)
-    Users = _load_table('users', db_address=_snex1_address)
+    Obsrequests = _load_table('obsrequests', db_address=settings.SNEX1_DB_URL)
+    Notes = _load_table('notes', db_address=settings.SNEX1_DB_URL)
+    Users = _load_table('users', db_address=settings.SNEX1_DB_URL)
 
     if userid != 67:
         try:
@@ -632,10 +624,8 @@ def approve_sequence_in_snex1(snex_id):
     that was approved in SNEx2
     '''
     
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-    
-    with _get_session(db_address=_snex1_address) as db_session:
-        Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
+    with _get_session(db_address=settings.SNEX1_DB_URL) as db_session:
+        Obsrequests = _load_table('obsrequests', db_address=settings.SNEX1_DB_URL)
  
         snex1_row = db_session.query(Obsrequests).filter(Obsrequests.id==snex_id).first()
         snex1_row.approved = 1
@@ -651,17 +641,15 @@ def update_reminder_in_snex1(snex_id, next_reminder, wrapped_session=None):
     Hook to update reminder for sequence in SNEx1.
     Runs after continuing a sequence from the scheduling page.
     '''
-    
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
 
     if wrapped_session:
         db_session = wrapped_session
 
     else:
-        db_session = _return_session(_snex1_address)
+        db_session = _return_session(settings.SNEX1_DB_URL)
     
     #with _get_session(db_address=_snex1_address) as db_session:
-    Obsrequests = _load_table('obsrequests', db_address=_snex1_address)
+    Obsrequests = _load_table('obsrequests', db_address=settings.SNEX1_DB_URL)
 
     snex1_row = db_session.query(Obsrequests).filter(Obsrequests.id==snex_id).first()
     now = datetime.now()
@@ -687,10 +675,8 @@ def find_images_from_snex1(targetid, allimages=False):
     given a target ID
     '''
     
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-    
-    with _get_session(db_address=_snex1_address) as db_session:
-        Photlco = _load_table('photlco', db_address=_snex1_address)
+    with _get_session(db_address=settings.SNEX1_DB_URL) as db_session:
+        Photlco = _load_table('photlco', db_address=settings.SNEX1_DB_URL)
 
         if not allimages:
             query = db_session.query(Photlco).filter(and_(Photlco.targetid==targetid, Photlco.filetype==1)).order_by(Photlco.id.desc()).limit(8)
@@ -715,11 +701,10 @@ def change_interest_in_snex1(targetid, username, status):
     Hook to change the status of an interested person
     in SNEx1
     '''
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
 
-    with _get_session(db_address=_snex1_address) as db_session:
-        Interests = _load_table('interests', db_address=_snex1_address)
-        Users = _load_table('users', db_address=_snex1_address)
+    with _get_session(db_address=settings.SNEX1_DB_URL) as db_session:
+        Interests = _load_table('interests', db_address=settings.SNEX1_DB_URL)
+        Users = _load_table('users', db_address=settings.SNEX1_DB_URL)
 
         snex1_user = db_session.query(Users).filter(Users.name==username).first()
         now = datetime.strftime(datetime.utcnow(), '%Y-%m-%d %H:%M:%S')
@@ -749,10 +734,8 @@ def sync_paper_with_snex1(paper):
     '''
     Hook to ingest a paper into SNEx1
     '''
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-
-    with _get_session(db_address=_snex1_address) as db_session:
-        papers = _load_table('papers', db_address=_snex1_address)
+    with _get_session(db_address=settings.SNEX1_DB_URL) as db_session:
+        papers = _load_table('papers', db_address=settings.SNEX1_DB_URL)
 
         status_dict = {'in prep': 'inprep',
                        'submitted': 'submitted',
@@ -778,17 +761,14 @@ def sync_comment_with_snex1(comment, tablename, userid, targetid, snex1_rowid, w
     Hook to sync an observation sequence submitted through SNEx2 
     to the obsrequests table in the SNEx1 database
     '''
-
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-
     if wrapped_session:
         db_session = wrapped_session
 
     else:
-        db_session = _return_session(_snex1_address)
+        db_session = _return_session(settings.SNEX1_DB_URL)
         #with _get_session(db_address=_snex1_address) as db_session:
-    Notes = _load_table('notes', db_address=_snex1_address)
-    Users = _load_table('users', db_address=_snex1_address)
+    Notes = _load_table('notes', db_address=settings.SNEX1_DB_URL)
+    Users = _load_table('users', db_address=settings.SNEX1_DB_URL)
     
     if userid != 67:
         try:
@@ -832,9 +812,6 @@ def get_unreduced_spectra(allspec=True):
     '''
     Hook to find unreduced spectra for FLOYDS inbox
     '''
-
-    _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
-
     token = os.environ['LCO_APIKEY']
 
     response = requests.get('https://observe.lco.global/api/proposals?active=True&limit=50/',
@@ -842,12 +819,12 @@ def get_unreduced_spectra(allspec=True):
 
     proposals = [prop['id'] for prop in response['results']]
     
-    with _get_session(db_address=_snex1_address) as db_session:
-        speclcoraw = _load_table('speclcoraw', db_address=_snex1_address)
-        targetnames = _load_table('targetnames', db_address=_snex1_address)
-        targets = _load_table('targets', db_address=_snex1_address)
-        classifications = _load_table('classifications', db_address=_snex1_address)
-        spec = _load_table('spec', db_address=_snex1_address)
+    with _get_session(db_address=settings.SNEX1_DB_URL) as db_session:
+        speclcoraw = _load_table('speclcoraw', db_address=settings.SNEX1_DB_URL)
+        targetnames = _load_table('targetnames', db_address=settings.SNEX1_DB_URL)
+        targets = _load_table('targets', db_address=settings.SNEX1_DB_URL)
+        classifications = _load_table('classifications', db_address=settings.SNEX1_DB_URL)
+        spec = _load_table('spec', db_address=settings.SNEX1_DB_URL)
 
         original_filenames = [s.original for s in db_session.query(spec).filter(and_(spec.original!='None', spec.original!=None))]
 

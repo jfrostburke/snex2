@@ -147,8 +147,8 @@ if os.environ.get('SNEX2_DB_BACKEND') == 'postgres':
             'NAME': 'snex2',
             'USER': os.environ['SNEX2_DB_USER'],
             'PASSWORD': os.environ['SNEX2_DB_PASSWORD'],
-            'HOST': 'snex2-db',
-            'PORT': 5432,
+            'HOST': os.getenv('SNEX2_DB_HOST', 'snex2-db'),
+            'PORT': os.getenv('SNEX2_DB_PORT', 5432),
         }
     }
 else:
@@ -232,7 +232,7 @@ if not DEBUG:
     STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRECT_ACCESS_KEY', '')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
 AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
 AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', '')
 AWS_DEFAULT_ACL = None
@@ -352,7 +352,7 @@ HOOKS = {
 }
 
 BROKERS = {
-    'TNS': {'api_key': os.environ['TNS_APIKEY']}
+    'TNS': {'api_key': os.getenv('TNS_APIKEY', '')}
 }
 
 TOM_ALERT_CLASSES = [
@@ -456,9 +456,12 @@ EMAIL_USE_TLS = True
 
 EMAIL_HOST_USER = 'snex@lco.global'
 
-EMAIL_HOST_PASSWORD = str(os.environ['SNEX_EMAIL_PASSWORD'])
+EMAIL_HOST_PASSWORD = str(os.getenv('SNEX_EMAIL_PASSWORD', ''))
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 7000000
+
+SNEX1_DB_URL = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'
+SNEX1_DB_URL = SNEX1_DB_URL.format(os.getenv('SNEX1_DB_USER', ''), os.getenv('SNEX1_DB_PASSWORD', '')
 
 PLOTLY_DASH = {
     'cache_arguments': False,

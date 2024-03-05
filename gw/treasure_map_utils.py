@@ -2,7 +2,7 @@ import os
 import requests
 
 
-TM_TOKEN = os.environ['TM_TOKEN']
+TM_TOKEN = os.getenv('TM_TOKEN', '')
 TM_POINTING_URL = 'http://treasuremap.space/api/v0/pointings'
 INSTRUMENT_DICT = {'2M0-SCICAM-SPECTRAL': 56, '1M0-SCICAM-SINISTRO': 9} #TODO: Check these
 

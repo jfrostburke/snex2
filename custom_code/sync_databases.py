@@ -9,15 +9,15 @@ import json
 from contextlib import contextmanager
 import os
 import datetime
+from django.conf import settings
 
-_SNEX1_DB = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ.get('SNEX1_DB_USER'), os.environ.get('SNEX1_DB_PASSWORD'))
 _SNEX2_DB = 'postgresql://{}:{}@supernova.science.lco.global:5435/snex2'.format(os.environ.get('SNEX2_DB_USER'), os.environ.get('SNEX2_DB_PASSWORD'))
 
-engine1 = create_engine(_SNEX1_DB)
+engine1 = create_engine(settings.SNEX1_DB_URL)
 engine2 = create_engine(_SNEX2_DB)
 
 @contextmanager
-def get_session(db_address=_SNEX1_DB):
+def get_session(db_address=settings.SNEX1_DB_URL):
     """
     Get a connection to a database
 
@@ -26,7 +26,7 @@ def get_session(db_address=_SNEX1_DB):
     session: SQLAlchemy database session
     """
     Base = automap_base()
-    if db_address==_SNEX1_DB:
+    if db_address==settings.SNEX1_DB_URL:
         Base.metadata.bind = engine1
         db_session = sessionmaker(bind=engine1, autoflush=False, expire_on_commit=False)
     else:
@@ -47,7 +47,7 @@ def get_session(db_address=_SNEX1_DB):
         session.close()
 
 
-def load_table(tablename, db_address=_SNEX1_DB):
+def load_table(tablename, db_address=settings.SNEX1_DB_URL):
     """
     Load a table with its data from a database
 
@@ -69,13 +69,13 @@ def load_table(tablename, db_address=_SNEX1_DB):
 
 
 ### Define our SNex1 db tables as Classes
-Db_Changes = load_table('db_changes', db_address=_SNEX1_DB)
-Photlco = load_table('photlco', db_address=_SNEX1_DB)
-Spec = load_table('spec', db_address=_SNEX1_DB)
-Targets = load_table('targets', db_address=_SNEX1_DB)
-Target_Names = load_table('targetnames', db_address=_SNEX1_DB)
-Classifications = load_table('classifications', db_address=_SNEX1_DB)
-Groups = load_table('groups', db_address=_SNEX1_DB)
+Db_Changes = load_table('db_changes', db_address=settings.SNEX1_DB_URL)
+Photlco = load_table('photlco', db_address=settings.SNEX1_DB_URL)
+Spec = load_table('spec', db_address=settings.SNEX1_DB_URL)
+Targets = load_table('targets', db_address=settings.SNEX1_DB_URL)
+Target_Names = load_table('targetnames', db_address=settings.SNEX1_DB_URL)
+Classifications = load_table('classifications', db_address=settings.SNEX1_DB_URL)
+Groups = load_table('groups', db_address=settings.SNEX1_DB_URL)
 
 ### And our SNex2 tables
 Datum = load_table('tom_dataproducts_reduceddatum', db_address=_SNEX2_DB)
@@ -87,13 +87,13 @@ Group_Perm = load_table('guardian_groupobjectpermission', db_address=_SNEX2_DB)
 Datum_Extra = load_table('custom_code_reduceddatumextra', db_address=_SNEX2_DB)
 
 ### Make a dictionary of the groups in the SNex1 db
-with get_session(db_address=_SNEX1_DB) as db_session:
+with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
     snex1_groups = {}
     for x in db_session.query(Groups):
         snex1_groups[x.name] = x.idcode
     
 
-def query_db_changes(table, action, db_address=_SNEX1_DB):
+def query_db_changes(table, action, db_address=settings.SNEX1_DB_URL):
     """
     Query the db_changes table
 
@@ -110,7 +110,7 @@ def query_db_changes(table, action, db_address=_SNEX1_DB):
     return record
 
 
-def get_current_row(table, id_, db_address=_SNEX1_DB):
+def get_current_row(table, id_, db_address=settings.SNEX1_DB_URL):
     """ 
     Get the row that was modified, as recorded in the db_changes table
     
@@ -126,7 +126,7 @@ def get_current_row(table, id_, db_address=_SNEX1_DB):
     return record
 
 
-def delete_row(table, id_, db_address=_SNEX1_DB):
+def delete_row(table, id_, db_address=settings.SNEX1_DB_URL):
     """
     Deletes a given row in table
     
@@ -180,11 +180,11 @@ def update_phot(action, db_address=_SNEX2_DB):
     action: str, one of 'update', 'insert', or 'delete'
     db_address: str, sqlalchemy address to the SNex2 db
     """
-    phot_result = query_db_changes('photlco', action, db_address=_SNEX1_DB)
+    phot_result = query_db_changes('photlco', action, db_address=settings.SNEX1_DB_URL)
     for result in phot_result:
         try:
             id_ = result.rowid # The ID of the row in the photlco table
-            phot_row = get_current_row(Photlco, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the photlco table    
+            phot_row = get_current_row(Photlco, id_, db_address=settings.SNEX1_DB_URL) # The row corresponding to id_ in the photlco table    
             #targetid = phot_row.targetid
             
             if action=='delete':
@@ -210,7 +210,7 @@ def update_phot(action, db_address=_SNEX2_DB):
                     #db_session.commit()
 
                 #Delete all other rows corresponding to this dataproduct in the db_changes table
-                with get_session(db_address=_SNEX1_DB) as db_session:
+                with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
                     all_other_rows = db_session.query(Db_Changes).filter(and_(Db_Changes.tablename=='photlco', Db_Changes.rowid==id_))
                     for row in all_other_rows:
                         db_session.delete(row)
@@ -249,7 +249,7 @@ def update_phot(action, db_address=_SNEX2_DB):
     
                 phot_groupid = phot_row.groupidcode
     
-                with get_session(db_address=_SNEX1_DB) as db_session:
+                with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
                     standard_list = db_session.query(Targets).filter(Targets.classificationid==1)
                     standard_ids = [x.id for x in standard_list]
                 if targetid not in standard_ids and int(phot_row.filetype) in (1,3):
@@ -282,7 +282,7 @@ def update_phot(action, db_address=_SNEX2_DB):
                             #db_session.add(newphot_extra)
 
                         db_session.commit()
-                delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
+                delete_row(Db_Changes, result.id, db_address=settings.SNEX1_DB_URL)
 
         except:
             raise #continue
@@ -311,7 +311,7 @@ def update_spec(action, db_address=_SNEX2_DB):
     action: str, one of 'update', 'insert', or 'delete'
     db_address: str, sqlalchemy address to the SNex2 db
     """
-    spec_result = query_db_changes('spec', action, db_address=_SNEX1_DB)
+    spec_result = query_db_changes('spec', action, db_address=settings.SNEX1_DB_URL)
     for result in spec_result:
         try:
             id_ = result.rowid # The ID of the row in the spec table
@@ -338,10 +338,10 @@ def update_spec(action, db_address=_SNEX2_DB):
                     db_session.commit()
 
             else:
-                spec_row = get_current_row(Spec, id_, db_address=_SNEX1_DB) # The row corresponding to id_ in the spec table
+                spec_row = get_current_row(Spec, id_, db_address=settings.SNEX1_DB_URL) # The row corresponding to id_ in the spec table
 
                 if not spec_row:
-                    delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
+                    delete_row(Db_Changes, result.id, db_address=settings.SNEX1_DB_URL)
                     continue
 
                 targetid = spec_row.targetid
@@ -349,7 +349,7 @@ def update_spec(action, db_address=_SNEX2_DB):
                 spec = read_spec(spec_row.filepath + spec_row.filename.replace('.fits', '.ascii'))
                 spec_groupid = spec_row.groupidcode
     
-                with get_session(db_address=_SNEX1_DB) as db_session:
+                with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
                     standard_list = db_session.query(Targets).filter(Targets.classificationid==1)
                     standard_ids = [x.id for x in standard_list]
                 if targetid not in standard_ids:
@@ -395,7 +395,7 @@ def update_spec(action, db_address=_SNEX2_DB):
                             db_session.add(spec_extras_row)
 
                         db_session.commit()
-            delete_row(Db_Changes, result.id, db_address=_SNEX1_DB)
+            delete_row(Db_Changes, result.id, db_address=settings.SNEX1_DB_URL)
 
         except:
             raise #continue
@@ -410,13 +410,13 @@ def update_target(action, db_address=_SNEX2_DB):
     action: str, one of 'update', 'insert', or 'delete'
     db_address: str, sqlalchemy address to the SNex2 db
     """
-    target_result = query_db_changes('targets', action, db_address=_SNEX1_DB)
-    name_result = query_db_changes('targetnames', action, db_address=_SNEX1_DB)
+    target_result = query_db_changes('targets', action, db_address=settings.SNEX1_DB_URL)
+    name_result = query_db_changes('targetnames', action, db_address=settings.SNEX1_DB_URL)
 
     for tresult in target_result:
         try:
             target_id = tresult.rowid # The ID of the row in the targets table
-            target_row = get_current_row(Targets, target_id, db_address=_SNEX1_DB) # The row corresponding to target_id in the targets table
+            target_row = get_current_row(Targets, target_id, db_address=settings.SNEX1_DB_URL) # The row corresponding to target_id in the targets table
 
             t_ra = target_row.ra0
             t_dec = target_row.dec0
@@ -427,7 +427,7 @@ def update_target(action, db_address=_SNEX2_DB):
             t_groupid = int(target_row.groupidcode)
 
             ### Get the name of the target
-            with get_session(db_address=_SNEX1_DB) as db_session:
+            with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
                 name_query = db_session.query(Target_Names).filter(Target_Names.targetid==target_row.id).first()
                 t_name = name_query.name
                 db_session.commit()
@@ -459,7 +459,7 @@ def update_target(action, db_address=_SNEX2_DB):
     for nresult in name_result:
         try:
             name_id = nresult.rowid # The ID of the row in the targetnames table
-            name_row = get_current_row(Target_Names, name_id, db_address=_SNEX1_DB) # The row corresponding to name_id in the targetnames table
+            name_row = get_current_row(Target_Names, name_id, db_address=settings.SNEX1_DB_URL) # The row corresponding to name_id in the targetnames table
 
             if action!='delete':
                 n_id = name_row.targetid
@@ -482,7 +482,7 @@ def update_target(action, db_address=_SNEX2_DB):
                 #    db_session.delete(name_delete)
 
                 db_session.commit()
-            delete_row(Db_Changes, nresult.id, db_address=_SNEX1_DB)
+            delete_row(Db_Changes, nresult.id, db_address=settings.SNEX1_DB_URL)
         
         except:
             raise #continue
@@ -497,12 +497,12 @@ def update_target_extra(action, db_address=_SNEX2_DB):
     action: str, one of 'update', 'insert', or 'delete'
     db_address: str, sqlalchemy address to the SNex2 db
     """
-    target_result = query_db_changes('targets', action, db_address=_SNEX1_DB)
+    target_result = query_db_changes('targets', action, db_address=settings.SNEX1_DB_URL)
 
     for tresult in target_result:
         try:
             target_id = tresult.rowid # The ID of the row in the targets table
-            target_row = get_current_row(Targets, target_id, db_address=_SNEX1_DB) # The row corresponding to target_id in the targets table
+            target_row = get_current_row(Targets, target_id, db_address=settings.SNEX1_DB_URL) # The row corresponding to target_id in the targets table
 
             #t_id = target_row.id
             value = target_row.redshift
@@ -526,7 +526,7 @@ def update_target_extra(action, db_address=_SNEX2_DB):
 
             class_id = target_row.classificationid
             if class_id is not None:
-                class_name = get_current_row(Classifications, class_id, db_address=_SNEX1_DB).name # Get the classification from the classifications table based on the classification id in the targets table (wtf)
+                class_name = get_current_row(Classifications, class_id, db_address=settings.SNEX1_DB_URL).name # Get the classification from the classifications table based on the classification id in the targets table (wtf)
                 with get_session(db_address=db_address) as db_session:
                     c_criteria = and_(Target_Extra.target_id==target_id, Target_Extra.key=='classification') # Criteria for updating the classification info in the targetextra table
                     if action=='update':
@@ -542,7 +542,7 @@ def update_target_extra(action, db_address=_SNEX2_DB):
                         db_session.query(Target_Extra).filter(c_criteria).delete()
 
                     db_session.commit()
-            delete_row(Db_Changes, tresult.id, db_address=_SNEX1_DB)
+            delete_row(Db_Changes, tresult.id, db_address=settings.SNEX1_DB_URL)
 
         except:
             raise #continue
