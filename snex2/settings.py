@@ -228,8 +228,29 @@ MEDIA_URL = '/data/'
 # Using AWS
 
 if not DEBUG:
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    #DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    #STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+               "bucket_name": os.getenv('AWS_STORAGE_BUCKET_NAME', ''),
+               "region_name": os.getenv('AWS_S3_REGION_NAME', ''),
+               "default_acl": None,
+               "addressing_style": "virtual",
+            }
+        },
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+               "bucket_name": os.getenv('AWS_STORAGE_BUCKET_NAME', ''),
+               "region_name": os.getenv('AWS_S3_REGION_NAME', ''),
+               "default_acl": None,
+               "addressing_style": "virtual",
+            }
+        }
+    }
+
 
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
@@ -349,6 +370,7 @@ HOOKS = {
     'sync_paper_with_snex1': 'custom_code.hooks.sync_paper_with_snex1',
     'sync_comment_with_snex1': 'custom_code.hooks.sync_comment_with_snex1',
     'cancel_gw_obs': 'gw.hooks.cancel_gw_obs',
+    'ingest_gw_galaxy_into_snex1': 'gw.hooks.ingest_gw_galaxy_into_snex1',
 }
 
 BROKERS = {
@@ -484,7 +506,7 @@ WEBPACK_LOADER = {
 TOM_API_URL = os.getenv('TOM_API_URL', 'http://127.0.0.1:8000')
 HERMES_API_URL = os.getenv('HERMES_API_URL', 'https://hermes.lco.global')
 
-SAVE_TEST_ALERTS = True
+SAVE_TEST_ALERTS = False
 
 ALERT_STREAMS = [
     {

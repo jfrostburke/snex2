@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 BASE_DIR = settings.BASE_DIR
 
 
-def generate_galaxy_list(eventlocalization, completeness=None, credzone=None):
+def generate_galaxy_list(eventlocalization, completeness=None, credzone=None, skymap_filepath=None):
     """
     An adaptation of the galaxy ranking algorithm described in
     Arcavi et al. 2017 (doi:10.3847/2041-8213/aa910f)
@@ -53,10 +53,14 @@ def generate_galaxy_list(eventlocalization, completeness=None, credzone=None):
     #MB_star = float(config.get('GALAXIES', 'MB_STAR'))
     
     try:
-        prob, distmu, distsigma, distnorm = hp.read_map(eventlocalization.skymap_url.replace('.multiorder.fits','.fits.gz'), field=[0,1,2,3], verbose=False)
+        if skymap_filepath is not None:
+            prob, distmu, distsigma, distnorm = hp.read_map(skymap_filepath, field=[0,1,2,3], verbose=False)
+        else:
+            prob, distmu, distsigma, distnorm = hp.read_map(eventlocalization.skymap_url.replace('.multiorder.fits','.fits.gz'), field=[0,1,2,3], verbose=False)
 
     except Exception as e:
         logger.warning('Failed to read sky map for {}'.format(eventlocalization))
+        logger.warning(e)
         return
 
     # Get the map parameters:

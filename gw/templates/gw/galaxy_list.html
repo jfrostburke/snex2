@@ -61,7 +61,17 @@
 	<div class="row"><input type="checkbox" class="individual-checkbox" id="select-{{ galaxy.id }}" checked></div>
       </td>
       <td>{{ galaxy.catalog_objname }}<br>
-	<span><a href="{% url 'nonlocalizedevents-galaxies-triplets' galaxy.id %}">View Galaxy Observations</a></span>
+	{% if galaxy|get_target_id %}
+	  <span><a href="{% url 'targets:detail' galaxy|get_target_id %}">Target Created and Observations Requested</a></span><br>
+          {% if galaxy|has_images %}
+	  <span>Images Have Been Taken</span>
+	  {% else %}
+	  <span>No Images Yet</span>
+	  {% endif %}
+	{% else %}
+	  <span>Observations Not Triggered</span>
+	{% endif %}
+	<!--span><a href="{% url 'nonlocalizedevents-galaxies-triplets' galaxy.id %}">View Galaxy Observations</a></span-->
       </td>
       <td>{{ galaxy.score|floatformat:4 }}</td>
       <td>{{ galaxy.ra|floatformat:4 }}</td>

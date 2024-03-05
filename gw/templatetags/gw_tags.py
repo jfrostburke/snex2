@@ -11,6 +11,9 @@ import numpy as np
 import sep
 import logging
 
+from tom_targets.models import TargetExtra
+from tom_common.hooks import run_hook
+
 logger = logging.getLogger(__name__)
 
 register = template.Library()
@@ -162,3 +165,29 @@ def event_info(sequence):
 
     return {'sequence': sequence, 'localization': sequence.localization}
 
+
+@register.filter
+def has_images(galaxy):
+    targetextralink = TargetExtra.objects.filter(key='gwfollowupgalaxy_id', value=galaxy.id)
+    if not targetextralink:
+        return False
+    targ = targetextralink.first().target
+    try:
+        filepaths, filenames, dates, teles, filters, exptimes, psfxs, psfys = run_hook('find_images_from_snex1', targ.id)
+    except:
+        return False
+
+    if filepaths:
+        return True
+
+    return False
+
+
+@register.filter
+def get_target_id(galaxy):
+    targetextralink = TargetExtra.objects.filter(key='gwfollowupgalaxy_id', value=galaxy.id)
+    if not targetextralink:
+        return None
+    targ = targetextralink.first().target
+    
+    return targ.id

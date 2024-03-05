@@ -27,7 +27,6 @@ from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.contrib import messages
 from django.conf import settings
-#from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from django.db.models.fields.json import KeyTextTransform
 
 import os
@@ -39,6 +38,7 @@ from datetime import datetime, date, timedelta
 import json
 from statistics import median
 from collections import OrderedDict
+from io import StringIO
 
 from sqlalchemy import create_engine, pool
 from sqlalchemy.orm import sessionmaker
@@ -169,9 +169,8 @@ def target_redirect_view(request):
 
     target_search_coords = None
     if ':' in search_entry or '.' in search_entry:
-        target_search_coords = search_entry.split(' ')
-        if len(target_search_coords) < 2:
-            target_search_coords = search_entry.split(',')
+        search_entry = search_entry.replace(',', ' ')
+        target_search_coords = search_entry.split()
 
     if target_search_coords is not None:
         ra = target_search_coords[0]
@@ -206,8 +205,10 @@ def target_redirect_view(request):
             target_id = target_match_list[0].id
             return(redirect('/targets/{}/'.format(target_id)))
         
-        else:
+        elif len(target_match_list) > 1:
             return(redirect('/targets/?cone_search={ra}%2C{dec}%2C{radius}'.format(ra=ra,dec=dec,radius=radius)))
+        else:
+            return(redirect('/create-target/?ra={ra}&dec={dec}'.format(ra=ra,dec=dec)))
 
     else:
         target_match_list = Target.objects.filter(Q(name__icontains=search_entry) | Q(aliases__name__icontains=search_entry) | Q(name__icontains=search_entry.lower().replace('SN ','')) | Q(aliases__name__icontains=search_entry.lower().replace('AT ',''))).distinct()
@@ -216,8 +217,10 @@ def target_redirect_view(request):
             target_id = target_match_list[0].id
             return(redirect('/targets/{}/'.format(target_id)))
 
-        else: 
+        elif len(target_match_list) > 1: 
             return(redirect('/targets/?name={}'.format(search_entry)))
+        else:
+            return(redirect('/create-target/?name={name}'.format(name=search_entry)))
 
 
 def add_tag_view(request):
@@ -1956,3 +1959,33 @@ class AuthorshipInformation(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context
+
+
+def download_photometry_view(request, targetid):
+
+    user = request.user
+    target = Target.objects.get(id=int(targetid))
+
+    if settings.TARGET_PERMISSIONS_ONLY:
+        datums = ReducedDatum.objects.filter(target=target, data_type=settings.DATA_PRODUCT_TYPES['photometry'][0])
+
+    else:
+        datums = get_objects_for_user(user,
+                                      'tom_dataproducts.view_reduceddatum',
+                                      klass=ReducedDatum.objects.filter(
+                                        target=target,
+                                        data_type=settings.DATA_PRODUCT_TYPES['photometry'][0]))
+
+    datums = datums.order_by('timestamp')
+    newfile = StringIO()
+
+    newfile.write('mjd mag err filter subtracted?\n')
+
+    for d in datums:
+        if all(k in d.value.keys() for k in ['magnitude', 'error', 'filter']):
+            newfile.write('{} {} {} {} {}\n'.format(round(Time(d.timestamp).mjd, 2), d.value['magnitude'], d.value['error'], d.value['filter'], d.value.get('background_subtracted', False)))
+
+    response = HttpResponse(newfile.getvalue(), content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename={}.txt'.format(target.name.replace(' ',''))
+    return response
+
