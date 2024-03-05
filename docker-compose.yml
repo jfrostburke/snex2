@@ -12,6 +12,7 @@ services:
             - ${SNEX2_DB_DATA_PATH}:/var/lib/postgresql/data
         ports:
             - 5435:5432/tcp
+        platform: linux/amd64
     snex2:
         image: lcogt/snex2:latest
         network_mode: bridge
