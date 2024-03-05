@@ -114,7 +114,7 @@ TEMPLATES = [
 DATA_SHARING = {
     'hermes': {
         'DISPLAY_NAME': os.getenv('HERMES_DISPLAY_NAME', 'Hermes'),
-        'BASE_URL': os.getenv('HERMES_BASE_URL', 'http://hermes-dev.lco.gtn/'),
+        'BASE_URL': os.getenv('HERMES_BASE_URL', 'https://hermes-dev.lco.global/'),
         'SCIMMA_AUTH_USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
         'CREDENTIAL_USERNAME': os.getenv('SCIMMA_CREDENTIAL_USERNAME', None,),
         'CREDENTIAL_PASSWORD': os.getenv('SCIMMA_CREDENTIAL_PASSWORD', None),
@@ -138,18 +138,6 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
 WSGI_APPLICATION = 'snex2.wsgi.application'
 
-DATA_SHARING = {
-    'hermes': {
-        'DISPLAY_NAME': os.getenv('HERMES_DISPLAY_NAME', 'Hermes'),
-        'BASE_URL': os.getenv('HERMES_BASE_URL', 'http://hermes-dev.lco.gtn/'),
-        'SCIMMA_AUTH_USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
-        'CREDENTIAL_USERNAME': os.getenv('SCIMMA_CREDENTIAL_USERNAME', None),
-        'CREDENTIAL_PASSWORD': os.getenv('SCIMMA_CREDENTIAL_PASSWORD', None),
-        'USER_TOPICS': ['hermes.test', 'tomtoolkit.test']
-    },
-}
-
-
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 if os.environ.get('SNEX2_DB_BACKEND') == 'postgres':
@@ -159,19 +147,25 @@ if os.environ.get('SNEX2_DB_BACKEND') == 'postgres':
             'NAME': 'snex2',
             'USER': os.environ['SNEX2_DB_USER'],
             'PASSWORD': os.environ['SNEX2_DB_PASSWORD'],
-            'HOST': 'snex2-db',
-            'PORT': 5432,
+            'HOST': os.getenv('SNEX2_DB_HOST', 'snex2-db'),
+            'PORT': os.getenv('SNEX2_DB_PORT', 5432),
         }
     }
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-            'USER': '',
-            'PASSWORD': '',
-            'HOST': '',
-            'PORT': 5432,
+            #'ENGINE': 'django.db.backends.sqlite3',
+            #'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+            #'USER': '',
+            #'PASSWORD': '',
+            #'HOST': '',
+            #'PORT': 5432,
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'snex2',
+            'USER': 'postgres',
+            'PASSWORD': 'postgres',
+            'HOST': '127.0.0.1',
+            'PORT': '5432'
         }
     }
 
@@ -234,11 +228,32 @@ MEDIA_URL = '/data/'
 # Using AWS
 
 if not DEBUG:
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    #DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    #STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STORAGES = {
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+               "bucket_name": os.getenv('AWS_STORAGE_BUCKET_NAME', ''),
+               "region_name": os.getenv('AWS_S3_REGION_NAME', ''),
+               "default_acl": None,
+               "addressing_style": "virtual",
+            }
+        },
+        "default": {
+            "BACKEND": "storages.backends.s3.S3Storage",
+            "OPTIONS": {
+               "bucket_name": os.getenv('AWS_STORAGE_BUCKET_NAME', ''),
+               "region_name": os.getenv('AWS_S3_REGION_NAME', ''),
+               "default_acl": None,
+               "addressing_style": "virtual",
+            }
+        }
+    }
+
 
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', '')
-AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRECT_ACCESS_KEY', '')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', '')
 AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', '')
 AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', '')
 AWS_DEFAULT_ACL = None
@@ -355,10 +370,11 @@ HOOKS = {
     'sync_paper_with_snex1': 'custom_code.hooks.sync_paper_with_snex1',
     'sync_comment_with_snex1': 'custom_code.hooks.sync_comment_with_snex1',
     'cancel_gw_obs': 'gw.hooks.cancel_gw_obs',
+    'ingest_gw_galaxy_into_snex1': 'gw.hooks.ingest_gw_galaxy_into_snex1',
 }
 
 BROKERS = {
-    'TNS': {'api_key': os.environ['TNS_APIKEY']}
+    'TNS': {'api_key': os.getenv('TNS_APIKEY', '')}
 }
 
 TOM_ALERT_CLASSES = [
@@ -442,6 +458,8 @@ PASSWORD_HASHERS = [
     #'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
 ]
 
+CSRF_TRUSTED_ORIGINS = ['https://test.supernova.exchange']
+
 TOM_REGISTRATION = {
     'REGISTRATION_AUTHENTICATION_BACKEND': 'django.contrib.auth.backends.AllowAllUsersModelBackend',
     'REGISTRATION_REDIRECT_PATTERN': 'home',
@@ -460,9 +478,12 @@ EMAIL_USE_TLS = True
 
 EMAIL_HOST_USER = 'snex@lco.global'
 
-EMAIL_HOST_PASSWORD = str(os.environ['SNEX_EMAIL_PASSWORD'])
+EMAIL_HOST_PASSWORD = str(os.getenv('SNEX_EMAIL_PASSWORD', ''))
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 7000000
+
+SNEX1_DB_URL = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'
+SNEX1_DB_URL = SNEX1_DB_URL.format(os.getenv('SNEX1_DB_USER', ''), os.getenv('SNEX1_DB_PASSWORD', '')
 
 PLOTLY_DASH = {
     'cache_arguments': False,
@@ -483,7 +504,9 @@ WEBPACK_LOADER = {
 }
 
 TOM_API_URL = os.getenv('TOM_API_URL', 'http://127.0.0.1:8000')
-HERMES_API_URL = os.getenv('HERMES_API_URL', 'http://hermes.lco.gtn')
+HERMES_API_URL = os.getenv('HERMES_API_URL', 'https://hermes.lco.global')
+
+SAVE_TEST_ALERTS = False
 
 ALERT_STREAMS = [
     {
@@ -491,18 +514,20 @@ ALERT_STREAMS = [
         'NAME': 'custom_code.alertstreams.hopskotch.CustomHopskotchAlertStream',
         'OPTIONS': {
             'URL': 'kafka://kafka.scimma.org/',
-            'GROUP_ID': os.getenv('SCIMMA_AUTH_USERNAME', "") + '-' + 'uniqueidforyourapp12345',
-            'USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', None),
-            'PASSWORD': os.getenv('SCIMMA_AUTH_PASSWORD', None),
+            'USERNAME': os.getenv('SCIMMA_AUTH_USERNAME', ''),
+            'PASSWORD': os.getenv('SCIMMA_AUTH_PASSWORD', ''),
+            # Group ID must be prefixed with SCiMMA SCRAM credential username to open the SCiMMA kafka stream
+            'GROUP_ID': os.getenv('SCIMMA_AUTH_USERNAME', '') + '-' + os.getenv('HOPSKOTCH_GROUP_ID', 'hermes-dev'),
             'TOPIC_HANDLERS': {
-                'sys.heartbeat': 'custom_code.alertstreams.hopskotch.heartbeat_handler',
+                'hermes.*': 'custom_code.alertstreams.hopskotch.alert_logger',
                 'tomtoolkit.test': 'custom_code.alertstreams.hopskotch.alert_logger',
-                'hermes.test': 'custom_code.alertstreams.hopskotch.alert_logger',
+                #'igwn.gwalert': 'tom_nonlocalizedevents.alertstream_handlers.igwn_event_handler.handle_igwn_message',
+                'igwn.gwalert': 'gw.gw_event_handler.handle_igwn_message_with_galaxies',
             },
         },
     },
     {
-        'ACTIVE': True,
+        'ACTIVE': False,
         'NAME': 'tom_alertstreams.alertstreams.gcn.GCNClassicAlertStream',
         # The keys of the OPTIONS dictionary become (lower-case) properties of the AlertStream instance.
         'OPTIONS': {
@@ -516,9 +541,9 @@ ALERT_STREAMS = [
                 # 'enable.auto.commit': False
             },
             'TOPIC_HANDLERS': {
-                'gcn.classic.text.LVC_INITIAL': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
-                'gcn.classic.text.LVC_PRELIMINARY': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_message',
-                'gcn.classic.text.LVC_RETRACTION': 'gw.gw_event_handler.handle_retraction_with_galaxies',#'tom_nonlocalizedevents.alertstream_handlers.gw_event_handler.handle_retraction',
+                'gcn.classic.text.LVC_INITIAL': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gcn_event_handler.handle_message',
+                'gcn.classic.text.LVC_PRELIMINARY': 'gw.gw_event_handler.handle_message',#'tom_nonlocalizedevents.alertstream_handlers.gcn_event_handler.handle_message',
+                'gcn.classic.text.LVC_RETRACTION': 'gw.gw_event_handler.handle_retraction_with_galaxies',#'tom_nonlocalizedevents.alertstream_handlers.gcn_event_handler.handle_retraction',
             },
         },
     }

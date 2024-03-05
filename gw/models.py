@@ -10,7 +10,7 @@ class GWFollowupGalaxy(models.Model):
     )
 
     catalog_objname = models.CharField(
-        max_length=10, default='', blank=True, null=True,
+        max_length=50, default='', blank=True, null=True,
         help_text='Name of this galaxy in the catalog'
     )
 

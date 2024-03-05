@@ -7,7 +7,12 @@
 {% block content %}
 <nav class="navbar navbar-expand-md fixed-top fixed-top-2">
   <div class="collapse navbar-collapse" id="targetInfo">
-    <h3>Galaxy List for {{ superevent_id }}</h3>
+    <div class="col-md-6">
+      <h3>Galaxy List for {{ superevent_id }}</h3>
+    </div>
+    <div class="col-md-6">
+      {% event_info sequence %}
+    </div>
   </div>
 </nav>
 {% if user|has_gw_permissions %}
@@ -23,6 +28,9 @@
     <div class="row">
       <div class="col-md-6"><input type="checkbox" onclick='toggleButton("submit-btn")'><span>Check if ready to submit</span></div>
       <div class="col-md-6"><input type="checkbox" onclick='toggleButton("cancel-btn")'><span>Check if ready to cancel</span></div>
+    </div>
+    <div class="row">
+      {% galaxy_distribution galaxies %}
     </div>
   </div>
 </div>
@@ -52,7 +60,19 @@
 	<div class="row"><b>{{ page_obj.start_index|add:forloop.counter0 }}.</b></div>
 	<div class="row"><input type="checkbox" class="individual-checkbox" id="select-{{ galaxy.id }}" checked></div>
       </td>
-      <td>{{ galaxy.catalog_objname }}</td>
+      <td>{{ galaxy.catalog_objname }}<br>
+	{% if galaxy|get_target_id %}
+	  <span><a href="{% url 'targets:detail' galaxy|get_target_id %}">Target Created and Observations Requested</a></span><br>
+          {% if galaxy|has_images %}
+	  <span>Images Have Been Taken</span>
+	  {% else %}
+	  <span>No Images Yet</span>
+	  {% endif %}
+	{% else %}
+	  <span>Observations Not Triggered</span>
+	{% endif %}
+	<!--span><a href="{% url 'nonlocalizedevents-galaxies-triplets' galaxy.id %}">View Galaxy Observations</a></span-->
+      </td>
       <td>{{ galaxy.score|floatformat:4 }}</td>
       <td>{{ galaxy.ra|floatformat:4 }}</td>
       <td>{{ galaxy.dec|floatformat:4 }}</td>

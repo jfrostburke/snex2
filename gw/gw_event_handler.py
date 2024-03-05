@@ -1,15 +1,58 @@
 import logging
 import os
+import traceback
 from astropy.table import Table
 from astropy.io import fits
 from dateutil.parser import parse
 from ligo.skymap import distance
 
-from tom_nonlocalizedevents.alertstream_handlers.gw_event_handler import extract_fields, EXPECTED_FIELDS, get_moc_url_from_skymap_fits_url, handle_retraction
+from tom_nonlocalizedevents.alertstream_handlers.gcn_event_handler import extract_all_fields, EXPECTED_FIELDS, get_moc_url_from_skymap_fits_url, handle_retraction
+from tom_nonlocalizedevents.alertstream_handlers.igwn_event_handler import handle_igwn_message
 from tom_nonlocalizedevents.models import NonLocalizedEvent, EventSequence, EventLocalization
 from gw.find_galaxies import generate_galaxy_list
+from gw.models import GWFollowupGalaxy
+from tom_common.hooks import run_hook
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+
+def handle_igwn_message_with_galaxies(message, metadata):
+
+    alert = message.content[0]
+    if alert.get('superevent_id', '').startswith('M') and not settings.SAVE_TEST_ALERTS:
+        return None, None
+
+    ### First, check if the message contains a retraction
+    ### and handle that case differently
+    if alert.get('alert_type', '') == 'RETRACTION':
+        nonlocalizedevent, nle_created = NonLocalizedEvent.objects.update_or_create(
+            event_id=alert['superevent_id'],
+            event_type=NonLocalizedEvent.NonLocalizedEventType.GRAVITATIONAL_WAVE,
+            defaults={'state': NonLocalizedEvent.NonLocalizedEventState.RETRACTED}
+        )
+        
+        sequences = nonlocalizedevent.sequences.all()
+        for sequence in sequences:
+            run_hook('cancel_gw_obs', galaxy_ids=[], sequence_id=sequence.id)        
+
+        return nonlocalizedevent, None
+
+    nonlocalizedevent, event_sequence = handle_igwn_message(message, metadata)
+
+    localization = event_sequence.localization
+    existing_galaxies_for_localization = GWFollowupGalaxy.objects.filter(eventlocalization=localization)
+    if len(existing_galaxies_for_localization) > 0:
+        ### Already found galaxies for this localization, so don't do it again
+        return nonlocalizedevent, event_sequence
+    try:
+        generate_galaxy_list(localization)
+    except Exception as e:
+        logger.error('Could not generate galaxy list with exception {}'.format(e))
+        logger.error(traceback.format_exc())
+
+    return nonlocalizedevent, event_sequence
+
 
 def handle_message(message):
     # It receives a bytestring message or a Kafka message in the LIGO GW format
@@ -18,7 +61,7 @@ def handle_message(message):
         bytes_message = message.value()
     else:
         bytes_message = message
-    fields = extract_fields(bytes_message.decode('utf-8'), EXPECTED_FIELDS)
+    fields = extract_all_fields(bytes_message.decode('utf-8'))
     if fields:
         nonlocalizedevent, nle_created = NonLocalizedEvent.objects.get_or_create(
             event_id=fields['TRIGGER_NUM'],
@@ -87,7 +130,7 @@ def handle_retraction_with_galaxies(message):
         bytes_message = message.value()
     else:
         bytes_message = message
-    fields = extract_fields(bytes_message.decode('utf-8'), ['TRIGGER_NUM'])
+    fields = extract_all_fields(bytes_message.decode('utf-8'))
 
     try:
         retracted_event = NonLocalizedEvent.objects.get(event_id=fields['TRIGGER_NUM'])

@@ -18,10 +18,10 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from guardian.shortcuts import assign_perm
 from custom_code.models import ReducedDatumExtra
+from django.conf import settings
 
-_SNEX1_DB = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ.get('SNEX1_DB_USER'), os.environ.get('SNEX1_DB_PASSWORD'))
 
-engine1 = create_engine(_SNEX1_DB)
+engine1 = create_engine(settings.SNEX1_DB_URL)
 
 def get_comments(targetid, tablename, notes, users, days_ago):
     
@@ -29,7 +29,7 @@ def get_comments(targetid, tablename, notes, users, days_ago):
                     'obsrequests': ContentType.objects.get(model='observationgroup').id,
                     'spec': ContentType.objects.get(model='reduceddatum').id}
     
-    with get_session(db_address=_SNEX1_DB) as db_session:
+    with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
         if targetid == 'all':
             comments = db_session.query(notes).filter(and_(notes.tablename==tablename, notes.datecreated > days_ago))
         else:
@@ -118,8 +118,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         
-        notes = load_table('notes', db_address=_SNEX1_DB)
-        users = load_table('users', db_address=_SNEX1_DB)
+        notes = load_table('notes', db_address=settings.SNEX1_DB_URL)
+        users = load_table('users', db_address=settings.SNEX1_DB_URL)
 
         if not options['days_ago']:
             days_ago = datetime.datetime.utcnow() - datetime.timedelta(days=9999)

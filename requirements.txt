@@ -5,14 +5,14 @@ ligo.skymap==1.0.3
 tom-nonlocalizedevents
 tom-alertstreams
 gunicorn[gevent]
-django==3.2.16
+django==4.2
 django-heroku
 django-storages
 boto3
 requests_oauthlib
 python-magic
 sqlalchemy
-cryptography==3.3.2
+cryptography
 werkzeug==2.0.0
 flask==2.1.3
 dash==1.16.3
@@ -25,3 +25,4 @@ matplotlib
 mysqlclient==1.4.6
 lasair
 importlib-metadata==4.13.0
+sep

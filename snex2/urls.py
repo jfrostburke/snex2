@@ -67,6 +67,8 @@ urlpatterns = [
     path('submit-gw-obs/', submit_galaxy_observations_view, name='submit-gw-obs'),
     path('cancel-gw-obs/', cancel_galaxy_observations_view, name='cancel-gw-obs'),
     path('floyds-inbox/', FloydsInboxView.as_view(), name='floyds-inbox'),
+    path('nonlocalizedevents/sequence/<int:id>/obs/', EventSequenceGalaxiesTripletView.as_view(), name='nonlocalizedevents-sequence-triplets'),
+    path('nonlocalizedevents/galaxies/<int:id>/obs/', GWFollowupGalaxyTripletView.as_view(), name='nonlocalizedevents-galaxies-triplets'),
     path('', include('tom_registration.registration_flows.approval_required.urls', namespace='registration')),
     path('', include('tom_common.urls')),
     path('snex2/', include('custom_code.urls')),
