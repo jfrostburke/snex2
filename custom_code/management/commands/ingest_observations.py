@@ -17,14 +17,13 @@ from tom_observations.models import ObservationRecord, ObservationGroup, Dynamic
 from tom_targets.models import Target
 from django.contrib.auth.models import Group
 from guardian.shortcuts import assign_perm
+from django.conf import settings
 
 
-_SNEX1_DB = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ.get('SNEX1_DB_USER'), os.environ.get('SNEX1_DB_PASSWORD'))
-
-engine1 = create_engine(_SNEX1_DB)
+engine1 = create_engine(settings.SNEX1_DB_URL)
 
 @contextmanager
-def get_session(db_address=_SNEX1_DB):
+def get_session(db_address=settings.SNEX1_DB_URL):
     """
     Get a connection to a database
 
@@ -33,12 +32,9 @@ def get_session(db_address=_SNEX1_DB):
     session: SQLAlchemy database session
     """
     Base = automap_base()
-    if db_address==_SNEX1_DB:
+    if db_address==settings.SNEX1_DB_URL:
         Base.metadata.bind = engine1
         db_session = sessionmaker(bind=engine1, autoflush=False, expire_on_commit=False)
-    else:
-        Base.metadata.bind = engine2
-        db_session = sessionmaker(bind=engine2, autoflush=False, expire_on_commit=False)
 
     session = db_session()
 
@@ -54,7 +50,7 @@ def get_session(db_address=_SNEX1_DB):
         session.close()
 
 
-def load_table(tablename, db_address=_SNEX1_DB):
+def load_table(tablename, db_address=settings.SNEX1_DB_URL):
     """
     Load a table with its data from a database
 
@@ -208,7 +204,7 @@ def get_snex2_params(obs, repeating=True):
 
 def add_permissions_to_templates(target_id, existing_obs, snex1_groups, obsrequests):
     
-    with get_session(db_address=_SNEX1_DB) as db_session:
+    with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
         all_sequences = db_session.query(obsrequests).filter(
             and_(
                 obsrequests.approved==1,
@@ -232,7 +228,7 @@ def add_permissions_to_templates(target_id, existing_obs, snex1_groups, obsreque
 
 def make_templates_for_target(target_id, existing_obs, snex1_groups, obsrequests, obslog, users):
 
-    with get_session(db_address=_SNEX1_DB) as db_session:
+    with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
         ### Get all the sequences
         
         all_sequences = db_session.query(obsrequests).filter(
@@ -284,7 +280,7 @@ def make_templates_for_target(target_id, existing_obs, snex1_groups, obsrequests
 
 def get_sequences_for_target(target_id, existing_obs, snex1_groups, obsrequests, obslog):
 
-    with get_session(db_address=_SNEX1_DB) as db_session:
+    with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
         ### Get all the sequences
         onetime_sequence = db_session.query(obsrequests).filter(
             and_(
@@ -446,7 +442,7 @@ class Command(BaseCommand):
             except: # Name not a SNEx1 ID, so not in SNEx1
                 continue
         
-        with get_session(db_address=_SNEX1_DB) as db_session:
+        with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
             ### Make a dictionary of the groups in the SNex1 db
             snex1_groups = {}
             for x in db_session.query(Groups):

@@ -21,11 +21,9 @@ from django.contrib.auth.models import Group, User
 from django_comments.models import Comment
 from guardian.shortcuts import assign_perm
 from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
 
-
-_SNEX1_DB = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ.get('SNEX1_DB_USER'), os.environ.get('SNEX1_DB_PASSWORD'))
-
-engine1 = create_engine(_SNEX1_DB)
+engine1 = create_engine(settings.SNEX1_DB_URL)
 
 
 def create_new_sequence(requestsid, created, modified, snex2_param, users, notes, db_session, active=True):
@@ -71,17 +69,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         ### Define our db tables as Classes
-        obsrequests = load_table('obsrequests', db_address=_SNEX1_DB)
-        obslog = load_table('obslog', db_address=_SNEX1_DB)
-        obstags = load_table('obsrequests_tags', db_address=_SNEX1_DB)
-        tags = load_table('tags', db_address=_SNEX1_DB)
-        Groups = load_table('groups', db_address=_SNEX1_DB)
-        users = load_table('users', db_address=_SNEX1_DB)
-        notes = load_table('notes', db_address=_SNEX1_DB)
+        obsrequests = load_table('obsrequests', db_address=settings.SNEX1_DB_URL)
+        obslog = load_table('obslog', db_address=settings.SNEX1_DB_URL)
+        obstags = load_table('obsrequests_tags', db_address=settings.SNEX1_DB_URL)
+        tags = load_table('tags', db_address=settings.SNEX1_DB_URL)
+        Groups = load_table('groups', db_address=settings.SNEX1_DB_URL)
+        users = load_table('users', db_address=settings.SNEX1_DB_URL)
+        notes = load_table('notes', db_address=settings.SNEX1_DB_URL)
         
         #print('Made tables')
         
-        with get_session(db_address=_SNEX1_DB) as db_session:
+        with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
             ### Make a dictionary of the groups in the SNex1 db
             snex1_groups = {}
             for x in db_session.query(Groups):

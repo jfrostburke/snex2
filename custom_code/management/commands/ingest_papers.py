@@ -13,10 +13,9 @@ from django.core.management.base import BaseCommand
 from tom_targets.models import Target
 from custom_code.management.commands.ingest_observations import get_session, load_table
 from custom_code.models import Papers
+from django.conf import settings
 
-_SNEX1_DB = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ.get('SNEX1_DB_USER'), os.environ.get('SNEX1_DB_PASSWORD'))
-
-engine1 = create_engine(_SNEX1_DB)
+engine1 = create_engine(settings.SNEX1_DB_URL)
 
 
 class Command(BaseCommand):
@@ -28,7 +27,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        papers = load_table('papers', db_address=_SNEX1_DB)
+        papers = load_table('papers', db_address=settings.SNEX1_DB_URL)
 
         if not options.get('days_ago'):
             print('could not find days ago, using default value of 1')
@@ -42,7 +41,7 @@ class Command(BaseCommand):
                        'submitted': 'submitted',
                        'published': 'published'}
 
-        with get_session(db_address=_SNEX1_DB) as db_session:
+        with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
 
             papers_to_add = db_session.query(papers).filter(or_(papers.datecreated > days_ago, papers.lastmodified > days_ago))
 

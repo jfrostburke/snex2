@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 BASE_DIR = settings.BASE_DIR
 
 
-def generate_galaxy_list(eventlocalization, completeness=None, credzone=None):
+def generate_galaxy_list(eventlocalization, completeness=None, credzone=None, skymap_filepath=None):
     """
     An adaptation of the galaxy ranking algorithm described in
     Arcavi et al. 2017 (doi:10.3847/2041-8213/aa910f)
@@ -53,17 +53,14 @@ def generate_galaxy_list(eventlocalization, completeness=None, credzone=None):
     #MB_star = float(config.get('GALAXIES', 'MB_STAR'))
     
     try:
-        ### Should look at differences between these methods
-        map_data = Table.read(eventlocalization.skymap_moc_file_url)
-        prob = np.asarray(map_data['PROBDENSITY'])
-        distmu, distsigma, distnorm = distance.parameters_to_moments(map_data['DISTMU'], map_data['DISTSIGMA'])
-        distmu = np.asarray(distmu)
-        distsigma = np.asarray(distsigma)
-        distnorm = np.asarray(distnorm)
+        if skymap_filepath is not None:
+            prob, distmu, distsigma, distnorm = hp.read_map(skymap_filepath, field=[0,1,2,3], verbose=False)
+        else:
+            prob, distmu, distsigma, distnorm = hp.read_map(eventlocalization.skymap_url.replace('.multiorder.fits','.fits.gz'), field=[0,1,2,3], verbose=False)
 
-        #prob, distmu, distsigma, distnorm = hp.read_map(eventlocalization.skymap_moc_file_url, field=[0,1,2,3], verbose=False)
     except Exception as e:
         logger.warning('Failed to read sky map for {}'.format(eventlocalization))
+        logger.warning(e)
         return
 
     # Get the map parameters:
@@ -72,9 +69,8 @@ def generate_galaxy_list(eventlocalization, completeness=None, credzone=None):
 
     # Load the galaxy catalog.
     logger.info('Loading Galaxy Catalog')
-    hdu = fits.open(catalog_path)
-    galaxies = Table(hdu[1].data)
-    hdu.close()
+    galaxies = Table.read(catalog_path)
+    
     ### If using luminosity, remove galaxies with no Lum_X, like so:q
     #galaxies = galaxies[~np.isnan(galaxies['Lum_W1'])]
     ### If using mass, make cuts on DistMpc and Mstar

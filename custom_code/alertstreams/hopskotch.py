@@ -109,7 +109,7 @@ class CustomHopskotchAlertStream(AlertStream):
                             # First check all wildcard topics to see if they will match this topic
                             matched_handler = False
                             for topic in self.alert_handler.keys():
-                                if '*' in topic and re.match(topic, metadata.topic):
+                                if topic != '*' and '*' in topic and re.match(topic, metadata.topic):
                                     self.alert_handler[topic](alert, metadata)
                                     matched_handler = True
                                     break

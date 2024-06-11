@@ -220,6 +220,9 @@
       <div class="tab-pane" id="photometry">
         {#% lightcurve object %#}
 	{% snex2_get_photometry_data object %}
+	<div align="center">
+          <u><span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:#ff9900;"><a href="{% url 'custom_code:download-photometry' target.id %}">Download Photometry for this Target</a></span></u>
+        </div>
 	{% dash_lightcurve object 1000 600 %}
       </div>
       <div class="tab-pane" id="spectroscopy">

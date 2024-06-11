@@ -1,0 +1,28 @@
+<div class="row">
+  <div class="col-md-3">
+    <b>Instruments: </b>{{ sequence.details.instruments }}
+  </div>
+  <div class="col-md-3">
+    <b>NSBH: </b>{{ sequence.details.classification.NSBH|floatformat:2 }}
+  </div>
+  <div class="col-md-3">
+    <b>FAR: </b>{{ sequence.details.far|stringformat:".2e" }}
+  </div>
+  <div class="col-md-3">
+    <b>90%: </b>{{ localization.area_90|floatformat:2 }}
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-3">
+    <b>BNS: </b>{{ sequence.details.classification.BNS|floatformat:2 }}
+  </div>
+  <div class="col-md-3">
+    <b>Terrestrial: </b>{{ sequence.details.classification.Terrestrial|floatformat:2 }}
+  </div>
+  <div class="col-md-3">
+    <b>BBH: </b>{{ sequence.details.classification.BBH|floatformat:2 }}
+  </div>
+  <div class="col-md-3">
+    <b>50%: </b>{{ localization.area_50|floatformat:2 }}
+  </div>
+</div>

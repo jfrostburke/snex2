@@ -6,12 +6,17 @@ from django.db.models import F
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.views.generic import ListView
+from django.views.generic.base import TemplateView
 from guardian.shortcuts import assign_perm
 import json
+import os
+from astropy.io import fits
+import sep
 from datetime import datetime, timedelta
 from tom_nonlocalizedevents.models import NonLocalizedEvent, EventSequence, EventLocalization
 from gw.models import GWFollowupGalaxy
 from gw.forms import GWGalaxyObservationForm
+from gw.treasure_map_utils import build_tm_pointings, submit_tm_pointings
 from tom_common.hooks import run_hook
 from tom_targets.models import Target, TargetExtra
 from tom_observations.facility import get_service_class
@@ -21,6 +26,9 @@ from custom_code.views import Snex1ConnectionError
 import logging
 
 logger = logging.getLogger(__name__)
+
+BASE_DIR = settings.BASE_DIR
+
 
 class GWFollowupGalaxyListView(LoginRequiredMixin, ListView):
 
@@ -41,9 +49,101 @@ class GWFollowupGalaxyListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        context['sequence'] = EventSequence.objects.get(id=self.kwargs['id'])
         context['superevent_id'] = EventSequence.objects.get(id=self.kwargs['id']).nonlocalizedevent.event_id
         context['galaxy_count'] = len(self.get_queryset())
         context['obs_form'] = GWGalaxyObservationForm()
+        return context
+
+
+class EventSequenceGalaxiesTripletView(TemplateView, LoginRequiredMixin):
+
+    template_name = 'gw/galaxy_observations.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        sequence = EventSequence.objects.get(id=self.kwargs['id'])
+        context['sequence'] = sequence
+        loc = sequence.localization
+        galaxies = GWFollowupGalaxy.objects.filter(eventlocalization=loc)
+        galaxies = galaxies.annotate(name=F("id"))
+        context['galaxy_count'] = len(galaxies)
+        #TODO: Filter galaxies by observations, but for now we'll just take a subset and fake it
+
+        context['superevent_id'] = sequence.nonlocalizedevent.event_id 
+        context['superevent_index'] = sequence.nonlocalizedevent.id
+
+        rows = []
+
+        #TODO: Populate this dynamically
+        for galaxy in galaxies[:1]:
+
+            row = {'galaxy': galaxy,
+                   'triplets': [{
+                       'obsdate': '2023-04-19',
+                       'filter': 'g',
+                       'exposure_time': 200,
+                       'original': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/obs.fits')},
+                       'template': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/ref.fits')},
+                       'diff': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/sub.fits')}
+                   },
+                   #{
+                   #    'obsdate': '2023-04-19',
+                   #    'filter': 'g',
+                   #    'exposure_time': 200,
+                   #    'original': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/obs.fits')},
+                   #    'template': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/ref.fits')},
+                   #    'diff': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/sub.fits')}
+                   #}
+                   ]
+            }
+            rows.append(row)
+
+        context['rows'] = rows
+
+        return context
+
+
+class GWFollowupGalaxyTripletView(TemplateView, LoginRequiredMixin):
+
+    template_name = 'gw/galaxy_observations_individual.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        galaxy = GWFollowupGalaxy.objects.get(id=self.kwargs['id'])
+        context['galaxy'] = galaxy
+
+        loc = galaxy.eventlocalization
+        context['superevent_id'] = loc.nonlocalizedevent.event_id 
+        context['superevent_index'] = loc.nonlocalizedevent.id
+
+        rows = []
+
+        #TODO: Populate this dynamically
+
+        triplets = [{
+            'obsdate': '2023-04-19',
+            'filter': 'g',
+            'exposure_time': 200,
+            'original': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/obs.fits')},
+            'template': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/ref.fits')},
+            'diff': {'filename': os.path.join(BASE_DIR, 'data/fits/gw/sub.fits')}
+        }]
+
+        ### Run SExtractor to get sources to plot
+        for triplet in triplets:
+            hdu = fits.open(triplet['diff']['filename'])
+            img = hdu[0].data
+            hdu.close()
+
+            bkg = sep.Background(img.byteswap().newbyteorder())
+            sources = sep.extract(img-bkg, 5.0, err=bkg.globalrms)
+            triplet['sources'] = sources
+
+        context['triplets'] = triplets
+
         return context
 
 
@@ -54,8 +154,9 @@ def submit_galaxy_observations_view(request):
     galaxies = GWFollowupGalaxy.objects.filter(id__in=galaxy_ids)
 
     try:
-        #db_session = _return_session()
+        db_session = _return_session()
         failed_obs = []
+        all_pointings = []
         with transaction.atomic():
             for galaxy in galaxies:
                 newtarget, created = Target.objects.get_or_create(
@@ -65,7 +166,13 @@ def submit_galaxy_observations_view(request):
                         type='SIDEREAL'
                 )
 
-                #run_hook('target_post_save', target=newtarget, created=created, group_names=['GWO4'], wrapped_session=db_session)
+                if created:
+                    gw = Group.objects.get(name='GWO4')
+                    assign_perm('tom_targets.view_target', gw, newtarget)
+                    assign_perm('tom_targets.change_target', gw, newtarget)
+                    assign_perm('tom_targets.delete_target', gw, newtarget)
+
+                run_hook('target_post_save', target=newtarget, created=created, group_names=['GWO4'], wrapped_session=db_session)
 
                 ### Create TargetExtra linking the Target with the GWFollowupGalaxy
                 if created:
@@ -165,50 +272,61 @@ def submit_galaxy_observations_view(request):
                             active=True
                         )
 
-                    groups = Group.objects.filter(name='GWO4')
+                groups = Group.objects.filter(name='GWO4')
+                for record in new_observations:
+                    assign_perm('tom_observations.view_observationrecord', groups, record)
+                    assign_perm('tom_observations.change_observationrecord', groups, record)
+                    assign_perm('tom_observations.delete_observationrecord', groups, record)
+
+                ## Add the sequence to SNEx1
+                snex_id = run_hook(
+                    'sync_sequence_with_snex1',
+                    form.serialize_parameters(),
+                    ['GWO4'],
+                    userid=request.user.id,
+                    wrapped_session=db_session
+                )
+
+                if len(new_observations) > 1 or form_data.get('cadence'):
+                    observation_group.name = str(snex_id)
+                    observation_group.save()
+
                     for record in new_observations:
-                        assign_perm('tom_observations.view_observationrecord', groups, record)
-                        assign_perm('tom_observations.change_observationrecord', groups, record)
-                        assign_perm('tom_observations.delete_observationrecord', groups, record)
+                        record.parameters['name'] = snex_id
+                        record.save()
 
-                    ## Add the sequence to SNEx1
-                    #snex_id = run_hook(
-                    #    'sync_sequence_with_snex1',
-                    #    form.serialize_parameters(),
-                    #    ['GWO4'],
-                    #    userid=request.user.id,
-                    #    wrapped_session=db_session
-                    #)
-
-                    #if len(new_observations) > 1 or form_data.get('cadence'):
-                    #    observation_group.name = str(snex_id)
-                    #    observation_group.save()
-
-                    #    for record in new_observations:
-                    #        record.parameters['name'] = snex_id
-                    #        record.save()
-
-                    ### TODO: Log the target in a new snex1 table?
+                ### Log the target in SNEx1 and ingest template images
+                run_hook('ingest_gw_galaxy_into_snex1', 
+                         newtarget.id, 
+                         galaxy.eventlocalization.nonlocalizedevent.event_id,
+                         wrapped_session=db_session)
 
                 ### Submit pointing to TreasureMap
+                #pointings = build_tm_pointings(newtarget, observing_parameters)
 
-            raise Snex1ConnectionError(message="We got to the end but raise an error to roll back the db")
+                #all_pointings += pointings
+
+            #submitted = submit_tm_pointings(galaxy.eventlocalization.sequences.first(), all_pointings)
+            #if not submitted:
+            #    logger.error('Submitting to Treasure Map failed for these observations')
+
+            #raise Snex1ConnectionError(message="We got to the end but raise an error to roll back the db")
         if not failed_obs:
             failed_obs_str = 'All observations submitted successfully'
         else:
             failed_obs_str = 'Observations failed to submit for the following galaxies: ' + ','.join(failed_obs)
         response_data = {'success': 'Submitted',
                          'failed_obs': failed_obs_str}
-        #db_session.commit()
+        db_session.commit()
 
     except Exception as e:
         logger.error('Creating galaxy Target objects and scheduling observations failed with error: {}'.format(e))
         response_data = {'failure': 'Creating galaxy Target objects and scheduling observations failed'}
-        #db_session.rollback()
+        db_session.rollback()
 
     finally:
         print('Done')
-        #db_session.close()
+        db_session.close()
 
     return HttpResponse(json.dumps(response_data), content_type='application/json')
 
